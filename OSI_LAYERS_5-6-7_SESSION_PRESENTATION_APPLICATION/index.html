@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en" data-theme-auto>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OSI Layers 5, 6 &amp; 7 — Session, Presentation &amp; Application</title>
+<style>
+:root{
+  --bg:#fbfbf9; --surface:#ffffff; --ink:#1c1c1a; --muted:#5c5c56;
+  --line:#e3e3dd; --accent:#8a4b2a; --accent-soft:#f3ece7;
+  --code-bg:#f5f4f0; --quote-bg:#f7f5f1;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#16161a; --surface:#1d1d22; --ink:#e8e8e4; --muted:#a0a099;
+    --line:#32323a; --accent:#e0a077; --accent-soft:#2a2320;
+    --code-bg:#232329; --quote-bg:#202026;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#16161a; --surface:#1d1d22; --ink:#e8e8e4; --muted:#a0a099;
+  --line:#32323a; --accent:#e0a077; --accent-soft:#2a2320;
+  --code-bg:#232329; --quote-bg:#202026;
+}
+*{box-sizing:border-box}
+body{
+  background:var(--bg); color:var(--ink); margin:0;
+  font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,
+       "Helvetica Neue",Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.layout{max-width:1180px;margin:0 auto;padding:0 24px;
+  display:grid;grid-template-columns:236px minmax(0,1fr);gap:48px}
+nav.toc{position:sticky;top:0;align-self:start;max-height:100vh;
+  overflow-y:auto;padding:40px 0 40px;font-size:13.5px}
+nav.toc .label{text-transform:uppercase;letter-spacing:.09em;
+  font-size:11px;color:var(--muted);font-weight:700;margin-bottom:12px}
+nav.toc a{display:block;color:var(--muted);text-decoration:none;
+  padding:4px 10px;border-left:2px solid transparent;line-height:1.4}
+nav.toc a:hover{color:var(--accent);border-left-color:var(--accent);
+  background:var(--accent-soft)}
+nav.toc a.lvl2{padding-left:22px;font-size:13px}
+main{padding:40px 0 96px;min-width:0}
+h1,h2,h3,h4{line-height:1.25;font-weight:650;
+  scroll-margin-top:24px;position:relative}
+h1{font-size:2.05rem;margin:.2em 0 .6em;letter-spacing:-.02em}
+h2{font-size:1.5rem;margin:2.2em 0 .7em;padding-bottom:.3em;
+  border-bottom:1px solid var(--line)}
+h3{font-size:1.16rem;margin:1.9em 0 .5em}
+h4{font-size:1rem;margin:1.5em 0 .4em;color:var(--muted)}
+.anchor{position:absolute;margin-left:.4em;color:var(--line);
+  text-decoration:none;opacity:0;font-weight:400}
+h1:hover .anchor,h2:hover .anchor,h3:hover .anchor{opacity:1}
+.anchor:hover{color:var(--accent)}
+p{margin:0 0 1em}
+a{color:var(--accent)}
+ul,ol{margin:0 0 1.15em;padding-left:1.45em}
+li{margin:.32em 0}
+li::marker{color:var(--muted)}
+hr{border:0;border-top:1px solid var(--line);margin:2.6em 0}
+code{background:var(--code-bg);border:1px solid var(--line);
+  border-radius:4px;padding:.12em .38em;font-size:.875em;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+pre{background:var(--code-bg);border:1px solid var(--line);
+  border-radius:8px;padding:16px 18px;overflow-x:auto;margin:0 0 1.3em}
+pre code{background:none;border:0;padding:0;font-size:13px;line-height:1.55}
+blockquote{margin:0 0 1.3em;padding:14px 18px;background:var(--quote-bg);
+  border-left:3px solid var(--accent);border-radius:0 8px 8px 0}
+blockquote p{margin:0 0 .6em}
+blockquote p:last-child{margin:0}
+.table-wrap{overflow-x:auto;margin:0 0 1.5em;border:1px solid var(--line);
+  border-radius:8px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:14.5px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);
+  vertical-align:top}
+th{background:var(--accent-soft);font-weight:650;white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+figure{margin:0 0 1.6em;text-align:center}
+img{max-width:100%;height:auto;border:1px solid var(--line);
+  border-radius:8px;background:var(--surface)}
+footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--line);
+  font-size:13px;color:var(--muted)}
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr;gap:0}
+  nav.toc{position:static;max-height:none;padding:28px 0 0;
+    border-bottom:1px solid var(--line);margin-bottom:8px}
+  nav.toc a.lvl2{display:none}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="toc"><div class="label">On this page</div>
+<a class="lvl1" href="#osi-layers-5-6-7-session-presentation-application">OSI Layers 5, 6 &amp; 7 — Session, Presentation &amp; Application</a>
+<a class="lvl2" href="#0-where-these-layers-sit">0. Where these layers sit</a>
+<a class="lvl1" href="#1-session-layer-layer-5">1. Session Layer (Layer 5)</a>
+<a class="lvl2" href="#11-overall">1.1 Overall</a>
+<a class="lvl2" href="#12-key-functions">1.2 Key functions</a>
+<a class="lvl2" href="#13-flow">1.3 Flow</a>
+<a class="lvl2" href="#14-protocols">1.4 Protocols</a>
+<a class="lvl2" href="#15-devices">1.5 Devices</a>
+<a class="lvl2" href="#16-where-layer-5-shows-up-in-backend-work">1.6 Where Layer 5 shows up in backend work</a>
+<a class="lvl1" href="#2-presentation-layer-layer-6">2. Presentation Layer (Layer 6)</a>
+<a class="lvl2" href="#21-overview">2.1 Overview</a>
+<a class="lvl2" href="#22-key-responsibilities">2.2 Key responsibilities</a>
+<a class="lvl2" href="#23-role-in-the-osi-model">2.3 Role in the OSI model</a>
+<a class="lvl2" href="#24-functions">2.4 Functions</a>
+<a class="lvl2" href="#25-services-provided">2.5 Services provided</a>
+<a class="lvl2" href="#26-working-of-the-presentation-layer">2.6 Working of the Presentation layer</a>
+<a class="lvl2" href="#27-protocols">2.7 Protocols</a>
+<a class="lvl2" href="#28-attacks-on-the-presentation-layer">2.8 Attacks on the Presentation layer</a>
+<a class="lvl2" href="#29-key-ideas">2.9 Key ideas</a>
+<a class="lvl1" href="#3-application-layer-layer-7">3. Application Layer (Layer 7)</a>
+<a class="lvl2" href="#31-overview">3.1 Overview</a>
+<a class="lvl2" href="#32-key-role">3.2 Key role</a>
+<a class="lvl2" href="#33-important-clarification-a-common-confusion">3.3 Important clarification — a common confusion</a>
+<a class="lvl2" href="#34-core-functions">3.4 Core functions</a>
+<a class="lvl2" href="#35-how-it-works-step-by-step">3.5 How it works step by step</a>
+<a class="lvl2" href="#36-services-provided">3.6 Services provided</a>
+<a class="lvl2" href="#37-key-protocols">3.7 Key protocols</a>
+<a class="lvl2" href="#38-modern-additions">3.8 Modern additions</a>
+<a class="lvl2" href="#39-security-considerations">3.9 Security considerations</a>
+<a class="lvl2" href="#310-key-ideas">3.10 Key ideas</a>
+<a class="lvl1" href="#4-rest-vs-restful-api">4. REST vs RESTful API</a>
+<a class="lvl2" href="#41-the-difference">4.1 The difference</a>
+<a class="lvl2" href="#42-definitions">4.2 Definitions</a>
+<a class="lvl2" href="#43-sample-usage">4.3 Sample usage</a>
+<a class="lvl2" href="#44-takeaway">4.4 Takeaway</a>
+<a class="lvl1" href="#5-quick-revision-sheet">5. Quick revision sheet</a>
+</nav>
+<main>
+<h1 id="osi-layers-5-6-7-session-presentation-application">OSI Layers 5, 6 &amp; 7 — Session, Presentation &amp; Application<a class="anchor" href="#osi-layers-5-6-7-session-presentation-application">#</a></h1>
+<blockquote><p>Scope: the three upper layers. How conversations are opened, kept in sync and closed; how data is translated, compressed and encrypted; and how applications actually speak to the network.</p><p>Source: extracted and reorganised from <code>md/DOCUMENTATIONS ...md</code> → <code>SYSTEM_DESIGN vs BACKEND</code> → <code>PREVIOUS, OSI LAYERS, API DESIGN, Networking Essentials</code> → <code>OSI layers-(Open System Interconnection)</code>.</p></blockquote>
+<hr>
+<h2 id="0-where-these-layers-sit">0. Where these layers sit<a class="anchor" href="#0-where-these-layers-sit">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>#</th><th>Layer</th><th>Job in one line</th><th>Typical protocols</th></tr></thead><tbody><tr><td>7</td><td>Application</td><td>Provides network services to user software</td><td>HTTP, DNS, SMTP, FTP, SSH</td></tr><tr><td>6</td><td>Presentation</td><td>Translates, compresses, encrypts data</td><td>TLS, SSL, XDR, NDR</td></tr><tr><td>5</td><td>Session</td><td>Opens, synchronises and closes conversations</td><td>RTCP, PPTP, RPC, SDP</td></tr></tbody></table></div>
+<p>A practical caveat worth stating up front: in the real TCP/IP stack these three layers are <strong>collapsed into one application layer</strong>. Many Layer 5 and Layer 6 functions are absorbed by the Transport layer or by the application protocol itself. They remain useful as <strong>conceptual categories</strong>, which is how they are taught and how they are asked about in interviews.</p>
+<hr>
+<h1 id="1-session-layer-layer-5">1. Session Layer (Layer 5)<a class="anchor" href="#1-session-layer-layer-5">#</a></h1>
+<h2 id="11-overall">1.1 Overall<a class="anchor" href="#11-overall">#</a></h2>
+<ul><li>Operates at Layer 5 of the OSI model.</li><li>Manages session <strong>setup, maintenance, and termination</strong>.</li><li>Controls <strong>dialogue</strong>: who sends and receives, and when.</li><li>Provides <strong>synchronisation and recovery</strong> mechanisms.</li><li>Many of its functions are integrated into the Transport or Application layers in modern TCP/IP networks.</li></ul>
+<h2 id="12-key-functions">1.2 Key functions<a class="anchor" href="#12-key-functions">#</a></h2>
+<ul><li><strong>Session establishment</strong> — initiates and negotiates communication parameters, such as authentication and duplex mode.</li><li><strong>Communication synchronisation</strong> — keeps data streams in order using checkpoints.</li><li><strong>Activity and dialog management</strong> — controls turns, prevents collisions, and avoids duplication.</li><li><strong>Resynchronisation and recovery</strong> — recovers from failures using synchronisation points.</li><li><strong>Session termination</strong> — gracefully ends communication after all data is exchanged.</li></ul>
+<h2 id="13-flow">1.3 Flow<a class="anchor" href="#13-flow">#</a></h2>
+<figure><img src="images/image-48.png" alt="session layer flow"></figure>
+<ol><li>Establishes and negotiates session parameters, for example authentication and duplex mode.</li><li>Manages <strong>token-based dialogue control</strong> to avoid collisions.</li><li>Inserts <strong>synchronisation checkpoints</strong> for recovery from failures.</li><li>Ensures data integrity by reducing duplication or message loss.</li><li>Gracefully terminates the session after confirming all data has been exchanged.</li></ol>
+<h3 id="why-checkpoints-matter">Why checkpoints matter<a class="anchor" href="#why-checkpoints-matter">#</a></h3>
+<p>If a 1 GB transfer fails at 900 MB, a session with checkpoints resumes from the last checkpoint rather than restarting. This is the conceptual ancestor of HTTP range requests and resumable uploads.</p>
+<h2 id="14-protocols">1.4 Protocols<a class="anchor" href="#14-protocols">#</a></h2>
+<h3 id="adsp-appletalk-data-stream-protocol">ADSP — AppleTalk Data Stream Protocol<a class="anchor" href="#adsp-appletalk-data-stream-protocol">#</a></h3>
+<p>Developed by Apple for LAN communication with self-configuration support.</p>
+<ul><li>Provides a <strong>reliable, ordered byte-stream connection</strong> between devices on an AppleTalk network.</li><li>Uses <strong>connection-oriented communication</strong> similar to TCP.</li><li>Handles <strong>error detection, retransmission, and flow control</strong> automatically.</li><li>Supports <strong>self-configuring</strong> network communication within Apple&#x27;s AppleTalk suite.</li><li>Was mainly used for Mac-to-Mac or printer and file sharing in old Apple LANs.</li></ul>
+<p><strong>Is it only for the Apple ecosystem?</strong> Yes.</p>
+<ul><li>ADSP is only for Apple&#x27;s old AppleTalk ecosystem.</li><li>Designed for Mac computers, printers, and devices in Apple LAN networks.</li><li>Not used on the modern internet or on non-Apple systems.</li><li>Today it is <strong>obsolete</strong>, replaced by TCP/IP protocols such as HTTP, TCP, and QUIC.</li><li>Practically, it existed only in legacy Apple network environments.</li></ul>
+<h3 id="rtcp-real-time-transport-control-protocol">RTCP — Real-time Transport Control Protocol<a class="anchor" href="#rtcp-real-time-transport-control-protocol">#</a></h3>
+<p>Provides QoS feedback for RTP-based multimedia sessions.</p>
+<ul><li>Works with <strong>RTP (Real-time Transport Protocol)</strong> to transmit media data like voice and video.</li><li>Provides <strong>feedback about network quality</strong>: packet loss, delay, jitter.</li><li>Helps adjust <strong>Quality of Service</strong> during streaming.</li><li>Does <strong>not carry media itself</strong>, only control and monitoring data.</li><li>Commonly used in VoIP, video calls, and live streaming systems.</li></ul>
+<p><strong>How RTCP is implemented</strong></p>
+<ul><li>RTP carries the <strong>audio and video data</strong>.</li><li>RTCP carries the <strong>control and feedback data</strong>.</li><li>Both run over <strong>UDP ports</strong>, conventionally:</li></ul>
+<pre><code>RTP  → even UDP port
+RTCP → next odd UDP port</code></pre>
+<p>Example:</p>
+<pre><code>RTP:  5004
+RTCP: 5005</code></pre>
+<h3 id="other-layer-5-protocols">Other Layer 5 protocols<a class="anchor" href="#other-layer-5-protocols">#</a></h3>
+<ul><li><strong>PPTP (Point-to-Point Tunnelling Protocol)</strong> — enables VPNs over TCP/IP. Now considered cryptographically broken; use IPSec or WireGuard instead.</li><li><strong>PAP (Password Authentication Protocol)</strong> — password-based user authentication in PPP connections. Sends credentials in the clear, so CHAP or EAP is preferred.</li><li><strong>RPCP (Remote Procedure Call Protocol)</strong> — allows a program to execute procedures in another address space, the basis of client-server interaction. The modern descendant is gRPC.</li><li><strong>SDP (Sockets Direct Protocol)</strong> — supports socket communication over RDMA-enabled networks.</li></ul>
+<h2 id="15-devices">1.5 Devices<a class="anchor" href="#15-devices">#</a></h2>
+<ul><li><strong>Firewalls</strong> — monitor and control sessions for security.</li><li><strong>Proxy servers</strong> — act as intermediaries, managing sessions between clients and servers.</li><li><strong>Session Border Controllers (SBCs)</strong> — secure and manage VoIP sessions.</li><li><strong>Application servers</strong> — create and maintain user sessions for applications.</li></ul>
+<h2 id="16-where-layer-5-shows-up-in-backend-work">1.6 Where Layer 5 shows up in backend work<a class="anchor" href="#16-where-layer-5-shows-up-in-backend-work">#</a></h2>
+<p>Even though the OSI session layer is not implemented as a separate layer in TCP/IP, the <strong>idea</strong> is everywhere in backend systems:</p>
+<div class="table-wrap"><table><thead><tr><th>Concept</th><th>Modern equivalent</th></tr></thead><tbody><tr><td>Session establishment</td><td>Login, JWT issuance, OAuth token grant</td></tr><tr><td>Session state</td><td>Cookies, server-side session stores, Redis session cache</td></tr><tr><td>Dialogue control</td><td>Request/response vs WebSocket full-duplex messaging</td></tr><tr><td>Checkpoints</td><td>Resumable uploads, HTTP range requests, Kafka consumer offsets</td></tr><tr><td>Graceful termination</td><td>Connection draining, <code>SIGTERM</code> handling before shutdown</td></tr></tbody></table></div>
+<hr>
+<h1 id="2-presentation-layer-layer-6">2. Presentation Layer (Layer 6)<a class="anchor" href="#2-presentation-layer-layer-6">#</a></h1>
+<h2 id="21-overview">2.1 Overview<a class="anchor" href="#21-overview">#</a></h2>
+<p>The Presentation Layer is the 6th layer of the OSI model, responsible for ensuring that data is properly <strong>formatted, translated, encrypted, and compressed</strong> so different systems can understand each other.</p>
+<p>It acts as a <strong>translator between the Application Layer and the lower layers</strong> of the network stack.</p>
+<h2 id="22-key-responsibilities">2.2 Key responsibilities<a class="anchor" href="#22-key-responsibilities">#</a></h2>
+<ul><li>Ensures <strong>data compatibility between different systems</strong>.</li><li>Handles <strong>data formatting and structure</strong>, both syntax and semantics.</li><li>Provides <strong>encryption and decryption</strong>.</li><li>Applies <strong>data compression</strong>.</li><li>Acts as a <strong>data translation layer</strong>.</li></ul>
+<h2 id="23-role-in-the-osi-model">2.3 Role in the OSI model<a class="anchor" href="#23-role-in-the-osi-model">#</a></h2>
+<p><strong>Sender side</strong></p>
+<ul><li>Converts application data into a standard transferable format.</li><li>Encrypts and compresses data.</li><li>Passes data to the Session layer.</li></ul>
+<p><strong>Receiver side</strong></p>
+<ul><li>Decrypts data.</li><li>Decompresses data.</li><li>Converts it back into an application-readable format.</li></ul>
+<h2 id="24-functions">2.4 Functions<a class="anchor" href="#24-functions">#</a></h2>
+<h3 id="1-data-translation">1. Data translation<a class="anchor" href="#1-data-translation">#</a></h3>
+<p>Converts data formats between systems, for example ASCII ↔ Unicode, JSON ↔ XML.</p>
+<h3 id="2-data-compression">2. Data compression<a class="anchor" href="#2-data-compression">#</a></h3>
+<p>Reduces data size to save bandwidth and improve transmission speed.</p>
+<h3 id="3-encryption-and-decryption">3. Encryption and decryption<a class="anchor" href="#3-encryption-and-decryption">#</a></h3>
+<p>Encrypts data for security before transmission, decrypts it after reception.</p>
+<h3 id="4-syntax-and-semantics-management">4. Syntax and semantics management<a class="anchor" href="#4-syntax-and-semantics-management">#</a></h3>
+<p>Ensures the data structure (syntax) is correct and the meaning (semantics) is preserved.</p>
+<h3 id="5-transfer-syntax-negotiation">5. Transfer syntax negotiation<a class="anchor" href="#5-transfer-syntax-negotiation">#</a></h3>
+<p>Agrees on the encoding type, compression method, and data representation format.</p>
+<h3 id="6-interoperability">6. Interoperability<a class="anchor" href="#6-interoperability">#</a></h3>
+<p>Enables communication between different operating systems, different architectures, and different data formats.</p>
+<h2 id="25-services-provided">2.5 Services provided<a class="anchor" href="#25-services-provided">#</a></h2>
+<ul><li>Encryption and decryption</li><li>Compression</li><li>Format translation</li><li>Cross-platform compatibility</li></ul>
+<h2 id="26-working-of-the-presentation-layer">2.6 Working of the Presentation layer<a class="anchor" href="#26-working-of-the-presentation-layer">#</a></h2>
+<p><strong>Sender side</strong> — Application Layer → Presentation Layer:</p>
+<ol><li>Format data</li><li>Compress data</li><li>Encrypt data</li><li>Pass to Session Layer</li></ol>
+<p><strong>Receiver side</strong> — Session Layer → Presentation Layer:</p>
+<ol><li>Decrypt data</li><li>Decompress data</li><li>Convert to readable format</li><li>Pass to Application Layer</li></ol>
+<p>Note the ordering. On the way out you <strong>compress then encrypt</strong>; on the way in you <strong>decrypt then decompress</strong>. Compressing after encryption is useless, because ciphertext has no redundancy left to squeeze out.</p>
+<h2 id="27-protocols">2.7 Protocols<a class="anchor" href="#27-protocols">#</a></h2>
+<ul><li><strong>SSL (Secure Socket Layer)</strong> — legacy secure communication. Deprecated; all versions are broken.</li><li><strong>TLS (Transport Layer Security)</strong> — modern secure protocol. TLS 1.3 is current.</li><li><strong>XDR (External Data Representation)</strong> — data encoding standard.</li><li><strong>NDR (Network Data Representation)</strong> — data representation format.</li><li><strong>AFP (Apple Filing Protocol)</strong> — file services for macOS.</li><li><strong>NCP (NetWare Core Protocol)</strong> — file and print services for Novell systems.</li><li><strong>LPP (Lightweight Presentation Protocol)</strong> — ISO presentation services over TCP/IP.</li></ul>
+<h3 id="a-note-on-where-tls-really-sits">A note on where TLS really sits<a class="anchor" href="#a-note-on-where-tls-really-sits">#</a></h3>
+<p>TLS is classified here because it does encryption and format negotiation. In the TCP/IP model it runs directly on top of TCP and below the application protocol, which is why it is sometimes called a Layer 5, 6, or &quot;Layer 6.5&quot; protocol depending on the textbook. The classification matters less than the mechanism.</p>
+<h2 id="28-attacks-on-the-presentation-layer">2.8 Attacks on the Presentation layer<a class="anchor" href="#28-attacks-on-the-presentation-layer">#</a></h2>
+<h3 id="man-in-the-middle-mitm">Man-in-the-Middle (MITM)<a class="anchor" href="#man-in-the-middle-mitm">#</a></h3>
+<p>Intercepts communication to steal or modify data.</p>
+<h3 id="ssltls-downgrade-attack">SSL/TLS downgrade attack<a class="anchor" href="#ssltls-downgrade-attack">#</a></h3>
+<p>Forces weaker encryption protocols to break security. Mitigated by HSTS and by TLS 1.3 removing legacy cipher suites entirely.</p>
+<h3 id="certificate-spoofing">Certificate spoofing<a class="anchor" href="#certificate-spoofing">#</a></h3>
+<p>Uses fake certificates to impersonate trusted servers. Mitigated by certificate pinning and Certificate Transparency logs.</p>
+<h3 id="code-injection">Code injection<a class="anchor" href="#code-injection">#</a></h3>
+<p>Exploits parsing and formatting vulnerabilities in data handling. Deserialisation bugs in JSON, XML, and binary formats are the modern form of this.</p>
+<h2 id="29-key-ideas">2.9 Key ideas<a class="anchor" href="#29-key-ideas">#</a></h2>
+<blockquote><p>The Presentation Layer ensures data is in a format both sender and receiver can understand securely and efficiently.</p></blockquote>
+<p><strong>One-line summary:</strong> the Presentation Layer is responsible for translating, encrypting, and compressing data so that different systems can communicate correctly and securely.</p>
+<hr>
+<h1 id="3-application-layer-layer-7">3. Application Layer (Layer 7)<a class="anchor" href="#3-application-layer-layer-7">#</a></h1>
+<h2 id="31-overview">3.1 Overview<a class="anchor" href="#31-overview">#</a></h2>
+<p>The Application Layer is the <strong>topmost layer</strong> of the OSI model, and it interacts directly with <strong>end-user applications</strong>. It provides network services to software such as browsers, email clients, file transfer tools, and remote login systems.</p>
+<h2 id="32-key-role">3.2 Key role<a class="anchor" href="#32-key-role">#</a></h2>
+<ul><li>Acts as the <strong>interface between user applications and the network</strong>.</li><li>Provides <strong>network services to applications</strong>.</li><li>Enables <strong>communication between software and remote systems</strong>.</li><li>Handles <strong>user-level network interactions</strong>.</li></ul>
+<h2 id="33-important-clarification-a-common-confusion">3.3 Important clarification — a common confusion<a class="anchor" href="#33-important-clarification-a-common-confusion">#</a></h2>
+<blockquote><p><strong>Application Layer ≠ the applications themselves.</strong></p></blockquote>
+<p>It provides <strong>services for</strong> applications, not the apps themselves.</p>
+<p>Example:</p>
+<ul><li>Chrome = the application.</li><li>HTTP = the Application Layer protocol that Chrome uses.</li></ul>
+<h2 id="34-core-functions">3.4 Core functions<a class="anchor" href="#34-core-functions">#</a></h2>
+<h3 id="1-data-representation">1. Data representation<a class="anchor" href="#1-data-representation">#</a></h3>
+<p>Converts user data into network format and received data into readable format. Example: HTML, JSON, XML formatting.</p>
+<h3 id="2-network-service-access">2. Network service access<a class="anchor" href="#2-network-service-access">#</a></h3>
+<p>Provides direct access to network services. Example: email through Gmail or Outlook, file downloads over FTP or HTTP.</p>
+<h3 id="3-application-protocol-handling">3. Application protocol handling<a class="anchor" href="#3-application-protocol-handling">#</a></h3>
+<p>Defines rules for communication between applications. Example: HTTP for web browsing, SMTP for email sending, DNS for name resolution.</p>
+<h3 id="4-session-management-logical-concept-here">4. Session management (logical concept here)<a class="anchor" href="#4-session-management-logical-concept-here">#</a></h3>
+<p>Maintains communication sessions, starts and ends application-level interactions. Example: a login session on a website, an SSH connection session.</p>
+<h3 id="5-resource-sharing">5. Resource sharing<a class="anchor" href="#5-resource-sharing">#</a></h3>
+<p>Enables sharing of files, printers, and services.</p>
+<h2 id="35-how-it-works-step-by-step">3.5 How it works step by step<a class="anchor" href="#35-how-it-works-step-by-step">#</a></h2>
+<p><strong>Sender side</strong></p>
+<ol><li>User requests an action, for example opening a website.</li><li>The Application Layer formats the request.</li><li>Sends it to the lower layers: Presentation → Session → Transport.</li></ol>
+<p><strong>Receiver side</strong></p>
+<ol><li>Data arrives from the network.</li><li>The Application Layer processes it.</li><li>Converts it into readable output for the user.</li></ol>
+<h2 id="36-services-provided">3.6 Services provided<a class="anchor" href="#36-services-provided">#</a></h2>
+<ul><li>File transfer</li><li>Email communication</li><li>Web browsing</li><li>Remote login</li><li>Name resolution</li><li>Network resource sharing</li></ul>
+<h2 id="37-key-protocols">3.7 Key protocols<a class="anchor" href="#37-key-protocols">#</a></h2>
+<h3 id="web-and-communication">Web and communication<a class="anchor" href="#web-and-communication">#</a></h3>
+<ul><li><strong>HTTP / HTTPS</strong> — web browsing.</li><li><strong>WebSocket</strong> — real-time, full-duplex communication.</li></ul>
+<h3 id="email">Email<a class="anchor" href="#email">#</a></h3>
+<ul><li><strong>SMTP</strong> — send emails.</li><li><strong>IMAP / POP3</strong> — receive emails.</li></ul>
+<h3 id="name-resolution">Name resolution<a class="anchor" href="#name-resolution">#</a></h3>
+<ul><li><strong>DNS</strong> — converts a domain name to an IP address.</li></ul>
+<h3 id="file-transfer">File transfer<a class="anchor" href="#file-transfer">#</a></h3>
+<ul><li><strong>FTP</strong> — file transfer.</li><li><strong>SFTP</strong> — secure file transfer.</li><li><strong>NFS</strong> — network file system access.</li></ul>
+<h3 id="network-management">Network management<a class="anchor" href="#network-management">#</a></h3>
+<ul><li><strong>SNMP</strong> — device monitoring and management.</li></ul>
+<h3 id="system-services">System services<a class="anchor" href="#system-services">#</a></h3>
+<ul><li><strong>DHCP</strong> — assigns IP addresses automatically.</li><li><strong>TELNET</strong> — remote login. Insecure and outdated.</li><li><strong>SSH</strong> — secure remote login.</li></ul>
+<h2 id="38-modern-additions">3.8 Modern additions<a class="anchor" href="#38-modern-additions">#</a></h2>
+<h3 id="1-http3-uses-quic">1. HTTP/3 uses QUIC<a class="anchor" href="#1-http3-uses-quic">#</a></h3>
+<p>The modern web stack is <strong>HTTP/3 → QUIC → UDP</strong>, replacing HTTP/2 → TLS → TCP. See the QUIC section in the Layer 3 &amp; 4 document for why.</p>
+<h3 id="2-the-application-layer-handles-logic-not-transport">2. The Application Layer handles logic, not transport<a class="anchor" href="#2-the-application-layer-handles-logic-not-transport">#</a></h3>
+<p>It decides <strong>what</strong> to send, <strong>when</strong> to send, and <strong>how to interpret</strong> the data. It does not decide how the data physically moves.</p>
+<h3 id="3-it-runs-on-top-of-everything">3. It runs on top of everything<a class="anchor" href="#3-it-runs-on-top-of-everything">#</a></h3>
+<pre><code>Application
+    ↓
+Presentation
+    ↓
+Session
+    ↓
+Transport
+    ↓
+Network
+    ↓
+Data Link
+    ↓
+Physical</code></pre>
+<h2 id="39-security-considerations">3.9 Security considerations<a class="anchor" href="#39-security-considerations">#</a></h2>
+<p>Common attacks at this layer:</p>
+<ul><li>MITM (Man-in-the-Middle)</li><li>DNS spoofing</li><li>Session hijacking</li><li>Credential theft</li></ul>
+<p>Add to those the ones that dominate real backend incident reports: injection (SQL, command, template), broken access control, and application-layer denial of service such as HTTP floods and slowloris.</p>
+<h2 id="310-key-ideas">3.10 Key ideas<a class="anchor" href="#310-key-ideas">#</a></h2>
+<blockquote><p>The Application Layer is where <strong>network meaning is created</strong>. It defines what the data means, not how it moves.</p></blockquote>
+<p><strong>One-line summary:</strong> the Application Layer provides network services directly to user applications and defines protocols for communication like HTTP, DNS, SMTP, and FTP.</p>
+<hr>
+<h1 id="4-rest-vs-restful-api">4. REST vs RESTful API<a class="anchor" href="#4-rest-vs-restful-api">#</a></h1>
+<p>Included here because it is the Layer 7 design vocabulary you will actually be asked about.</p>
+<h2 id="41-the-difference">4.1 The difference<a class="anchor" href="#41-the-difference">#</a></h2>
+<ul><li><strong>REST</strong> is an <strong>architectural style</strong>, a set of rules and constraints for designing APIs and web services.</li><li><strong>RESTful API</strong> is an <strong>actual API</strong> built following REST principles.</li></ul>
+<p>In short: <strong>REST = concept and rules. RESTful API = implementation of those rules in real systems.</strong></p>
+<h2 id="42-definitions">4.2 Definitions<a class="anchor" href="#42-definitions">#</a></h2>
+<ul><li><strong>REST (Representational State Transfer)</strong> is an architectural style for designing networked applications where resources are accessed using standard HTTP methods.</li><li>A <strong>RESTful API</strong> is an API that follows REST principles such as stateless communication, resource-based URLs, and standard methods: GET, POST, PUT, DELETE.</li><li>It is widely used in web services because it is <strong>simple, scalable, and works over HTTP</strong>.</li></ul>
+<h2 id="43-sample-usage">4.3 Sample usage<a class="anchor" href="#43-sample-usage">#</a></h2>
+<p>A real working API built using REST rules.</p>
+<p><strong>GitHub API</strong></p>
+<pre><code>GET https://api.github.com/users
+GET https://api.github.com/users/octocat</code></pre>
+<p><strong>E-commerce API</strong></p>
+<pre><code>GET    /products
+POST   /products
+PUT    /products/10
+DELETE /products/10</code></pre>
+<h2 id="44-takeaway">4.4 Takeaway<a class="anchor" href="#44-takeaway">#</a></h2>
+<ul><li>REST = rules and design style.</li><li>RESTful API = a real API built using those rules.</li></ul>
+<hr>
+<h1 id="5-quick-revision-sheet">5. Quick revision sheet<a class="anchor" href="#5-quick-revision-sheet">#</a></h1>
+<div class="table-wrap"><table><thead><tr><th>Question</th><th>Layer 5</th><th>Layer 6</th><th>Layer 7</th></tr></thead><tbody><tr><td>Job</td><td>Manage conversations</td><td>Translate and secure</td><td>Serve applications</td></tr><tr><td>Key verbs</td><td>Establish, sync, terminate</td><td>Encode, compress, encrypt</td><td>Request, respond, interpret</td></tr><tr><td>Protocols</td><td>RTCP, PPTP, RPC, SDP, PAP</td><td>TLS, SSL, XDR, NDR, AFP</td><td>HTTP, DNS, SMTP, FTP, SSH</td></tr><tr><td>Devices</td><td>Firewall, proxy, SBC, app server</td><td>none specific</td><td>none specific</td></tr><tr><td>Attacks</td><td>Session hijacking</td><td>MITM, TLS downgrade, cert spoofing</td><td>DNS spoofing, injection, credential theft</td></tr><tr><td>In TCP/IP</td><td>Folded into the application layer</td><td>Folded into the application layer</td><td>The application layer</td></tr></tbody></table></div>
+<p><strong>One sentence each</strong></p>
+<ul><li>Layer 5 decides when a conversation starts, whose turn it is, and when it ends.</li><li>Layer 6 makes sure both sides read the bytes the same way, and that nobody else can.</li><li>Layer 7 gives the bytes meaning, and is the only layer a user ever sees.</li></ul>
+<hr>
+<p><strong>Previous:</strong> <a href="../OSI_LAYERS_3-4_NETWORK_TRANSPORT/index.html">OSI Layers 3 &amp; 4 — Network &amp; Transport</a></p>
+<p><strong>Start:</strong> <a href="../OSI_LAYERS_1-2_PHYSICAL_DATALINK/index.html">OSI Layers 1 &amp; 2 — Physical &amp; Data Link</a></p>
+<footer>Extracted from the DOCUMENTATIONS export &middot; OSI model study notes &middot; see <code>README.md</code> for the markdown source.</footer>
+</main>
+</div>
+</body>
+</html>

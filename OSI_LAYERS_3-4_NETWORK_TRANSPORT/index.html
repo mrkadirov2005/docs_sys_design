@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="en" data-theme-auto>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OSI Layers 3 &amp; 4 — Network &amp; Transport</title>
+<style>
+:root{
+  --bg:#fbfbf9; --surface:#ffffff; --ink:#1c1c1a; --muted:#5c5c56;
+  --line:#e3e3dd; --accent:#8a4b2a; --accent-soft:#f3ece7;
+  --code-bg:#f5f4f0; --quote-bg:#f7f5f1;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#16161a; --surface:#1d1d22; --ink:#e8e8e4; --muted:#a0a099;
+    --line:#32323a; --accent:#e0a077; --accent-soft:#2a2320;
+    --code-bg:#232329; --quote-bg:#202026;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#16161a; --surface:#1d1d22; --ink:#e8e8e4; --muted:#a0a099;
+  --line:#32323a; --accent:#e0a077; --accent-soft:#2a2320;
+  --code-bg:#232329; --quote-bg:#202026;
+}
+*{box-sizing:border-box}
+body{
+  background:var(--bg); color:var(--ink); margin:0;
+  font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,
+       "Helvetica Neue",Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.layout{max-width:1180px;margin:0 auto;padding:0 24px;
+  display:grid;grid-template-columns:236px minmax(0,1fr);gap:48px}
+nav.toc{position:sticky;top:0;align-self:start;max-height:100vh;
+  overflow-y:auto;padding:40px 0 40px;font-size:13.5px}
+nav.toc .label{text-transform:uppercase;letter-spacing:.09em;
+  font-size:11px;color:var(--muted);font-weight:700;margin-bottom:12px}
+nav.toc a{display:block;color:var(--muted);text-decoration:none;
+  padding:4px 10px;border-left:2px solid transparent;line-height:1.4}
+nav.toc a:hover{color:var(--accent);border-left-color:var(--accent);
+  background:var(--accent-soft)}
+nav.toc a.lvl2{padding-left:22px;font-size:13px}
+main{padding:40px 0 96px;min-width:0}
+h1,h2,h3,h4{line-height:1.25;font-weight:650;
+  scroll-margin-top:24px;position:relative}
+h1{font-size:2.05rem;margin:.2em 0 .6em;letter-spacing:-.02em}
+h2{font-size:1.5rem;margin:2.2em 0 .7em;padding-bottom:.3em;
+  border-bottom:1px solid var(--line)}
+h3{font-size:1.16rem;margin:1.9em 0 .5em}
+h4{font-size:1rem;margin:1.5em 0 .4em;color:var(--muted)}
+.anchor{position:absolute;margin-left:.4em;color:var(--line);
+  text-decoration:none;opacity:0;font-weight:400}
+h1:hover .anchor,h2:hover .anchor,h3:hover .anchor{opacity:1}
+.anchor:hover{color:var(--accent)}
+p{margin:0 0 1em}
+a{color:var(--accent)}
+ul,ol{margin:0 0 1.15em;padding-left:1.45em}
+li{margin:.32em 0}
+li::marker{color:var(--muted)}
+hr{border:0;border-top:1px solid var(--line);margin:2.6em 0}
+code{background:var(--code-bg);border:1px solid var(--line);
+  border-radius:4px;padding:.12em .38em;font-size:.875em;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+pre{background:var(--code-bg);border:1px solid var(--line);
+  border-radius:8px;padding:16px 18px;overflow-x:auto;margin:0 0 1.3em}
+pre code{background:none;border:0;padding:0;font-size:13px;line-height:1.55}
+blockquote{margin:0 0 1.3em;padding:14px 18px;background:var(--quote-bg);
+  border-left:3px solid var(--accent);border-radius:0 8px 8px 0}
+blockquote p{margin:0 0 .6em}
+blockquote p:last-child{margin:0}
+.table-wrap{overflow-x:auto;margin:0 0 1.5em;border:1px solid var(--line);
+  border-radius:8px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:14.5px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);
+  vertical-align:top}
+th{background:var(--accent-soft);font-weight:650;white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+figure{margin:0 0 1.6em;text-align:center}
+img{max-width:100%;height:auto;border:1px solid var(--line);
+  border-radius:8px;background:var(--surface)}
+footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--line);
+  font-size:13px;color:var(--muted)}
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr;gap:0}
+  nav.toc{position:static;max-height:none;padding:28px 0 0;
+    border-bottom:1px solid var(--line);margin-bottom:8px}
+  nav.toc a.lvl2{display:none}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="toc"><div class="label">On this page</div>
+<a class="lvl1" href="#osi-layers-3-4-network-transport">OSI Layers 3 &amp; 4 — Network &amp; Transport</a>
+<a class="lvl2" href="#0-where-these-layers-sit">0. Where these layers sit</a>
+<a class="lvl1" href="#1-network-layer-layer-3">1. Network Layer (Layer 3)</a>
+<a class="lvl2" href="#11-overall">1.1 Overall</a>
+<a class="lvl2" href="#12-responsibilities">1.2 Responsibilities</a>
+<a class="lvl2" href="#13-mtu-maximum-transmission-unit">1.3 MTU — Maximum Transmission Unit</a>
+<a class="lvl2" href="#14-ipv4-header-at-a-glance">1.4 IPv4 header at a glance</a>
+<a class="lvl2" href="#15-reference-diagrams">1.5 Reference diagrams</a>
+<a class="lvl2" href="#16-devices">1.6 Devices</a>
+<a class="lvl2" href="#17-protocols">1.7 Protocols</a>
+<a class="lvl2" href="#18-routing-tables-and-how-they-spread">1.8 Routing tables and how they spread</a>
+<a class="lvl2" href="#19-your-laptop-has-a-routing-table-too">1.9 Your laptop has a routing table too</a>
+<a class="lvl2" href="#110-do-all-network-devices-work-at-once">1.10 Do all network devices work at once?</a>
+<a class="lvl2" href="#111-what-the-network-layer-does-and-does-not-do">1.11 What the Network layer does and does not do</a>
+<a class="lvl2" href="#112-advantages-and-limitations">1.12 Advantages and limitations</a>
+<a class="lvl1" href="#2-transport-layer-layer-4">2. Transport Layer (Layer 4)</a>
+<a class="lvl2" href="#21-definition">2.1 Definition</a>
+<a class="lvl2" href="#22-overall-and-responsibilities">2.2 Overall and responsibilities</a>
+<a class="lvl2" href="#23-usage">2.3 Usage</a>
+<a class="lvl2" href="#24-multiplexing-and-demultiplexing">2.4 Multiplexing and demultiplexing</a>
+<a class="lvl2" href="#25-tcp-header">2.5 TCP header</a>
+<a class="lvl2" href="#26-tcp-3-way-handshake">2.6 TCP 3-Way Handshake</a>
+<a class="lvl2" href="#27-connection-termination-the-4-way-close">2.7 Connection termination — the 4-way close</a>
+<a class="lvl2" href="#28-protocols">2.8 Protocols</a>
+<a class="lvl2" href="#29-quic">2.9 QUIC</a>
+<a class="lvl2" href="#210-reference-diagrams">2.10 Reference diagrams</a>
+<a class="lvl1" href="#3-qa-layers-3-4">3. Q&amp;A — Layers 3 &amp; 4</a>
+<a class="lvl1" href="#4-quick-revision-sheet">4. Quick revision sheet</a>
+</nav>
+<main>
+<h1 id="osi-layers-3-4-network-transport">OSI Layers 3 &amp; 4 — Network &amp; Transport<a class="anchor" href="#osi-layers-3-4-network-transport">#</a></h1>
+<blockquote><p>Scope: how packets find their way across many networks using IP addresses, and how processes on two different hosts hold a reliable, ordered conversation using ports.</p><p>Source: extracted and reorganised from <code>md/DOCUMENTATIONS ...md</code> → <code>SYSTEM_DESIGN vs BACKEND</code> → <code>PREVIOUS, OSI LAYERS, API DESIGN, Networking Essentials</code> → <code>OSI layers-(Open System Interconnection)</code>.</p></blockquote>
+<hr>
+<h2 id="0-where-these-layers-sit">0. Where these layers sit<a class="anchor" href="#0-where-these-layers-sit">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>#</th><th>Layer</th><th>PDU</th><th>Address used</th><th>Devices</th></tr></thead><tbody><tr><td>4</td><td>Transport</td><td>Segment (TCP) / Datagram (UDP)</td><td>Port number</td><td>End hosts only</td></tr><tr><td>3</td><td>Network</td><td>Packet</td><td>IP address</td><td>Router, Layer 3 switch, gateway</td></tr></tbody></table></div>
+<p>The pivotal distinction: <strong>Layer 3 is hop-by-hop and lives in every router. Layer 4 is end-to-end and exists only in the two end systems.</strong> A router in the middle never opens your TCP segment.</p>
+<hr>
+<h1 id="1-network-layer-layer-3">1. Network Layer (Layer 3)<a class="anchor" href="#1-network-layer-layer-3">#</a></h1>
+<h2 id="11-overall">1.1 Overall<a class="anchor" href="#11-overall">#</a></h2>
+<ul><li>Handles <strong>logical (IP) addressing</strong> of devices.</li><li>Determines <strong>optimal routing paths</strong> between networks.</li><li>Enables <strong>host-to-host communication</strong> across multiple networks.</li><li>Takes <strong>segments</strong> from the Transport layer.</li><li>Adds an <strong>IP header</strong> containing source and destination IP.</li><li>Wraps them into <strong>packets</strong>.</li></ul>
+<h2 id="12-responsibilities">1.2 Responsibilities<a class="anchor" href="#12-responsibilities">#</a></h2>
+<ul><li><strong>Logical addressing</strong> — assigns unique IP addresses to devices, ensuring accurate identification and communication across networks.</li><li><strong>Packetization</strong> — encapsulates transport layer segments into packets for efficient transmission.</li><li><strong>Host-to-host delivery</strong> — delivers packets from sender to intended receiver across diverse networks.</li><li><strong>Forwarding</strong> — moves packets from a router&#x27;s input interface to the appropriate output interface based on the destination IP.</li><li><strong>Routing</strong> — determines the optimal path across multiple networks using routing algorithms and protocols.</li><li><strong>Fragmentation and reassembly</strong> — splits large packets into smaller fragments to match the MTU of a network, and reassembles them at the destination.</li><li><strong>Subnetting</strong> — divides larger networks into smaller subnetworks for efficient addressing and traffic management.</li><li><strong>NAT (Network Address Translation)</strong> — maps private IPs to public IPs for internet communication, conserving address space and adding security.</li></ul>
+<h2 id="13-mtu-maximum-transmission-unit">1.3 MTU — Maximum Transmission Unit<a class="anchor" href="#13-mtu-maximum-transmission-unit">#</a></h2>
+<ul><li>The amount of data one packet can carry.</li><li>On Ethernet it is <strong>1500 bytes</strong>, that is 1500 × 8 = 12,000 bits.</li><li>A packet larger than the MTU of the next link must be <strong>fragmented</strong>, which costs processing time and risks total loss if any fragment is dropped.</li><li>Path MTU Discovery is how modern stacks avoid fragmentation: they probe for the smallest MTU on the path and size packets to fit.</li></ul>
+<h2 id="14-ipv4-header-at-a-glance">1.4 IPv4 header at a glance<a class="anchor" href="#14-ipv4-header-at-a-glance">#</a></h2>
+<pre><code>0                   1                   2                   3
+|Version|  IHL  |Type of Service|          Total Length         |
+|         Identification        |Flags|    Fragment Offset      |
+| Time to Live  |    Protocol   |        Header Checksum        |
+|                       Source IP Address                       |
+|                    Destination IP Address                     |
+|                    Options (optional)                         |</code></pre>
+<ul><li><strong>Version</strong> — 4 or 6.</li><li><strong>TTL</strong> — decremented at each hop; at zero the packet is dropped. Prevents infinite routing loops and is what <code>traceroute</code> exploits.</li><li><strong>Protocol</strong> — what is inside: 6 = TCP, 17 = UDP, 1 = ICMP.</li><li><strong>Identification / Flags / Fragment Offset</strong> — used to reassemble fragments.</li><li>Minimum header size is <strong>20 bytes</strong> without options.</li></ul>
+<h3 id="why-8-bits-per-byte">Why 8 bits per byte?<a class="anchor" href="#why-8-bits-per-byte">#</a></h3>
+<p>2⁸ = 256 possible values, enough to represent characters, numbers, and symbols. This is why an IPv4 address, made of four 8-bit octets, has each part in the range 0–255.</p>
+<h2 id="15-reference-diagrams">1.5 Reference diagrams<a class="anchor" href="#15-reference-diagrams">#</a></h2>
+<p><img src="images/image-30.png" alt="network layer diagram"> <img src="images/image-31.png" alt="network layer diagram"> <img src="images/image-32.png" alt="network layer diagram"> <img src="images/image-33.png" alt="network layer diagram"> <img src="images/image-34.png" alt="network layer diagram"> <img src="images/image-35.png" alt="network layer diagram"> <img src="images/image-36.png" alt="network layer diagram"> <img src="images/image-37.png" alt="network layer diagram"></p>
+<h2 id="16-devices">1.6 Devices<a class="anchor" href="#16-devices">#</a></h2>
+<blockquote><p><strong>Network layer = routing between different networks using IP addresses.</strong></p></blockquote>
+<ol><li><strong>Router</strong> — the most important one. Connects distinct networks and forwards packets based on its routing table.</li><li><strong>Layer 3 switch (multilayer switch)</strong> — switches at wire speed but can also route between VLANs.</li><li><strong>Gateway</strong> — a concept device. Your <strong>default gateway</strong> is the exit point of your network, used whenever the destination is not in your local subnet.</li></ol>
+<h2 id="17-protocols">1.7 Protocols<a class="anchor" href="#17-protocols">#</a></h2>
+<ul><li><strong>IP (Internet Protocol, IPv4 / IPv6)</strong> — the addressing and delivery protocol itself.</li><li><strong>ICMP (Internet Control Message Protocol)</strong> — sends error reports and diagnostic messages, for example destination unreachable, and ping.</li><li><strong>ARP (Address Resolution Protocol)</strong> — maps IP addresses to MAC addresses within a local network. Sits at the L2/L3 boundary.</li><li><strong>RARP (Reverse Address Resolution Protocol)</strong> — retrieves a device&#x27;s IP address using its MAC address. Largely obsolete, replaced by DHCP.</li><li><strong>NAT (Network Address Translation)</strong> — converts private IP addresses to public IPs, conserving addresses and improving security.</li><li><strong>IPSec (Internet Protocol Security)</strong> — secures IP communication through encryption and authentication.</li><li><strong>MPLS (Multiprotocol Label Switching)</strong> — uses labels to forward packets efficiently and manage traffic.</li></ul>
+<h2 id="18-routing-tables-and-how-they-spread">1.8 Routing tables and how they spread<a class="anchor" href="#18-routing-tables-and-how-they-spread">#</a></h2>
+<p>Each router stores, per entry:</p>
+<ul><li>destination network</li><li>next hop</li><li>hop count (metric)</li></ul>
+<p>With a distance-vector protocol such as RIP, every 30 seconds each router sends its <strong>entire routing table</strong> to its neighbours. Link-state protocols such as OSPF instead flood topology changes and each router computes shortest paths itself.</p>
+<h3 id="routing-protocols">Routing protocols<a class="anchor" href="#routing-protocols">#</a></h3>
+<ul><li><strong>RIP (Routing Information Protocol)</strong> — distance-vector protocol using hop count to select routes.</li><li><strong>OSPF (Open Shortest Path First)</strong> — link-state protocol that computes the shortest path from network topology.</li><li><strong>BGP (Border Gateway Protocol)</strong> — path-vector protocol that routes data between autonomous systems on the internet. This is the protocol that holds the public internet together.</li></ul>
+<h2 id="19-your-laptop-has-a-routing-table-too">1.9 Your laptop has a routing table too<a class="anchor" href="#19-your-laptop-has-a-routing-table-too">#</a></h2>
+<p>Yes, your laptop does have a routing table. It is a small set of rules telling it where to send network traffic.</p>
+<pre><code>Destination        Next Hop
+192.168.1.0/24     Direct (LAN)
+0.0.0.0/0          192.168.1.1 (router)</code></pre>
+<ul><li><strong>Local network traffic</strong> — if the destination is inside your WiFi or LAN, send it directly, no router needed.</li><li><strong>Internet traffic</strong> — if the destination is outside, send it to the <strong>default gateway</strong>, that is your router. <code>0.0.0.0/0</code> is the catch-all default route.</li></ul>
+<p>Inspect it yourself:</p>
+<pre><code class="lang-bash">netstat -rn          # macOS / BSD
+ip route show        # Linux
+route print          # Windows</code></pre>
+<h2 id="110-do-all-network-devices-work-at-once">1.10 Do all network devices work at once?<a class="anchor" href="#110-do-all-network-devices-work-at-once">#</a></h2>
+<p>No. Network devices do not all act at once. They are used based on <strong>destination and network boundaries</strong>.</p>
+<h3 id="case-1-destination-is-in-the-same-lan">Case 1 — destination is in the SAME LAN<a class="anchor" href="#case-1-destination-is-in-the-same-lan">#</a></h3>
+<p>PC A → PC B on the same WiFi.</p>
+<ul><li>Uses a <strong>switch</strong> (Layer 2).</li><li>Uses the <strong>MAC address</strong>.</li><li><strong>No router involved.</strong></li></ul>
+<pre><code>PC A → Switch → PC B</code></pre>
+<h3 id="case-2-destination-is-outside-the-lan">Case 2 — destination is OUTSIDE the LAN<a class="anchor" href="#case-2-destination-is-outside-the-lan">#</a></h3>
+<p>PC → google.com.</p>
+<ul><li>Uses the <strong>router (gateway)</strong>.</li><li>Uses the <strong>IP address</strong>.</li><li>The switch is still used inside the LAN, but the router is needed next.</li></ul>
+<pre><code>PC → Switch → Router (Gateway) → Internet</code></pre>
+<h3 id="case-3-what-is-a-gateway">Case 3 — what is a gateway?<a class="anchor" href="#case-3-what-is-a-gateway">#</a></h3>
+<p>The gateway is your <strong>default router</strong>, the exit point of your network, used when the destination is not in the local subnet.</p>
+<h2 id="111-what-the-network-layer-does-and-does-not-do">1.11 What the Network layer does and does not do<a class="anchor" href="#111-what-the-network-layer-does-and-does-not-do">#</a></h2>
+<p><strong>Does:</strong></p>
+<ol><li><strong>Logical addressing</strong> — uses IP to identify source and destination host.</li><li><strong>Routing</strong> — chooses the <strong>next router only</strong>, using the routing table.</li><li><strong>Packet forwarding</strong> — sends the packet hop by hop from router to router.</li><li><strong>TTL</strong> — prevents infinite loops, decreasing at each hop.</li><li><strong>Fragmentation</strong> — splits packets when the MTU is too small.</li></ol>
+<p><strong>Does NOT:</strong></p>
+<ul><li>No retransmission.</li><li>No reliability guarantee.</li><li>No ordering of packets.</li><li>No connection management.</li></ul>
+<p>Those four omissions are exactly the job description of Layer 4.</p>
+<h2 id="112-advantages-and-limitations">1.12 Advantages and limitations<a class="anchor" href="#112-advantages-and-limitations">#</a></h2>
+<p><strong>Advantages</strong></p>
+<ul><li>Enables end-to-end communication across multiple networks.</li><li>Supports scalability through subnetting and hierarchical addressing.</li><li>Efficiently routes packets using shortest-path and dynamic routing algorithms.</li><li>Provides internetworking by connecting heterogeneous networks.</li></ul>
+<p><strong>Limitations</strong></p>
+<ul><li>No flow control mechanism; congestion may occur if too many datagrams are in transit.</li><li>Limited error control; mainly relies on upper layers for reliability.</li><li>Routers may drop packets under heavy load, leading to possible data loss.</li><li>Fragmentation increases processing overhead and may affect performance.</li></ul>
+<hr>
+<h1 id="2-transport-layer-layer-4">2. Transport Layer (Layer 4)<a class="anchor" href="#2-transport-layer-layer-4">#</a></h1>
+<h2 id="21-definition">2.1 Definition<a class="anchor" href="#21-definition">#</a></h2>
+<p>The Transport Layer is the OSI Layer 4 responsible for providing <strong>reliable, efficient, and ordered end-to-end communication between applications</strong> on different hosts.</p>
+<h2 id="22-overall-and-responsibilities">2.2 Overall and responsibilities<a class="anchor" href="#22-overall-and-responsibilities">#</a></h2>
+<ul><li>Operates at Layer 4 of the OSI model.</li><li>Enables <strong>process-to-process</strong> communication using <strong>port numbers</strong>.</li><li>Ensures reliability through error control, sequencing, and retransmission.</li><li>Supports <strong>flow control</strong> to prevent receiver overload.</li><li>Uses protocols like TCP, UDP, and SCTP for different application needs.</li></ul>
+<h2 id="23-usage">2.3 Usage<a class="anchor" href="#23-usage">#</a></h2>
+<ul><li>Implemented <strong>only in end systems</strong>, not in intermediate routers.</li><li>Uses <strong>port numbers</strong> to identify sending and receiving applications.</li><li>Supports <strong>process-to-process delivery</strong>, so multiple applications share a single network connection.</li><li>Performs <strong>multiplexing and demultiplexing</strong> using port numbers to direct data to the correct process.</li><li>Divides data from upper layers into <strong>segments</strong> (TCP) or <strong>datagrams</strong> (UDP) and adds the necessary headers.</li><li>Handles error detection, retransmission, and sequencing to maintain reliability.</li><li>Coordinates flow control so the receiver is not overloaded.</li><li>Communicates with the Network layer, which handles addressing and routing.</li><li>At the receiving end it removes headers and reassembles data for the application.</li></ul>
+<h2 id="24-multiplexing-and-demultiplexing">2.4 Multiplexing and demultiplexing<a class="anchor" href="#24-multiplexing-and-demultiplexing">#</a></h2>
+<figure><img src="images/image-38.png" alt="full 4-tuple"></figure>
+<h3 id="the-4-tuple">The 4-tuple<a class="anchor" href="#the-4-tuple">#</a></h3>
+<p>A connection is uniquely identified by four values:</p>
+<pre><code>(source IP, source port, destination IP, destination port)</code></pre>
+<h3 id="demultiplexing">Demultiplexing<a class="anchor" href="#demultiplexing">#</a></h3>
+<figure><img src="images/image-39.png" alt="demultiplexing flow"></figure>
+<p>Demultiplexing is the process of <strong>distributing arriving segments to the correct sockets</strong> based on that tuple.</p>
+<h3 id="multiplexing">Multiplexing<a class="anchor" href="#multiplexing">#</a></h3>
+<figure><img src="images/image-40.png" alt="multiplexing visual"></figure>
+<p>Multiplexing is <strong>gathering data from multiple application processes of the sender, enveloping that data with a header, and sending them as a whole</strong> to the intended receiver.</p>
+<h3 id="what-is-a-socket">What is a socket?<a class="anchor" href="#what-is-a-socket">#</a></h3>
+<blockquote><p>Socket = <strong>door + receptionist + mailbox</strong></p></blockquote>
+<ul><li><strong>Door</strong> — the entry and exit point.</li><li><strong>Receptionist</strong> — decides where data goes, that is demultiplexing.</li><li><strong>Mailbox</strong> — buffers data.</li></ul>
+<p>More formally: a socket is an <strong>OS endpoint for network communication</strong>, holding buffers, connection state, and IP/port metadata. It is a smart endpoint, not a simple pipe.</p>
+<h3 id="source-vs-destination">Source vs destination<a class="anchor" href="#source-vs-destination">#</a></h3>
+<div class="table-wrap"><table><thead><tr><th>Field</th><th>Meaning</th></tr></thead><tbody><tr><td>Source port</td><td>Port number of the sender&#x27;s application</td></tr><tr><td>Destination port</td><td>Port number of the receiving service on the server</td></tr><tr><td>Source IP</td><td>IP address of the device sending the data</td></tr><tr><td>Destination IP</td><td>IP address of the device receiving the data</td></tr></tbody></table></div>
+<h2 id="25-tcp-header">2.5 TCP header<a class="anchor" href="#25-tcp-header">#</a></h2>
+<p>The <strong>minimum TCP header is 20 bytes</strong> without options. A <strong>UDP header is 8 bytes</strong>. That difference is the price of reliability.</p>
+<pre><code>|          Source Port          |       Destination Port        |
+|                        Sequence Number                        |
+|                     Acknowledgment Number                     |
+| Offset|Reserved|  Flags |            Window Size              |
+|           Checksum            |        Urgent Pointer         |
+|                    Options (0-40 bytes)                       |</code></pre>
+<p>Flags include SYN, ACK, FIN, RST, PSH, and URG.</p>
+<h2 id="26-tcp-3-way-handshake">2.6 TCP 3-Way Handshake<a class="anchor" href="#26-tcp-3-way-handshake">#</a></h2>
+<p>The 3-Way Handshake ensures both client and server are ready before data transmission begins.</p>
+<p><strong>Step 1 — SYN (Client → Server)</strong></p>
+<ul><li>Client sends a TCP segment with <code>SYN=1</code>, including its <strong>ISN (Initial Sequence Number)</strong>.</li><li>Marks the request to initiate a connection.</li></ul>
+<p><strong>Step 2 — SYN-ACK (Server → Client)</strong></p>
+<ul><li>Server replies with <code>SYN=1</code> and <code>ACK=1</code>, containing its own ISN and <code>ACK = client_ISN + 1</code>.</li><li>Confirms receipt of the client&#x27;s SYN and initiates its own synchronisation.</li></ul>
+<p><strong>Step 3 — ACK (Client → Server)</strong></p>
+<ul><li>Client sends <code>ACK=1</code> with <code>ACK = server_ISN + 1</code>.</li><li>Completes synchronisation; the connection enters the <strong>ESTABLISHED</strong> state.</li></ul>
+<pre><code>Client                                  Server
+  |------------ SYN, seq=x -------------&gt;|
+  |&lt;---- SYN-ACK, seq=y, ack=x+1 --------|
+  |------------ ACK, ack=y+1 -----------&gt;|
+  |             ESTABLISHED              |</code></pre>
+<h3 id="on-the-isn">On the ISN<a class="anchor" href="#on-the-isn">#</a></h3>
+<p>The ISN is <strong>not</strong> for packets. It is the starting sequence number for the <strong>TCP byte stream</strong>, and packets carry ranges of those byte numbers. A new connection knows where the stream starts because the ISN is exchanged in the handshake before any data flows.</p>
+<h2 id="27-connection-termination-the-4-way-close">2.7 Connection termination — the 4-way close<a class="anchor" href="#27-connection-termination-the-4-way-close">#</a></h2>
+<ul><li><strong>FIN</strong> — the client sends a FIN (finish) packet to the server to terminate the connection.</li><li><strong>ACK</strong> — the server acknowledges the FIN with an ACK.</li><li><strong>FIN</strong> — the server sends its own FIN to terminate its side.</li><li><strong>ACK</strong> — the client acknowledges the server&#x27;s FIN.</li></ul>
+<p>Two independent directions are closed separately, which is exactly what &quot;full duplex&quot; implies.</p>
+<h2 id="28-protocols">2.8 Protocols<a class="anchor" href="#28-protocols">#</a></h2>
+<h3 id="1-tcp-transmission-control-protocol">1. TCP — Transmission Control Protocol<a class="anchor" href="#1-tcp-transmission-control-protocol">#</a></h3>
+<ul><li><strong>Connection-oriented.</strong></li><li><strong>Reliable.</strong></li><li>Because it is connection-oriented, the connection is established between the two ends first, then data is transferred, then the connection is terminated after all data has been sent.</li><li>Provides ordering, retransmission, flow control, and congestion control.</li></ul>
+<h3 id="2-udp-user-datagram-protocol">2. UDP — User Datagram Protocol<a class="anchor" href="#2-udp-user-datagram-protocol">#</a></h3>
+<ul><li><strong>Not reliable.</strong></li><li><strong>Connectionless.</strong></li><li>Used when speed and size matter more than security and dependability.</li><li>Supplements higher-layer data with transport-level addresses, checksum error control, and length information.</li><li>The packet UDP generates is called a <strong>user datagram</strong>.</li></ul>
+<h3 id="3-sctp-stream-control-transmission-protocol">3. SCTP — Stream Control Transmission Protocol<a class="anchor" href="#3-sctp-stream-control-transmission-protocol">#</a></h3>
+<p>A transport-layer protocol like TCP and UDP, but more advanced and specialised.</p>
+<p>In SCTP, <strong>one connection can carry multiple independent streams at the same time</strong>:</p>
+<pre><code>Connection → Stream 1 (data A)
+           → Stream 2 (data B)
+           → Stream 3 (data C)</code></pre>
+<p>Where it is used:</p>
+<ul><li><strong>Telecom</strong> — 4G/LTE/5G core networks, SS7 signalling replacement.</li><li><strong>Financial systems</strong> — high-reliability trading systems.</li><li><strong>Industrial and control systems</strong> — systems needing failover and redundancy.</li></ul>
+<h3 id="comparison">Comparison<a class="anchor" href="#comparison">#</a></h3>
+<div class="table-wrap"><table><thead><tr><th>Protocol</th><th>Type</th><th>Key idea</th></tr></thead><tbody><tr><td>TCP</td><td>Byte stream</td><td>Reliable, single stream</td></tr><tr><td>UDP</td><td>Datagram</td><td>Fast, no guarantee</td></tr><tr><td>SCTP</td><td>Message-based</td><td>Multi-stream and multi-path</td></tr></tbody></table></div>
+<h2 id="29-quic">2.9 QUIC<a class="anchor" href="#29-quic">#</a></h2>
+<h3 id="key-idea">Key idea<a class="anchor" href="#key-idea">#</a></h3>
+<blockquote><p>QUIC = <strong>one connection with many streams.</strong></p></blockquote>
+<h3 id="details">Details<a class="anchor" href="#details">#</a></h3>
+<p><strong>QUIC (Quick UDP Internet Connections)</strong> is a modern transport protocol built on top of <strong>UDP</strong>, designed to replace TCP + TLS for web communication.</p>
+<p>Simple framing: QUIC is <strong>TCP + TLS + HTTP/2 features, but built over UDP</strong>.</p>
+<h3 id="why-quic-was-created">Why QUIC was created<a class="anchor" href="#why-quic-was-created">#</a></h3>
+<p>TCP has problems:</p>
+<ul><li>Slow handshake, because TCP and TLS are two separate handshakes.</li><li>Head-of-line blocking.</li><li>Hard to improve, because it is a kernel-level protocol.</li></ul>
+<p>QUIC fixes these at the <strong>user space level</strong>, so it can be updated by shipping a new browser or library rather than a new operating system.</p>
+<h3 id="key-features">Key features<a class="anchor" href="#key-features">#</a></h3>
+<ol><li><strong>Faster connection setup</strong> — combines transport and encryption handshake, usually 1-RTT or even 0-RTT.</li><li><strong>Built-in encryption</strong> — TLS 1.3 is integrated; every QUIC connection is encrypted by default.</li><li><strong>No head-of-line blocking</strong> — multiple independent streams; if one stream loses a packet, the others continue.</li><li><strong>Runs on UDP</strong> — UDP gives flexibility, and QUIC handles reliability itself.</li><li><strong>Connection migration</strong> — you can change network, WiFi to mobile data, without dropping the connection.</li></ol>
+<h3 id="tcp-vs-quic">TCP vs QUIC<a class="anchor" href="#tcp-vs-quic">#</a></h3>
+<div class="table-wrap"><table><thead><tr><th>Feature</th><th>TCP</th><th>QUIC</th></tr></thead><tbody><tr><td>Base</td><td>TCP</td><td>UDP</td></tr><tr><td>Encryption</td><td>Separate (TLS)</td><td>Built in</td></tr><tr><td>Streams</td><td>Single stream</td><td>Multiple streams</td></tr><tr><td>Head-of-line blocking</td><td>Yes</td><td>No</td></tr><tr><td>Connection speed</td><td>Slower</td><td>Faster</td></tr></tbody></table></div>
+<h3 id="where-quic-is-used">Where QUIC is used<a class="anchor" href="#where-quic-is-used">#</a></h3>
+<ul><li>HTTP/3 runs on QUIC.</li><li>YouTube, Google Search.</li><li>Chrome and Chromium browsers.</li><li>Cloud services from Google and Cloudflare.</li></ul>
+<blockquote><p>A <strong>stream</strong> is a logical sequence of data that can be sent and received independently within one connection.</p></blockquote>
+<h2 id="210-reference-diagrams">2.10 Reference diagrams<a class="anchor" href="#210-reference-diagrams">#</a></h2>
+<p><img src="images/image-41.png" alt="transport layer diagram"> <img src="images/image-42.png" alt="transport layer diagram"> <img src="images/image-43.png" alt="transport layer diagram"> <img src="images/image-44.png" alt="transport layer diagram"> <img src="images/image-45.png" alt="transport layer diagram"> <img src="images/image-46.png" alt="transport layer diagram"> <img src="images/image-47.png" alt="transport layer diagram"></p>
+<hr>
+<h1 id="3-qa-layers-3-4">3. Q&amp;A — Layers 3 &amp; 4<a class="anchor" href="#3-qa-layers-3-4">#</a></h1>
+<h3 id="network-layer">Network layer<a class="anchor" href="#network-layer">#</a></h3>
+<p><strong>Will the Network layer convert segments into packets?</strong> Yes. It takes segments from the Transport layer, adds an IP header with source and destination IP, and wraps them into packets.</p>
+<p><strong>How will the Network layer choose the next router, based on what?</strong> The router device holds a routing table, and the next hop is selected from it by matching the destination IP against the most specific prefix.</p>
+<p><strong>So will there be a router in my laptop too?</strong> Yes. Your laptop has a routing table, a small set of rules that tells it where to send network traffic. Local subnet traffic goes direct; everything else goes to the default gateway.</p>
+<p><strong>Do all network devices work together at once?</strong> No. They are used based on destination and network boundaries. Same LAN uses only the switch; outside the LAN adds the router.</p>
+<p><strong>Why 8 bits?</strong> 2⁸ = 256 possible values, enough to represent characters, numbers, and symbols.</p>
+<p><strong>What is the MTU?</strong> The amount of data one packet can carry, 1500 bytes on Ethernet.</p>
+<p><strong>What does the Network layer NOT do?</strong> No retransmission, no reliability guarantee, no ordering, no connection management.</p>
+<h3 id="transport-layer">Transport layer<a class="anchor" href="#transport-layer">#</a></h3>
+<p><strong>What is the size of the TCP header without options?</strong> Minimum TCP header is 20 bytes. A UDP header is 8 bytes.</p>
+<p><strong>Is one TCP request one process?</strong> No. One process can handle many TCP connections.</p>
+<p><strong>Does TCP use multiplexing and demultiplexing?</strong> Yes, to combine multiple application data streams and route them correctly.</p>
+<p><strong>Can TCP handle only one instance at a time?</strong> No. TCP handles many simultaneous connections.</p>
+<p><strong>How does the Transport layer know which socket gets the data?</strong> It uses the 4-tuple: source IP, source port, destination IP, destination port.</p>
+<p><strong>Do segments store socket IDs?</strong> No. They store IP and port information, not socket IDs.</p>
+<p><strong>What are the sequence number and ACK number for?</strong> They ensure ordering and reliability, not routing.</p>
+<p><strong>What is a socket?</strong> An OS endpoint for network communication.</p>
+<p><strong>What does a socket contain?</strong> Buffers, connection state, and IP/port metadata.</p>
+<p><strong>Is a socket like a tube into an application?</strong> Not exactly. It is a smart endpoint, not a simple pipe.</p>
+<p><strong>Do TCP segments store the 4-tuple?</strong> Not directly. The IP header and the TCP header together form the 4-tuple.</p>
+<p><strong>How does demultiplexing work when the ports are the same?</strong> Source IP and source port differences make each connection unique.</p>
+<p><strong>What if the same device sends multiple requests?</strong> The OS assigns different source ports, or reuses one connection.</p>
+<p><strong>What if everything is identical, IP, ports, and sequence?</strong> That is impossible. TCP and the OS prevent duplicate connections.</p>
+<p><strong>How does a server know which is the first segment in sequence on a new connection?</strong> Through the 3-way handshake, where the ISN is established before any data is exchanged, marking the start of the byte stream.</p>
+<p><strong>Application vs process?</strong> An application is a program stored on disk. When executed in memory it becomes a process managed by the OS, and it may spawn multiple processes or threads while running.</p>
+<hr>
+<h1 id="4-quick-revision-sheet">4. Quick revision sheet<a class="anchor" href="#4-quick-revision-sheet">#</a></h1>
+<div class="table-wrap"><table><thead><tr><th>Question</th><th>Layer 3</th><th>Layer 4</th></tr></thead><tbody><tr><td>Unit</td><td>Packet</td><td>Segment / datagram</td></tr><tr><td>Address</td><td>IP</td><td>Port</td></tr><tr><td>Scope</td><td>Hop by hop, host to host</td><td>End to end, process to process</td></tr><tr><td>Where it runs</td><td>Every router and host</td><td>End hosts only</td></tr><tr><td>Reliability</td><td>None</td><td>TCP yes, UDP no</td></tr><tr><td>Ordering</td><td>None</td><td>TCP yes</td></tr><tr><td>Key protocols</td><td>IP, ICMP, NAT, IPSec, MPLS</td><td>TCP, UDP, SCTP, QUIC</td></tr><tr><td>Routing protocols</td><td>RIP, OSPF, BGP</td><td>n/a</td></tr><tr><td>Devices</td><td>Router, L3 switch, gateway</td><td>none</td></tr></tbody></table></div>
+<p><strong>One sentence each</strong></p>
+<ul><li>Layer 3 gets a packet from any network to any other network, choosing one next hop at a time, and promises nothing about arrival.</li><li>Layer 4 turns that unreliable hop-by-hop delivery into a conversation between two processes, adding ports, ordering, and retransmission.</li></ul>
+<hr>
+<p><strong>Previous:</strong> <a href="../OSI_LAYERS_1-2_PHYSICAL_DATALINK/index.html">OSI Layers 1 &amp; 2 — Physical &amp; Data Link</a></p>
+<p><strong>Next:</strong> <a href="../OSI_LAYERS_5-6-7_SESSION_PRESENTATION_APPLICATION/index.html">OSI Layers 5, 6 &amp; 7 — Session, Presentation &amp; Application</a></p>
+<footer>Extracted from the DOCUMENTATIONS export &middot; OSI model study notes &middot; see <code>README.md</code> for the markdown source.</footer>
+</main>
+</div>
+</body>
+</html>

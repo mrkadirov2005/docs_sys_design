@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en" data-theme-auto>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OSI Layers 1 &amp; 2 — Physical &amp; Data Link</title>
+<style>
+:root{
+  --bg:#fbfbf9; --surface:#ffffff; --ink:#1c1c1a; --muted:#5c5c56;
+  --line:#e3e3dd; --accent:#8a4b2a; --accent-soft:#f3ece7;
+  --code-bg:#f5f4f0; --quote-bg:#f7f5f1;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#16161a; --surface:#1d1d22; --ink:#e8e8e4; --muted:#a0a099;
+    --line:#32323a; --accent:#e0a077; --accent-soft:#2a2320;
+    --code-bg:#232329; --quote-bg:#202026;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#16161a; --surface:#1d1d22; --ink:#e8e8e4; --muted:#a0a099;
+  --line:#32323a; --accent:#e0a077; --accent-soft:#2a2320;
+  --code-bg:#232329; --quote-bg:#202026;
+}
+*{box-sizing:border-box}
+body{
+  background:var(--bg); color:var(--ink); margin:0;
+  font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,
+       "Helvetica Neue",Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.layout{max-width:1180px;margin:0 auto;padding:0 24px;
+  display:grid;grid-template-columns:236px minmax(0,1fr);gap:48px}
+nav.toc{position:sticky;top:0;align-self:start;max-height:100vh;
+  overflow-y:auto;padding:40px 0 40px;font-size:13.5px}
+nav.toc .label{text-transform:uppercase;letter-spacing:.09em;
+  font-size:11px;color:var(--muted);font-weight:700;margin-bottom:12px}
+nav.toc a{display:block;color:var(--muted);text-decoration:none;
+  padding:4px 10px;border-left:2px solid transparent;line-height:1.4}
+nav.toc a:hover{color:var(--accent);border-left-color:var(--accent);
+  background:var(--accent-soft)}
+nav.toc a.lvl2{padding-left:22px;font-size:13px}
+main{padding:40px 0 96px;min-width:0}
+h1,h2,h3,h4{line-height:1.25;font-weight:650;
+  scroll-margin-top:24px;position:relative}
+h1{font-size:2.05rem;margin:.2em 0 .6em;letter-spacing:-.02em}
+h2{font-size:1.5rem;margin:2.2em 0 .7em;padding-bottom:.3em;
+  border-bottom:1px solid var(--line)}
+h3{font-size:1.16rem;margin:1.9em 0 .5em}
+h4{font-size:1rem;margin:1.5em 0 .4em;color:var(--muted)}
+.anchor{position:absolute;margin-left:.4em;color:var(--line);
+  text-decoration:none;opacity:0;font-weight:400}
+h1:hover .anchor,h2:hover .anchor,h3:hover .anchor{opacity:1}
+.anchor:hover{color:var(--accent)}
+p{margin:0 0 1em}
+a{color:var(--accent)}
+ul,ol{margin:0 0 1.15em;padding-left:1.45em}
+li{margin:.32em 0}
+li::marker{color:var(--muted)}
+hr{border:0;border-top:1px solid var(--line);margin:2.6em 0}
+code{background:var(--code-bg);border:1px solid var(--line);
+  border-radius:4px;padding:.12em .38em;font-size:.875em;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+pre{background:var(--code-bg);border:1px solid var(--line);
+  border-radius:8px;padding:16px 18px;overflow-x:auto;margin:0 0 1.3em}
+pre code{background:none;border:0;padding:0;font-size:13px;line-height:1.55}
+blockquote{margin:0 0 1.3em;padding:14px 18px;background:var(--quote-bg);
+  border-left:3px solid var(--accent);border-radius:0 8px 8px 0}
+blockquote p{margin:0 0 .6em}
+blockquote p:last-child{margin:0}
+.table-wrap{overflow-x:auto;margin:0 0 1.5em;border:1px solid var(--line);
+  border-radius:8px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:14.5px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);
+  vertical-align:top}
+th{background:var(--accent-soft);font-weight:650;white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+figure{margin:0 0 1.6em;text-align:center}
+img{max-width:100%;height:auto;border:1px solid var(--line);
+  border-radius:8px;background:var(--surface)}
+footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--line);
+  font-size:13px;color:var(--muted)}
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr;gap:0}
+  nav.toc{position:static;max-height:none;padding:28px 0 0;
+    border-bottom:1px solid var(--line);margin-bottom:8px}
+  nav.toc a.lvl2{display:none}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="toc"><div class="label">On this page</div>
+<a class="lvl1" href="#osi-layers-1-2-physical-data-link">OSI Layers 1 &amp; 2 — Physical &amp; Data Link</a>
+<a class="lvl2" href="#0-where-these-layers-sit">0. Where these layers sit</a>
+<a class="lvl1" href="#1-physical-layer-layer-1">1. Physical Layer (Layer 1)</a>
+<a class="lvl2" href="#11-definition">1.1 Definition</a>
+<a class="lvl2" href="#12-core-functionality">1.2 Core functionality</a>
+<a class="lvl2" href="#13-modulation-techniques">1.3 Modulation techniques</a>
+<a class="lvl2" href="#14-how-multiple-signals-are-separated">1.4 How multiple signals are separated</a>
+<a class="lvl2" href="#15-where-does-one-bit-end-and-the-next-begin">1.5 Where does one bit end and the next begin?</a>
+<a class="lvl2" href="#16-transmission-modes">1.6 Transmission modes</a>
+<a class="lvl2" href="#17-layer-1-standards-and-protocols">1.7 Layer 1 standards and protocols</a>
+<a class="lvl2" href="#18-physical-layer-security">1.8 Physical layer security</a>
+<a class="lvl1" href="#2-data-link-layer-layer-2">2. Data Link Layer (Layer 2)</a>
+<a class="lvl2" href="#21-responsibility">2.1 Responsibility</a>
+<a class="lvl2" href="#22-the-two-sublayers">2.2 The two sublayers</a>
+<a class="lvl2" href="#23-frame-structure-ethernet-ii">2.3 Frame structure (Ethernet II)</a>
+<a class="lvl2" href="#24-mac-address-resolution-in-a-lan-the-arp-flow">2.4 MAC address resolution in a LAN — the ARP flow</a>
+<a class="lvl2" href="#25-devices">2.5 Devices</a>
+<a class="lvl2" href="#26-limitations">2.6 Limitations</a>
+<a class="lvl2" href="#27-applications">2.7 Applications</a>
+<a class="lvl1" href="#3-qa-layers-1-2">3. Q&amp;A — Layers 1 &amp; 2</a>
+<a class="lvl1" href="#4-quick-revision-sheet">4. Quick revision sheet</a>
+</nav>
+<main>
+<h1 id="osi-layers-1-2-physical-data-link">OSI Layers 1 &amp; 2 — Physical &amp; Data Link<a class="anchor" href="#osi-layers-1-2-physical-data-link">#</a></h1>
+<blockquote><p>Scope: how raw bits become signals on a wire or in the air, and how those bits are grouped into frames and delivered between two directly connected devices.</p><p>Source: extracted and reorganised from <code>md/DOCUMENTATIONS ...md</code> → <code>SYSTEM_DESIGN vs BACKEND</code> → <code>PREVIOUS, OSI LAYERS, API DESIGN, Networking Essentials</code> → <code>OSI layers-(Open System Interconnection)</code>.</p></blockquote>
+<hr>
+<h2 id="0-where-these-layers-sit">0. Where these layers sit<a class="anchor" href="#0-where-these-layers-sit">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>#</th><th>Layer</th><th>PDU (unit of data)</th><th>Address used</th><th>Typical devices</th></tr></thead><tbody><tr><td>2</td><td>Data Link</td><td>Frame</td><td>MAC address</td><td>Switch, bridge, NIC, wireless access point</td></tr><tr><td>1</td><td>Physical</td><td>Bit / symbol</td><td>none</td><td>Cable, repeater, hub, transceiver, modem</td></tr></tbody></table></div>
+<p>Encapsulation on the way down:</p>
+<pre><code>Application data
+   ↓  Transport   → segment  (+ TCP/UDP header)
+   ↓  Network     → packet   (+ IP header)
+   ↓  Data Link   → frame    (+ MAC header + trailer/FCS)
+   ↓  Physical    → bits     → signal on the medium</code></pre>
+<p>The two layers are inseparable in practice. Every byte that leaves any device passes through the Physical layer, including traffic that never leaves the local network.</p>
+<hr>
+<h1 id="1-physical-layer-layer-1">1. Physical Layer (Layer 1)<a class="anchor" href="#1-physical-layer-layer-1">#</a></h1>
+<h2 id="11-definition">1.1 Definition<a class="anchor" href="#11-definition">#</a></h2>
+<ul><li>Responsible for transferring <strong>raw data bits</strong> between the nodes of endpoints.</li><li>Handles physical and electrical data transmission.</li><li>Includes cables, connectors, plugs, receivers, transceivers.</li><li>Defines hardware standards, voltage levels, pin layouts, and signal types.</li></ul>
+<p>It carries <strong>no addressing and no meaning</strong>. It moves 1s and 0s and nothing else.</p>
+<h2 id="12-core-functionality">1.2 Core functionality<a class="anchor" href="#12-core-functionality">#</a></h2>
+<h3 id="encoding">Encoding<a class="anchor" href="#encoding">#</a></h3>
+<p>Converts data into signals that can travel through copper wire, fibre optics, or a wireless channel.</p>
+<h3 id="decoding">Decoding<a class="anchor" href="#decoding">#</a></h3>
+<p>Turns those signals back into data at the receiver.</p>
+<h3 id="modem-modulator-demodulator">Modem — MOdulator / DEModulator<a class="anchor" href="#modem-modulator-demodulator">#</a></h3>
+<p>The most common device that performs both jobs to connect a home to the internet.</p>
+<div class="table-wrap"><table><thead><tr><th>Term</th><th>Meaning</th></tr></thead><tbody><tr><td>Modulation</td><td>Converting <code>010101</code> into a signal</td></tr><tr><td>Demodulation</td><td>Converting the signal back into <code>010101</code></td></tr><tr><td>Carrier wave</td><td>A base wave whose properties are modified to carry the data</td></tr></tbody></table></div>
+<h2 id="13-modulation-techniques">1.3 Modulation techniques<a class="anchor" href="#13-modulation-techniques">#</a></h2>
+<p>A <strong>carrier wave</strong> has three properties that can be changed to encode bits.</p>
+<div class="table-wrap"><table><thead><tr><th>Technique</th><th>What changes</th><th>Encoding</th></tr></thead><tbody><tr><td>ASK — Amplitude Shift Keying</td><td>Height of the wave</td><td><code>1</code> = high amplitude, <code>0</code> = low amplitude</td></tr><tr><td>FSK — Frequency Shift Keying</td><td>Frequency of the wave</td><td><code>1</code> and <code>0</code> are two different frequencies</td></tr><tr><td>PSK — Phase Shift Keying</td><td>Phase of the wave</td><td><code>1</code> and <code>0</code> are phase-shifted versions</td></tr><tr><td>QAM — Quadrature Amplitude Modulation</td><td>Amplitude <strong>and</strong> phase together</td><td>Several bits per symbol; used by WiFi, LTE, cable</td></tr></tbody></table></div>
+<p>So under ASK, bits are encoded as <strong>strong signal vs weak signal</strong>.</p>
+<h2 id="14-how-multiple-signals-are-separated">1.4 How multiple signals are separated<a class="anchor" href="#14-how-multiple-signals-are-separated">#</a></h2>
+<p>Signals sharing the same medium are kept apart by <strong>multiplexing</strong>:</p>
+<ul><li><strong>Cable / DSL / radio</strong> → often by <strong>frequency</strong> (FDM, Frequency Division Multiplexing).</li><li><strong>Modern networks (WiFi, 4G/5G)</strong> → a <strong>combination</strong>: frequency + time slots + codes.</li></ul>
+<p>Key point: frequency alone is not the main mechanism in modern systems. Frequency, time, and coding are used together (OFDMA in WiFi 6 and 5G is exactly this).</p>
+<h2 id="15-where-does-one-bit-end-and-the-next-begin">1.5 Where does one bit end and the next begin?<a class="anchor" href="#15-where-does-one-bit-end-and-the-next-begin">#</a></h2>
+<p>If the signal is continuous, how do we know how many bits it holds?</p>
+<blockquote><p>Bits are determined by <strong>time intervals</strong>, not by signal length. A long signal is split into multiple bits based on the data rate.</p></blockquote>
+<p>You do <strong>not</strong> decide the interval dynamically. It is predefined by the data rate:</p>
+<pre><code>bit interval = 1 / data rate</code></pre>
+<p>If the link is 1 Mbps = 1,000,000 bits per second, then 1 bit = 1 microsecond.</p>
+<h3 id="data-rate-bit-interval-table">Data-rate → bit-interval table<a class="anchor" href="#data-rate-bit-interval-table">#</a></h3>
+<div class="table-wrap"><table><thead><tr><th>Data rate</th><th>Bits per second</th><th>Time per bit (interval)</th></tr></thead><tbody><tr><td>1 bps</td><td>1</td><td>1 second</td></tr><tr><td>1 Kbps</td><td>1,000</td><td>1 millisecond (ms)</td></tr><tr><td>10 Kbps</td><td>10,000</td><td>0.1 ms (100 µs)</td></tr><tr><td>100 Kbps</td><td>100,000</td><td>10 µs</td></tr><tr><td>1 Mbps</td><td>1,000,000</td><td>1 µs</td></tr><tr><td>10 Mbps</td><td>10,000,000</td><td>0.1 µs (100 ns)</td></tr><tr><td>100 Mbps</td><td>100,000,000</td><td>10 ns</td></tr><tr><td>1 Gbps</td><td>1,000,000,000</td><td>1 ns</td></tr><tr><td>10 Gbps</td><td>10,000,000,000</td><td>0.1 ns</td></tr></tbody></table></div>
+<p>Faster speed = smaller interval. Sender and receiver stay aligned using <strong>clock timing and encoding rules</strong> (line codes such as Manchester or 8b/10b embed a clock in the signal so the receiver can recover timing).</p>
+<h2 id="16-transmission-modes">1.6 Transmission modes<a class="anchor" href="#16-transmission-modes">#</a></h2>
+<figure><img src="images/image-29.png" alt="simplex vs duplex"></figure>
+<div class="table-wrap"><table><thead><tr><th>Mode</th><th>Direction</th><th>Example</th></tr></thead><tbody><tr><td>Simplex</td><td>One way only</td><td>Keyboard → computer, TV broadcast</td></tr><tr><td>Half duplex</td><td>Two way, but one at a time</td><td>Walkie-talkie, old Ethernet hub</td></tr><tr><td>Full duplex</td><td>Two way simultaneously</td><td>TCP, WebSocket, modern switched Ethernet</td></tr></tbody></table></div>
+<p>Important correction found in the source notes: <strong>duplex mode is not decided by the Data Link layer per connection</strong>. It is determined by the hardware and network design. TCP already provides full-duplex communication at Layer 4, and WebSocket is full duplex on top of it.</p>
+<h2 id="17-layer-1-standards-and-protocols">1.7 Layer 1 standards and protocols<a class="anchor" href="#17-layer-1-standards-and-protocols">#</a></h2>
+<ul><li><strong>Ethernet (IEEE 802.3)</strong> — widely used for wired networks.</li><li><strong>Wi-Fi (IEEE 802.11)</strong> — wireless communication.</li><li><strong>Bluetooth (IEEE 802.15.1)</strong> — short-range wireless.</li><li><strong>USB (Universal Serial Bus)</strong> — device connection over short distances.</li></ul>
+<p>Note these standards straddle Layers 1 and 2: they define both the signalling (L1) and the framing / media access rules (L2).</p>
+<h2 id="18-physical-layer-security">1.8 Physical layer security<a class="anchor" href="#18-physical-layer-security">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>Threat</th><th>Description</th></tr></thead><tbody><tr><td>Cable tapping</td><td>Attacker intercepts data by connecting directly to network cables</td></tr><tr><td>Physical access</td><td>Entry to server rooms or hardware areas allows theft or damage</td></tr><tr><td>Wireless signal interception</td><td>WiFi signals captured from outside with special tools</td></tr><tr><td>Hardware manipulation</td><td>Tampering with routers or USB ports to install harmful software</td></tr></tbody></table></div>
+<p>Defence is physical: locked racks, port security, tamper-evident seals, and encryption at higher layers so a tapped cable yields only ciphertext.</p>
+<hr>
+<h1 id="2-data-link-layer-layer-2">2. Data Link Layer (Layer 2)<a class="anchor" href="#2-data-link-layer-layer-2">#</a></h1>
+<h2 id="21-responsibility">2.1 Responsibility<a class="anchor" href="#21-responsibility">#</a></h2>
+<ul><li>Responsible for the <strong>node-to-node delivery</strong> of data within the same local network.</li><li>Major role is to ensure <strong>error-free transmission</strong> of information.</li><li>Also responsible for encoding, decoding, and organising outgoing and incoming data.</li><li>Considered the <strong>most complex layer</strong> of the OSI model, because it hides all the underlying hardware complexity from the layers above.</li></ul>
+<p><strong>Node-to-node delivery</strong> means communication between directly connected devices using MAC addresses, not end-to-end delivery across the internet.</p>
+<p>A correction from the notes: the Data Link layer does not &quot;transfer data from&quot; the Physical layer. The Physical layer sends and receives bits; the Data Link layer <strong>frames and unframes</strong> them.</p>
+<h2 id="22-the-two-sublayers">2.2 The two sublayers<a class="anchor" href="#22-the-two-sublayers">#</a></h2>
+<h3 id="logical-link-control-llc">Logical Link Control (LLC)<a class="anchor" href="#logical-link-control-llc">#</a></h3>
+<p>Deals with multiplexing, the flow of data among applications and other services, and is responsible for providing <strong>error messages and acknowledgments</strong>.</p>
+<h3 id="media-access-control-mac">Media Access Control (MAC)<a class="anchor" href="#media-access-control-mac">#</a></h3>
+<p>Manages the device&#x27;s interaction with the medium, is responsible for <strong>addressing frames</strong>, and controls physical media access. It receives information in the form of <strong>packets</strong> from the Network layer, divides packets into <strong>frames</strong>, and sends those frames bit-by-bit to the underlying Physical layer.</p>
+<h2 id="23-frame-structure-ethernet-ii">2.3 Frame structure (Ethernet II)<a class="anchor" href="#23-frame-structure-ethernet-ii">#</a></h2>
+<pre><code>+----------+----------+---------+-------------------+-----+
+| Dest MAC | Src MAC  | Type    | Payload (46-1500) | FCS |
+|  6 bytes | 6 bytes  | 2 bytes |      bytes        |  4  |
++----------+----------+---------+-------------------+-----+</code></pre>
+<ul><li><strong>Dest / Src MAC</strong> — 48-bit hardware addresses.</li><li><strong>Type</strong> — what is inside (0x0800 = IPv4, 0x86DD = IPv6, 0x0806 = ARP).</li><li><strong>FCS</strong> — Frame Check Sequence, a CRC-32 used for <strong>error detection</strong>. A frame that fails the check is dropped, not repaired.</li></ul>
+<p>The 1500-byte payload limit is the standard Ethernet <strong>MTU</strong>, which is why the Network layer above may need to fragment.</p>
+<h2 id="24-mac-address-resolution-in-a-lan-the-arp-flow">2.4 MAC address resolution in a LAN — the ARP flow<a class="anchor" href="#24-mac-address-resolution-in-a-lan-the-arp-flow">#</a></h2>
+<p>You want to send data to <code>192.168.1.20</code>. You know the IP. You do <strong>not</strong> know the MAC.</p>
+<p><strong>Step 1 — You only know the IP</strong></p>
+<pre><code>IP  = 192.168.1.20
+MAC = unknown</code></pre>
+<p><strong>Step 2 — ARP Request (broadcast)</strong> Your laptop asks everyone: &quot;Who has 192.168.1.20?&quot; Sent to <code>FF:FF:FF:FF:FF:FF</code>, the broadcast address, so every device in the LAN sees it.</p>
+<p><strong>Step 3 — ARP Reply (unicast)</strong> The target laptop responds: &quot;I have that IP. My MAC = <code>AA:BB:CC:DD:EE:FF</code>.&quot;</p>
+<p><strong>Step 4 — Store in the ARP table</strong></p>
+<pre><code>192.168.1.20 → AA:BB:CC:DD:EE:FF</code></pre>
+<p>Cached for a few minutes so the broadcast is not repeated per packet.</p>
+<p><strong>Step 5 — Create the data frame</strong></p>
+<pre><code>Source MAC      = your laptop&#x27;s MAC
+Destination MAC = target laptop&#x27;s MAC</code></pre>
+<p><strong>Step 6 — Physical transmission</strong> The frame becomes electrical or radio signals and is sent through the switch, router, or cable.</p>
+<p><strong>Step 7 — Receiver gets it</strong> Checks the destination MAC. If it matches, it accepts the frame and passes the payload up to IP → TCP → the application.</p>
+<h3 id="one-line-memory">One-line memory<a class="anchor" href="#one-line-memory">#</a></h3>
+<blockquote><p>IP identifies the destination → ARP finds the MAC → frame is created → Physical layer sends signals → receiver accepts by MAC.</p></blockquote>
+<h3 id="interview-version">Interview version<a class="anchor" href="#interview-version">#</a></h3>
+<blockquote><p>&quot;To send data in a local network, the device uses ARP to resolve the destination IP into a MAC address, stores it in the ARP cache, then encapsulates the data into an Ethernet frame and sends it via the Physical layer.&quot;</p></blockquote>
+<h3 id="where-the-addresses-come-from">Where the addresses come from<a class="anchor" href="#where-the-addresses-come-from">#</a></h3>
+<div class="table-wrap"><table><thead><tr><th>Address</th><th>How the device gets it</th></tr></thead><tbody><tr><td>Own MAC</td><td>Taken directly from the NIC hardware (burned in at manufacture)</td></tr><tr><td>Peer MAC</td><td>Resolved with ARP inside the LAN</td></tr><tr><td>Own IP</td><td>Usually from a DHCP server, or configured manually</td></tr><tr><td>Peer IP</td><td>From DHCP, static configuration, or DNS resolution</td></tr></tbody></table></div>
+<p>Both addresses are needed at once: <strong>IP identifies the final destination, MAC is used for local hop delivery.</strong></p>
+<h2 id="25-devices">2.5 Devices<a class="anchor" href="#25-devices">#</a></h2>
+<h3 id="1-switch">1. Switch<a class="anchor" href="#1-switch">#</a></h3>
+<ul><li>The key device of the Data Link layer.</li><li>Uses MAC addresses to forward frames to the correct device.</li><li>Works in local area networks to connect multiple devices.</li><li>Builds a <strong>MAC address table</strong> by learning source addresses from incoming frames.</li></ul>
+<h3 id="2-bridge">2. Bridge<a class="anchor" href="#2-bridge">#</a></h3>
+<ul><li>Connects two or more LANs into a single unified network.</li><li>Operates at Layer 2 by forwarding frames based on MAC addresses.</li><li>Used to reduce network traffic and segment a network.</li></ul>
+<h3 id="3-network-interface-card-nic">3. Network Interface Card (NIC)<a class="anchor" href="#3-network-interface-card-nic">#</a></h3>
+<ul><li>Hardware component in computers, printers, and similar devices.</li><li>Adds the MAC address to frames and handles communication with the network.</li></ul>
+<h3 id="4-wireless-access-point-wap">4. Wireless Access Point (WAP)<a class="anchor" href="#4-wireless-access-point-wap">#</a></h3>
+<ul><li>Allows wireless devices to connect to a wired network.</li><li>Manages wireless MAC addresses at Layer 2.</li><li>Uses protocols like Wi-Fi (IEEE 802.11).</li></ul>
+<h3 id="5-layer-2-switches">5. Layer 2 switches<a class="anchor" href="#5-layer-2-switches">#</a></h3>
+<ul><li>Specialised switches that operate only at Layer 2, unlike multilayer switches.</li><li>Forward frames using MAC address tables.</li></ul>
+<blockquote><p><strong>Security note:</strong> the Data Link layer can be targeted by attacks like <strong>MAC spoofing</strong> or <strong>ARP poisoning</strong>. Understanding how devices and frames operate at this layer helps detect and mitigate such threats. Mitigations include dynamic ARP inspection, port security, and 802.1X authentication.</p></blockquote>
+<h2 id="26-limitations">2.6 Limitations<a class="anchor" href="#26-limitations">#</a></h2>
+<ul><li><strong>Limited scope</strong> — operates only within a local network; cannot handle end-to-end communication across different networks.</li><li><strong>Increased overhead</strong> — headers, trailers, and redundant data for error correction increase transmitted size.</li><li><strong>Error handling dependency</strong> — can detect and correct some errors, but relies on upper layers for more complex issues.</li><li><strong>No routing capability</strong> — cannot make routing decisions; only ensures delivery within the same network segment.</li><li><strong>Resource usage</strong> — flow control and error correction consume extra processing power and memory.</li></ul>
+<h2 id="27-applications">2.7 Applications<a class="anchor" href="#27-applications">#</a></h2>
+<ul><li><strong>Local Area Networks (LANs)</strong> — reliable communication between devices using Ethernet (IEEE 802.3).</li><li><strong>Wireless networks (Wi-Fi)</strong> — communication via IEEE 802.11, handling media access and error control.</li><li><strong>Switches and MAC addressing</strong> — forwarding frames to the correct device.</li><li><strong>Point-to-point connections</strong> — protocols like PPP establish and manage direct communication between two nodes.</li></ul>
+<hr>
+<h1 id="3-qa-layers-1-2">3. Q&amp;A — Layers 1 &amp; 2<a class="anchor" href="#3-qa-layers-1-2">#</a></h1>
+<h3 id="signals-and-encoding">Signals and encoding<a class="anchor" href="#signals-and-encoding">#</a></h3>
+<p><strong>How is binary converted to signals?</strong> By modulating a carrier wave, changing amplitude, frequency, or phase.</p>
+<p><strong>How does modulation work?</strong> It encodes 0 and 1 by modifying properties of a signal wave.</p>
+<p><strong>How are multiple signals separated?</strong> By using different frequencies, time slots, or codes.</p>
+<p><strong>Is frequency mainly used?</strong> No. Modern systems use frequency, time, and coding together.</p>
+<p><strong>How do we know how many bits are in a signal?</strong> By dividing the signal using fixed time intervals (bit duration).</p>
+<p><strong>How is the bit interval decided?</strong> It is defined by the data rate in bits per second.</p>
+<p><strong>Data rate table rule?</strong> Bit interval = 1 / data rate. Faster speed means a smaller interval.</p>
+<p><strong>How does a modem convert 0 and 1?</strong> By encoding bits onto a carrier wave.</p>
+<p><strong>How are bits separated from the signal?</strong> By using clock timing and encoding rules.</p>
+<p><strong>What is a carrier wave?</strong> A base wave whose properties are modified to carry data.</p>
+<h3 id="osi-and-data-link">OSI and Data Link<a class="anchor" href="#osi-and-data-link">#</a></h3>
+<p><strong>Are there 7 OSI layers?</strong> Yes, from Application at the top to Physical at the bottom.</p>
+<p><strong>Does the Data Link layer control duplex mode?</strong> No. Duplex is determined by hardware and network design, not per connection.</p>
+<p><strong>Simplex, half duplex, full duplex?</strong> One-way, two-way alternately, and two-way simultaneously.</p>
+<p><strong>Is the Data Link layer node-to-node delivery?</strong> Yes. It handles delivery between directly connected devices.</p>
+<p><strong>Does data skip the Physical layer inside the same network?</strong> No. All data always passes through the Physical layer.</p>
+<p><strong>Does the Data Link layer add the MAC address?</strong> Yes. It adds source and destination MAC addresses in frames.</p>
+<p><strong>How is the source MAC known?</strong> It is taken directly from the device&#x27;s NIC hardware.</p>
+<p><strong>How do we find another device&#x27;s MAC?</strong> Using ARP: a broadcast request and a unicast reply.</p>
+<p><strong>What is the ARP flow?</strong> Broadcast request → reply → store MAC → send frame.</p>
+<p><strong>Is IP also used?</strong> Yes. IP identifies the destination, MAC is used for local delivery.</p>
+<p><strong>How do we get an IP?</strong> Usually from a DHCP server, or by manual configuration.</p>
+<p><strong>Is the Physical layer only in routers?</strong> No. It exists in every network device.</p>
+<p><strong>Does the Data Link layer &quot;transfer&quot; data from the Physical layer?</strong> No. The Physical layer sends bits; the Data Link layer frames and unframes them.</p>
+<p><strong>Does the Data Link layer decide direction after TCP?</strong> No. TCP already provides full-duplex communication.</p>
+<p><strong>Is WebSocket full duplex?</strong> Yes. Both sides can send data simultaneously.</p>
+<p><strong>What is node-to-node delivery?</strong> Communication between directly connected devices using MAC addresses.</p>
+<hr>
+<h1 id="4-quick-revision-sheet">4. Quick revision sheet<a class="anchor" href="#4-quick-revision-sheet">#</a></h1>
+<div class="table-wrap"><table><thead><tr><th>Question</th><th>Layer 1</th><th>Layer 2</th></tr></thead><tbody><tr><td>Unit</td><td>Bit</td><td>Frame</td></tr><tr><td>Address</td><td>none</td><td>MAC (48-bit)</td></tr><tr><td>Job</td><td>Move signals</td><td>Node-to-node delivery, error detection</td></tr><tr><td>Error handling</td><td>none</td><td>CRC / FCS detection, drop on failure</td></tr><tr><td>Devices</td><td>Cable, hub, repeater, modem</td><td>Switch, bridge, NIC, WAP</td></tr><tr><td>Protocols</td><td>Ethernet PHY, 802.11 PHY, DSL, USB</td><td>Ethernet MAC, 802.11 MAC, PPP, ARP</td></tr><tr><td>Attacks</td><td>Cable tapping, signal interception</td><td>MAC spoofing, ARP poisoning</td></tr></tbody></table></div>
+<p><strong>One sentence each</strong></p>
+<ul><li>Layer 1 moves bits as signals over a medium and knows nothing about who they are for.</li><li>Layer 2 groups bits into frames, addresses them with MAC, and delivers them across one hop of the local network.</li></ul>
+<hr>
+<p><strong>Next:</strong> <a href="../OSI_LAYERS_3-4_NETWORK_TRANSPORT/index.html">OSI Layers 3 &amp; 4 — Network &amp; Transport</a></p>
+<footer>Extracted from the DOCUMENTATIONS export &middot; OSI model study notes &middot; see <code>README.md</code> for the markdown source.</footer>
+</main>
+</div>
+</body>
+</html>
