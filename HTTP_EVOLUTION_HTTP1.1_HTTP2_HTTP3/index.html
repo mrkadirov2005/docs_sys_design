@@ -1,0 +1,668 @@
+<!doctype html>
+<html lang="en" data-theme-auto>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HTTP Evolution — HTTP/1.1, HTTP/2 &amp; HTTP/3</title>
+<style>
+:root{
+  --bg:#fbfbf9; --surface:#ffffff; --ink:#1c1c1a; --muted:#5c5c56;
+  --line:#e3e3dd; --accent:#8a4b2a; --accent-soft:#f3ece7;
+  --code-bg:#f5f4f0; --quote-bg:#f7f5f1;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#16161a; --surface:#1d1d22; --ink:#e8e8e4; --muted:#a0a099;
+    --line:#32323a; --accent:#e0a077; --accent-soft:#2a2320;
+    --code-bg:#232329; --quote-bg:#202026;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#16161a; --surface:#1d1d22; --ink:#e8e8e4; --muted:#a0a099;
+  --line:#32323a; --accent:#e0a077; --accent-soft:#2a2320;
+  --code-bg:#232329; --quote-bg:#202026;
+}
+*{box-sizing:border-box}
+body{
+  background:var(--bg); color:var(--ink); margin:0;
+  font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,
+       "Helvetica Neue",Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.layout{max-width:1180px;margin:0 auto;padding:0 24px;
+  display:grid;grid-template-columns:236px minmax(0,1fr);gap:48px}
+nav.toc{position:sticky;top:0;align-self:start;max-height:100vh;
+  overflow-y:auto;padding:40px 0 40px;font-size:13.5px}
+nav.toc .label{text-transform:uppercase;letter-spacing:.09em;
+  font-size:11px;color:var(--muted);font-weight:700;margin-bottom:12px}
+nav.toc a{display:block;color:var(--muted);text-decoration:none;
+  padding:4px 10px;border-left:2px solid transparent;line-height:1.4}
+nav.toc a:hover{color:var(--accent);border-left-color:var(--accent);
+  background:var(--accent-soft)}
+nav.toc a.lvl2{padding-left:22px;font-size:13px}
+main{padding:40px 0 96px;min-width:0}
+h1,h2,h3,h4{line-height:1.25;font-weight:650;
+  scroll-margin-top:24px;position:relative}
+h1{font-size:2.05rem;margin:.2em 0 .6em;letter-spacing:-.02em}
+h2{font-size:1.5rem;margin:2.2em 0 .7em;padding-bottom:.3em;
+  border-bottom:1px solid var(--line)}
+h3{font-size:1.16rem;margin:1.9em 0 .5em}
+h4{font-size:1rem;margin:1.5em 0 .4em;color:var(--muted)}
+.anchor{position:absolute;margin-left:.4em;color:var(--line);
+  text-decoration:none;opacity:0;font-weight:400}
+h1:hover .anchor,h2:hover .anchor,h3:hover .anchor{opacity:1}
+.anchor:hover{color:var(--accent)}
+p{margin:0 0 1em}
+a{color:var(--accent)}
+ul,ol{margin:0 0 1.15em;padding-left:1.45em}
+li{margin:.32em 0}
+li::marker{color:var(--muted)}
+hr{border:0;border-top:1px solid var(--line);margin:2.6em 0}
+code{background:var(--code-bg);border:1px solid var(--line);
+  border-radius:4px;padding:.12em .38em;font-size:.875em;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+pre{background:var(--code-bg);border:1px solid var(--line);
+  border-radius:8px;padding:16px 18px;overflow-x:auto;margin:0 0 1.3em}
+pre code{background:none;border:0;padding:0;font-size:13px;line-height:1.55}
+blockquote{margin:0 0 1.3em;padding:14px 18px;background:var(--quote-bg);
+  border-left:3px solid var(--accent);border-radius:0 8px 8px 0}
+blockquote p{margin:0 0 .6em}
+blockquote p:last-child{margin:0}
+.table-wrap{overflow-x:auto;margin:0 0 1.5em;border:1px solid var(--line);
+  border-radius:8px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:14.5px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);
+  vertical-align:top}
+th{background:var(--accent-soft);font-weight:650;white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+figure{margin:0 0 1.6em;text-align:center}
+img{max-width:100%;height:auto;border:1px solid var(--line);
+  border-radius:8px;background:var(--surface)}
+footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--line);
+  font-size:13px;color:var(--muted)}
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr;gap:0}
+  nav.toc{position:static;max-height:none;padding:28px 0 0;
+    border-bottom:1px solid var(--line);margin-bottom:8px}
+  nav.toc a.lvl2{display:none}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="toc"><div class="label">On this page</div>
+<a class="lvl1" href="#http-evolution">HTTP Evolution</a>
+<a class="lvl2" href="#scope">Scope</a>
+<a class="lvl1" href="#1-http-fundamentals">1. HTTP Fundamentals</a>
+<a class="lvl2" href="#11-definition">1.1 Definition</a>
+<a class="lvl2" href="#12-request-lifecycle">1.2 Request lifecycle</a>
+<a class="lvl1" href="#2-http-methods">2. HTTP Methods</a>
+<a class="lvl2" href="#21-get">2.1 GET</a>
+<a class="lvl2" href="#22-post">2.2 POST</a>
+<a class="lvl2" href="#23-put">2.3 PUT</a>
+<a class="lvl2" href="#24-patch">2.4 PATCH</a>
+<a class="lvl2" href="#25-delete">2.5 DELETE</a>
+<a class="lvl2" href="#26-head">2.6 HEAD</a>
+<a class="lvl2" href="#27-options">2.7 OPTIONS</a>
+<a class="lvl2" href="#28-connect">2.8 CONNECT</a>
+<a class="lvl2" href="#29-trace">2.9 TRACE</a>
+<a class="lvl1" href="#3-http-headers">3. HTTP Headers</a>
+<a class="lvl2" href="#31-definition">3.1 Definition</a>
+<a class="lvl2" href="#32-header-categories">3.2 Header categories</a>
+<a class="lvl2" href="#33-authorization">3.3 Authorization</a>
+<a class="lvl2" href="#34-content-type">3.4 Content-Type</a>
+<a class="lvl1" href="#4-http-body">4. HTTP Body</a>
+<a class="lvl2" href="#41-definition">4.1 Definition</a>
+<a class="lvl2" href="#42-request-body">4.2 Request body</a>
+<a class="lvl2" href="#43-response-body">4.3 Response body</a>
+<a class="lvl2" href="#44-common-content-types">4.4 Common content types</a>
+<a class="lvl1" href="#5-status-codes">5. Status Codes</a>
+<a class="lvl1" href="#6-handling-state">6. Handling State</a>
+<a class="lvl1" href="#7-idempotency">7. Idempotency</a>
+<a class="lvl2" href="#71-definition">7.1 Definition</a>
+<a class="lvl2" href="#72-by-method">7.2 By method</a>
+<a class="lvl1" href="#8-http-version-evolution">8. HTTP Version Evolution</a>
+<a class="lvl2" href="#80-http09">8.0 HTTP/0.9</a>
+<a class="lvl2" href="#81-http10">8.1 HTTP/1.0</a>
+<a class="lvl2" href="#82-http11">8.2 HTTP/1.1</a>
+<a class="lvl2" href="#83-http2">8.3 HTTP/2</a>
+<a class="lvl2" href="#84-http3">8.4 HTTP/3</a>
+<a class="lvl1" href="#9-http-caching">9. HTTP Caching</a>
+<a class="lvl2" href="#91-definition">9.1 Definition</a>
+<a class="lvl2" href="#92-caching-flow">9.2 Caching flow</a>
+<a class="lvl2" href="#93-etag">9.3 ETag</a>
+<a class="lvl2" href="#94-heuristic-caching">9.4 Heuristic caching</a>
+<a class="lvl2" href="#95-cache-control-headers">9.5 Cache-Control headers</a>
+<a class="lvl1" href="#10-cdn-caching">10. CDN Caching</a>
+<a class="lvl2" href="#101-definition">10.1 Definition</a>
+<a class="lvl2" href="#102-cdn-caching-flow">10.2 CDN caching flow</a>
+<a class="lvl2" href="#103-additional-cdn-benefits">10.3 Additional CDN benefits</a>
+<a class="lvl1" href="#11-server-cache">11. Server Cache</a>
+<a class="lvl2" href="#111-what-to-cache">11.1 What to cache</a>
+<a class="lvl2" href="#112-validation-strategies">11.2 Validation strategies</a>
+<a class="lvl2" href="#113-cache-invalidation">11.3 Cache invalidation</a>
+<a class="lvl1" href="#12-quick-revision-sheet">12. Quick revision sheet</a>
+</nav>
+<main>
+<h1 id="http-evolution">HTTP Evolution — HTTP/1.1, HTTP/2 &amp; HTTP/3<a class="anchor" href="#http-evolution">#</a></h1>
+<blockquote><p>Scope: how the web talks. The full lifecycle of an HTTP request, every method, header, status code, caching layer, and the protocol evolution from HTTP/0.9 through HTTP/3 and QUIC.</p><p>Source: extracted and reorganised from <code>md/DOCUMENTATIONS ...md</code> &rarr; <code>SYSTEM_DESIGN vs BACKEND</code> &rarr; <code>HTTP Evolution</code>.</p></blockquote>
+<hr>
+
+<h2 id="scope">0. What this document covers<a class="anchor" href="#scope">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>Topic</th><th>One-line summary</th></tr></thead><tbody>
+<tr><td>HTTP fundamentals</td><td>Stateless request/response protocol over TCP (HTTPS adds TLS)</td></tr>
+<tr><td>Methods</td><td>GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS, CONNECT, TRACE</td></tr>
+<tr><td>Headers &amp; body</td><td>Metadata envelope + payload</td></tr>
+<tr><td>Status codes</td><td>2xx success, 3xx redirect, 4xx client error, 5xx server error</td></tr>
+<tr><td>State &amp; idempotency</td><td>How a stateless protocol remembers things, and which methods are safe to retry</td></tr>
+<tr><td>Version evolution</td><td>HTTP/0.9 &rarr; 1.0 &rarr; 1.1 &rarr; 2 &rarr; 3 (QUIC/UDP)</td></tr>
+<tr><td>Caching</td><td>Browser cache, CDN cache, server cache, ETags, Cache-Control</td></tr>
+</tbody></table></div>
+
+<hr>
+
+<h1 id="1-http-fundamentals">1. HTTP Fundamentals<a class="anchor" href="#1-http-fundamentals">#</a></h1>
+
+<h2 id="11-definition">1.1 Definition<a class="anchor" href="#11-definition">#</a></h2>
+<p><strong>HTTP (HyperText Transfer Protocol)</strong> is a stateless, application-layer protocol for communication between a client and a server. It runs on top of TCP; when the connection is secured, HTTPS wraps TCP in a TLS handshake before any HTTP bytes are exchanged.</p>
+<ul>
+<li><strong>Stateless</strong> &mdash; the server does not remember previous requests. Each request is independent.</li>
+<li><strong>Text-based</strong> (HTTP/1.x) or <strong>binary-framed</strong> (HTTP/2+).</li>
+<li><strong>Request/response</strong> model &mdash; the client always initiates; the server always replies (server push in HTTP/2 is the exception).</li>
+</ul>
+
+<h2 id="12-request-lifecycle">1.2 Request lifecycle<a class="anchor" href="#12-request-lifecycle">#</a></h2>
+<ol>
+<li>User enters a URL in the browser.</li>
+<li><strong>DNS resolution</strong> &mdash; the domain name is translated into an IP address.</li>
+<li><strong>TCP connection</strong> &mdash; a three-way handshake (<code>SYN</code>, <code>SYN-ACK</code>, <code>ACK</code>) opens the connection.</li>
+<li><strong>TLS handshake</strong> (HTTPS only) &mdash; negotiates cipher suite, exchanges certificates, derives session keys.</li>
+<li>Client sends an <strong>HTTP request</strong> (method, path, headers, optional body).</li>
+<li>Server processes the request and sends an <strong>HTTP response</strong> (status code, headers, body).</li>
+<li>Connection is <strong>reused</strong> (HTTP/1.1 Keep-Alive) or <strong>closed</strong>.</li>
+</ol>
+
+<hr>
+
+<h1 id="2-http-methods">2. HTTP Methods<a class="anchor" href="#2-http-methods">#</a></h1>
+
+<h2 id="21-get">2.1 GET<a class="anchor" href="#21-get">#</a></h2>
+<p>Retrieve a resource without modification. Safe and idempotent. The most common method on the web &mdash; every page load, image fetch, and API read is a GET.</p>
+<pre><code>GET /users/42 HTTP/1.1
+Host: api.example.com</code></pre>
+
+<h2 id="22-post">2.2 POST<a class="anchor" href="#22-post">#</a></h2>
+<p>Send data to create or update a resource. <strong>Not idempotent</strong> &mdash; sending the same POST twice may create two records.</p>
+<pre><code>POST /users HTTP/1.1
+Content-Type: application/json
+
+{"name": "Alice", "email": "alice@example.com"}</code></pre>
+
+<h2 id="23-put">2.3 PUT<a class="anchor" href="#23-put">#</a></h2>
+<p>Create or <strong>fully replace</strong> a resource at a specific URL. Idempotent &mdash; sending the same PUT ten times yields the same result as sending it once.</p>
+<pre><code>PUT /users/42 HTTP/1.1
+Content-Type: application/json
+
+{"name": "Alice", "email": "alice@new.com"}</code></pre>
+
+<h2 id="24-patch">2.4 PATCH<a class="anchor" href="#24-patch">#</a></h2>
+<p>Apply <strong>partial modifications</strong> to an existing resource. Not necessarily idempotent &mdash; a patch like <code>{"views": "+1"}</code> changes the result each time.</p>
+<pre><code>PATCH /users/42 HTTP/1.1
+Content-Type: application/json
+
+{"email": "alice@new.com"}</code></pre>
+
+<h2 id="25-delete">2.5 DELETE<a class="anchor" href="#25-delete">#</a></h2>
+<p>Remove a specified resource. Idempotent &mdash; deleting a resource that is already gone returns the same outcome.</p>
+<pre><code>DELETE /users/42 HTTP/1.1</code></pre>
+
+<h2 id="26-head">2.6 HEAD<a class="anchor" href="#26-head">#</a></h2>
+<p>Identical to GET but returns <strong>only the headers</strong>, no body. Used to check if a resource exists, its size, or its last-modified date without downloading it.</p>
+<pre><code>HEAD /large-file.zip HTTP/1.1</code></pre>
+
+<h2 id="27-options">2.7 OPTIONS<a class="anchor" href="#27-options">#</a></h2>
+<p>Request information about the communication options available for a resource. Commonly seen in CORS preflight requests.</p>
+<pre><code>OPTIONS /api/data HTTP/1.1
+Origin: https://app.example.com</code></pre>
+
+<h2 id="28-connect">2.8 CONNECT<a class="anchor" href="#28-connect">#</a></h2>
+<p>Establish a <strong>bidirectional tunnel</strong> through a proxy. The proxy becomes a transparent relay for raw TCP bytes.</p>
+<pre><code>CONNECT api.example.com:443 HTTP/1.1
+Host: api.example.com</code></pre>
+<h4>Use cases</h4>
+<ul>
+<li><strong>HTTPS via proxy</strong> &mdash; the browser asks the proxy to tunnel TLS traffic to the destination.</li>
+<li><strong>Proxy tunnelling</strong> &mdash; any TCP-based protocol (SSH, database) wrapped through an HTTP proxy.</li>
+<li><strong>Bypassing network restrictions</strong> &mdash; tunnel traffic past restrictive firewalls.</li>
+<li><strong>Debugging and testing</strong> &mdash; inspect traffic through an intercepting proxy.</li>
+</ul>
+
+<h2 id="29-trace">2.9 TRACE<a class="anchor" href="#29-trace">#</a></h2>
+<p>Diagnostic tool that asks the server to echo back the exact request it received. Useful for seeing what intermediaries (proxies, load balancers) add or modify.</p>
+<blockquote><p><strong>Security note:</strong> TRACE should be <strong>disabled in production</strong>. It enables Cross-Site Tracing (XST) attacks, where an attacker tricks a browser into issuing a TRACE request to steal cookies or authorization headers reflected in the response.</p></blockquote>
+
+<h3>Methods at a glance</h3>
+<div class="table-wrap"><table><thead><tr><th>Method</th><th>Purpose</th><th>Body?</th><th>Idempotent?</th><th>Safe?</th></tr></thead><tbody>
+<tr><td>GET</td><td>Read</td><td>No</td><td>Yes</td><td>Yes</td></tr>
+<tr><td>POST</td><td>Create / process</td><td>Yes</td><td>No</td><td>No</td></tr>
+<tr><td>PUT</td><td>Replace</td><td>Yes</td><td>Yes</td><td>No</td></tr>
+<tr><td>PATCH</td><td>Partial update</td><td>Yes</td><td>No*</td><td>No</td></tr>
+<tr><td>DELETE</td><td>Remove</td><td>Optional</td><td>Yes</td><td>No</td></tr>
+<tr><td>HEAD</td><td>Read headers only</td><td>No</td><td>Yes</td><td>Yes</td></tr>
+<tr><td>OPTIONS</td><td>Describe options</td><td>No</td><td>Yes</td><td>Yes</td></tr>
+<tr><td>CONNECT</td><td>Tunnel</td><td>No</td><td>No</td><td>No</td></tr>
+<tr><td>TRACE</td><td>Echo / debug</td><td>No</td><td>Yes</td><td>Yes</td></tr>
+</tbody></table></div>
+<p>* PATCH <em>can</em> be idempotent if the patch document is a full replacement, but the spec does not require it.</p>
+
+<hr>
+
+<h1 id="3-http-headers">3. HTTP Headers<a class="anchor" href="#3-http-headers">#</a></h1>
+
+<h2 id="31-definition">3.1 Definition<a class="anchor" href="#31-definition">#</a></h2>
+<p>Headers are <strong>metadata</strong> attached to every HTTP request and response &mdash; like the label on an envelope. They tell each side who is talking, what format the data is in, how long it can be cached, and how to authenticate.</p>
+<pre><code>GET /api/users HTTP/1.1
+Host: api.example.com
+Accept: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIs...</code></pre>
+
+<h2 id="32-header-categories">3.2 Header categories<a class="anchor" href="#32-header-categories">#</a></h2>
+
+<h3>Request headers</h3>
+<p>Sent by the browser or client. Describe <strong>who is asking and what they want</strong>.</p>
+<div class="table-wrap"><table><thead><tr><th>Header</th><th>Purpose</th><th>Example</th></tr></thead><tbody>
+<tr><td><code>Host</code></td><td>Target hostname (required in HTTP/1.1)</td><td><code>Host: api.example.com</code></td></tr>
+<tr><td><code>Accept</code></td><td>Preferred response format</td><td><code>Accept: application/json</code></td></tr>
+<tr><td><code>User-Agent</code></td><td>Client software identifier</td><td><code>User-Agent: Mozilla/5.0 ...</code></td></tr>
+<tr><td><code>Authorization</code></td><td>Credentials for authentication</td><td><code>Authorization: Bearer &lt;token&gt;</code></td></tr>
+<tr><td><code>Cookie</code></td><td>Previously stored cookies</td><td><code>Cookie: session_id=abc123</code></td></tr>
+</tbody></table></div>
+
+<h3>Response headers</h3>
+<p>Sent by the server. Describe <strong>what is being returned and how to handle it</strong>.</p>
+<div class="table-wrap"><table><thead><tr><th>Header</th><th>Purpose</th><th>Example</th></tr></thead><tbody>
+<tr><td><code>Content-Type</code></td><td>Body media type</td><td><code>Content-Type: application/json</code></td></tr>
+<tr><td><code>Content-Length</code></td><td>Body size in bytes</td><td><code>Content-Length: 1024</code></td></tr>
+<tr><td><code>Set-Cookie</code></td><td>Store a cookie on the client</td><td><code>Set-Cookie: id=abc; HttpOnly</code></td></tr>
+<tr><td><code>Cache-Control</code></td><td>Caching directives</td><td><code>Cache-Control: max-age=3600</code></td></tr>
+<tr><td><code>ETag</code></td><td>Resource fingerprint for validation</td><td><code>ETag: "33a64df5"</code></td></tr>
+</tbody></table></div>
+
+<h3>General headers</h3>
+<p>Appear on <strong>both</strong> request and response. Not specific to the body.</p>
+<ul>
+<li><code>Cache-Control</code> &mdash; caching directives for both directions.</li>
+<li><code>Connection</code> &mdash; whether to keep the connection alive or close it.</li>
+<li><code>Date</code> &mdash; timestamp of the message.</li>
+</ul>
+
+<h3>Entity / representation headers</h3>
+<p>Describe the <strong>body content itself</strong>.</p>
+<ul>
+<li><code>Content-Type</code> &mdash; media type of the body (<code>application/json</code>, <code>text/html</code>).</li>
+<li><code>Content-Length</code> &mdash; size in bytes.</li>
+<li><code>Content-Encoding</code> &mdash; compression applied (<code>gzip</code>, <code>br</code>).</li>
+</ul>
+
+<h2 id="33-authorization">3.3 Authorization<a class="anchor" href="#33-authorization">#</a></h2>
+<p>How a client proves its identity to the server.</p>
+<div class="table-wrap"><table><thead><tr><th>Scheme</th><th>How it works</th><th>When to use</th></tr></thead><tbody>
+<tr><td><strong>Basic Auth</strong></td><td>Base64-encoded <code>username:password</code> in every request</td><td>Internal tools, always over HTTPS</td></tr>
+<tr><td><strong>Bearer / JWT</strong></td><td>Client sends a signed token; server verifies the signature</td><td>Most modern APIs</td></tr>
+<tr><td><strong>API Key</strong></td><td>Static key in header or query param</td><td>Machine-to-machine calls</td></tr>
+</tbody></table></div>
+<pre><code># Basic
+Authorization: Basic dXNlcjpwYXNz
+
+# Bearer / JWT
+Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
+
+# API Key (header)
+X-API-Key: sk-abc123</code></pre>
+
+<h2 id="34-content-type">3.4 Content-Type<a class="anchor" href="#34-content-type">#</a></h2>
+<p>Tells the server (request) or the client (response) <strong>what type of data</strong> the body contains.</p>
+<div class="table-wrap"><table><thead><tr><th>Value</th><th>Use</th></tr></thead><tbody>
+<tr><td><code>application/json</code></td><td>JSON API payloads</td></tr>
+<tr><td><code>application/x-www-form-urlencoded</code></td><td>Classic HTML form submissions</td></tr>
+<tr><td><code>multipart/form-data</code></td><td>File uploads</td></tr>
+<tr><td><code>text/html</code></td><td>Web pages</td></tr>
+<tr><td><code>text/plain</code></td><td>Plain text</td></tr>
+</tbody></table></div>
+
+<hr>
+
+<h1 id="4-http-body">4. HTTP Body<a class="anchor" href="#4-http-body">#</a></h1>
+
+<h2 id="41-definition">4.1 Definition<a class="anchor" href="#41-definition">#</a></h2>
+<p>The body is the part of an HTTP message that carries the <strong>actual data</strong> being sent. Not every request or response has one &mdash; a GET request typically has no body, and a <code>204 No Content</code> response has no body by definition.</p>
+
+<h2 id="42-request-body">4.2 Request body<a class="anchor" href="#42-request-body">#</a></h2>
+<p>Sent by the client in methods that carry data: <strong>POST</strong>, <strong>PUT</strong>, <strong>PATCH</strong>.</p>
+<pre><code>POST /api/orders HTTP/1.1
+Content-Type: application/json
+
+{
+  "product_id": 101,
+  "quantity": 2
+}</code></pre>
+
+<h2 id="43-response-body">4.3 Response body<a class="anchor" href="#43-response-body">#</a></h2>
+<p>Sent by the server. Contains the resource data, an HTML page, a JSON payload, an error message, or nothing at all.</p>
+<pre><code>HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "id": 42,
+  "name": "Alice",
+  "email": "alice@example.com"
+}</code></pre>
+
+<h2 id="44-common-content-types">4.4 Common content types<a class="anchor" href="#44-common-content-types">#</a></h2>
+<ul>
+<li><strong>JSON</strong> &mdash; <code>application/json</code>. The default for modern APIs.</li>
+<li><strong>Form data</strong> &mdash; <code>application/x-www-form-urlencoded</code> or <code>multipart/form-data</code>.</li>
+<li><strong>Files</strong> &mdash; any MIME type (<code>image/png</code>, <code>application/pdf</code>, etc.).</li>
+<li><strong>Plain text</strong> &mdash; <code>text/plain</code>.</li>
+<li><strong>HTML</strong> &mdash; <code>text/html</code>.</li>
+</ul>
+
+<hr>
+
+<h1 id="5-status-codes">5. Status Codes<a class="anchor" href="#5-status-codes">#</a></h1>
+<p>Every HTTP response carries a three-digit status code that tells the client what happened.</p>
+
+<div class="table-wrap"><table><thead><tr><th>Range</th><th>Category</th><th>Meaning</th></tr></thead><tbody>
+<tr><td><strong>1xx</strong></td><td>Informational</td><td>Request received, processing continues</td></tr>
+<tr><td><strong>2xx</strong></td><td>Success</td><td>Request accepted and processed</td></tr>
+<tr><td><strong>3xx</strong></td><td>Redirection</td><td>Further action needed (follow a new URL)</td></tr>
+<tr><td><strong>4xx</strong></td><td>Client error</td><td>Bad request, not found, not authorised</td></tr>
+<tr><td><strong>5xx</strong></td><td>Server error</td><td>Server failed to fulfil a valid request</td></tr>
+</tbody></table></div>
+
+<h3>Common codes worth memorising</h3>
+<div class="table-wrap"><table><thead><tr><th>Code</th><th>Name</th><th>When</th></tr></thead><tbody>
+<tr><td>200</td><td>OK</td><td>Standard success</td></tr>
+<tr><td>201</td><td>Created</td><td>Resource created (POST, PUT)</td></tr>
+<tr><td>204</td><td>No Content</td><td>Success, no body (DELETE)</td></tr>
+<tr><td>301</td><td>Moved Permanently</td><td>URL changed forever, update bookmarks</td></tr>
+<tr><td>302</td><td>Found</td><td>Temporary redirect</td></tr>
+<tr><td>304</td><td>Not Modified</td><td>Cache is still valid</td></tr>
+<tr><td>400</td><td>Bad Request</td><td>Malformed syntax or invalid parameters</td></tr>
+<tr><td>401</td><td>Unauthorised</td><td>Authentication required or failed</td></tr>
+<tr><td>403</td><td>Forbidden</td><td>Authenticated but not authorised</td></tr>
+<tr><td>404</td><td>Not Found</td><td>Resource does not exist</td></tr>
+<tr><td>429</td><td>Too Many Requests</td><td>Rate limit exceeded</td></tr>
+<tr><td>500</td><td>Internal Server Error</td><td>Generic server failure</td></tr>
+<tr><td>502</td><td>Bad Gateway</td><td>Upstream server returned invalid response</td></tr>
+<tr><td>503</td><td>Service Unavailable</td><td>Server overloaded or in maintenance</td></tr>
+<tr><td>504</td><td>Gateway Timeout</td><td>Upstream server did not respond in time</td></tr>
+</tbody></table></div>
+
+<hr>
+
+<h1 id="6-handling-state">6. Handling State<a class="anchor" href="#6-handling-state">#</a></h1>
+<p>HTTP is stateless &mdash; the server does not remember anything between requests. Every mechanism for "remembering" a user is built <em>on top of</em> HTTP, not inside it.</p>
+
+<div class="table-wrap"><table><thead><tr><th>Mechanism</th><th>Where it lives</th><th>How it works</th></tr></thead><tbody>
+<tr><td><strong>Cookies</strong></td><td>Browser &harr; server (header)</td><td>Server sends <code>Set-Cookie</code>; browser attaches <code>Cookie</code> header on every subsequent request to that domain.</td></tr>
+<tr><td><strong>Sessions</strong></td><td>Server-side store</td><td>Server creates a session object, gives the client a session ID (usually in a cookie). State lives on the server.</td></tr>
+<tr><td><strong>Tokens (JWT)</strong></td><td>Client-side (header / storage)</td><td>Server issues a signed token containing claims. Client sends it in <code>Authorization: Bearer</code>. Server verifies the signature &mdash; no server-side lookup needed.</td></tr>
+</tbody></table></div>
+
+<hr>
+
+<h1 id="7-idempotency">7. Idempotency<a class="anchor" href="#7-idempotency">#</a></h1>
+
+<h2 id="71-definition">7.1 Definition<a class="anchor" href="#71-definition">#</a></h2>
+<p>A request is <strong>idempotent</strong> if making it multiple times produces the <strong>same final state</strong> as making it once. This is about the state on the server, not about the response body &mdash; a DELETE that returns <code>200</code> the first time and <code>404</code> the second time is still idempotent because the server state after both calls is the same: the resource is gone.</p>
+
+<h2 id="72-by-method">7.2 By method<a class="anchor" href="#72-by-method">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>Method</th><th>Idempotent?</th><th>Why</th></tr></thead><tbody>
+<tr><td>GET</td><td>Yes</td><td>Reading does not change state</td></tr>
+<tr><td>PUT</td><td>Yes</td><td>Full replacement &mdash; same input, same result</td></tr>
+<tr><td>DELETE</td><td>Yes</td><td>Deleting twice = resource still gone</td></tr>
+<tr><td>HEAD</td><td>Yes</td><td>Same as GET, no body</td></tr>
+<tr><td>OPTIONS</td><td>Yes</td><td>Describes capabilities, no side effects</td></tr>
+<tr><td>POST</td><td><strong>No</strong></td><td>Creates new resources &mdash; two POSTs may create two records</td></tr>
+<tr><td>PATCH</td><td><strong>No</strong></td><td>Depends on the patch semantics (increment operations are not idempotent)</td></tr>
+<tr><td>CONNECT</td><td><strong>No</strong></td><td>Opens a new tunnel each time</td></tr>
+</tbody></table></div>
+<blockquote><p><strong>Why it matters:</strong> idempotent methods are safe to retry on network failure. If a PUT times out and you resend it, you get the same result. If a POST times out and you resend it, you might create a duplicate. This is why payment APIs use idempotency keys.</p></blockquote>
+
+<hr>
+
+<h1 id="8-http-version-evolution">8. HTTP Version Evolution<a class="anchor" href="#8-http-version-evolution">#</a></h1>
+<p>This is the core of the topic. Each version solved the previous version's biggest pain point &mdash; and introduced the next one.</p>
+
+<h2 id="80-http09">8.0 HTTP/0.9<a class="anchor" href="#80-http09">#</a></h2>
+<p>The original 1991 protocol. One-line requests, HTML-only responses, no headers, no status codes. A historical footnote &mdash; not used today.</p>
+<pre><code>GET /page.html</code></pre>
+
+<h2 id="81-http10">8.1 HTTP/1.0<a class="anchor" href="#81-http10">#</a></h2>
+<p>Introduced headers, status codes, and content types. But every request required a <strong>new TCP connection</strong>.</p>
+<ul>
+<li>One request per TCP connection.</li>
+<li>Connection closes after each response.</li>
+<li>No persistent connections by default.</li>
+</ul>
+<h4>Problems</h4>
+<ul>
+<li><strong>Slow</strong> &mdash; TCP handshake on every single request.</li>
+<li><strong>Latency</strong> &mdash; a page with 20 images means 20 separate TCP connections.</li>
+<li><strong>No pipelining</strong> &mdash; completely sequential.</li>
+</ul>
+<pre><code># Request 1: open TCP → GET index.html → close TCP
+# Request 2: open TCP → GET style.css  → close TCP
+# Request 3: open TCP → GET logo.png   → close TCP
+# ... every resource = full round-trip overhead</code></pre>
+
+<h2 id="82-http11">8.2 HTTP/1.1<a class="anchor" href="#82-http11">#</a></h2>
+<p>The workhorse of the web for two decades (1997&ndash;2015+). Key improvements:</p>
+<ul>
+<li><strong>Persistent connections (Keep-Alive)</strong> &mdash; the TCP connection stays open for multiple requests.</li>
+<li><strong>Pipelining</strong> &mdash; send multiple requests without waiting for the first response (rarely used in practice).</li>
+<li><strong>Chunked transfer encoding</strong> &mdash; stream a response before the server knows the total size.</li>
+<li><strong>Host header</strong> &mdash; enables virtual hosting (multiple domains on one IP).</li>
+<li><strong>Improved caching</strong> &mdash; <code>Cache-Control</code>, <code>ETag</code>, conditional requests.</li>
+</ul>
+<pre><code># One TCP connection, multiple requests:
+GET /index.html HTTP/1.1    → 200 OK
+GET /style.css  HTTP/1.1    → 200 OK
+GET /logo.png   HTTP/1.1    → 200 OK
+# Connection stays open (Keep-Alive)</code></pre>
+<h4>The problem: Head-of-Line (HOL) blocking</h4>
+<p>Requests on a single connection must be processed <strong>sequentially</strong>. Even though the browser can send multiple requests, it cannot receive a later response until the previous one is fully delivered. If one response is slow, everything behind it waits.</p>
+<blockquote><p><strong>Workaround:</strong> browsers open 6&ndash;8 parallel TCP connections per domain. This helps but wastes resources and does not truly solve the problem.</p></blockquote>
+
+<h2 id="83-http2">8.3 HTTP/2<a class="anchor" href="#83-http2">#</a></h2>
+<p>Published in 2015, based on Google's SPDY. A major upgrade.</p>
+<ul>
+<li><strong>Multiplexing</strong> &mdash; multiple requests and responses <strong>in parallel</strong> over a <strong>single TCP connection</strong>. No more HOL blocking at the application layer.</li>
+<li><strong>Binary framing</strong> &mdash; data is split into binary frames, not human-readable text. More compact, faster to parse.</li>
+<li><strong>Header compression (HPACK)</strong> &mdash; headers are compressed and deduplicated. A typical API call's headers shrink dramatically.</li>
+<li><strong>Server push</strong> &mdash; the server can proactively send resources the client will need (e.g., push <code>style.css</code> alongside <code>index.html</code>). Rarely used in practice and deprecated in Chrome.</li>
+<li><strong>Stream prioritisation</strong> &mdash; the client can hint which resources are more important.</li>
+</ul>
+<pre><code># Single TCP connection, interleaved streams:
+Stream 1: GET /index.html  ─┐
+Stream 2: GET /style.css   ─┤  all multiplexed
+Stream 3: GET /app.js      ─┤  on one connection
+Stream 4: GET /logo.png    ─┘</code></pre>
+<h4>The remaining problem: TCP-level HOL blocking</h4>
+<p>HTTP/2 solves HOL blocking at the HTTP layer, but <strong>TCP itself still has HOL blocking</strong>. If a single TCP packet is lost, the entire connection stalls while TCP retransmits it &mdash; even streams whose data was not in the lost packet. This is worse on lossy networks (mobile, Wi-Fi).</p>
+
+<h2 id="84-http3">8.4 HTTP/3<a class="anchor" href="#84-http3">#</a></h2>
+<p>The current generation. HTTP/3 replaces TCP entirely with <strong>QUIC</strong>, a transport protocol built on <strong>UDP</strong>.</p>
+<ul>
+<li><strong>Built on QUIC (UDP-based)</strong> &mdash; no TCP at all. QUIC handles reliability, congestion control, and encryption itself.</li>
+<li><strong>Faster connection setup</strong> &mdash; QUIC combines the transport handshake and TLS handshake into a single round-trip (1-RTT), or even zero round-trips on reconnection (0-RTT).</li>
+<li><strong>No TCP-level HOL blocking</strong> &mdash; QUIC streams are independent. A lost packet only blocks the stream it belongs to, not the entire connection.</li>
+<li><strong>Connection migration</strong> &mdash; connections survive IP changes (e.g., switching from Wi-Fi to mobile data) because QUIC identifies connections by ID, not by IP+port.</li>
+<li><strong>Better performance on bad networks</strong> &mdash; the independent-stream design means lossy connections degrade gracefully.</li>
+</ul>
+<pre><code># The modern web stack:
+HTTP/3  →  QUIC  →  UDP
+ (app)    (transport)  (network)
+
+# vs the old stack:
+HTTP/1.1 or HTTP/2  →  TLS  →  TCP
+     (app)           (security) (transport)</code></pre>
+
+<h3>Version evolution summary</h3>
+<div class="table-wrap"><table><thead><tr><th>Version</th><th>Transport</th><th>Key feature</th><th>Main problem it solved</th><th>Remaining problem</th></tr></thead><tbody>
+<tr><td>HTTP/0.9</td><td>TCP</td><td>Basic GET</td><td>&mdash;</td><td>No headers, no status codes</td></tr>
+<tr><td>HTTP/1.0</td><td>TCP</td><td>Headers, status codes</td><td>No metadata</td><td>New TCP connection per request</td></tr>
+<tr><td>HTTP/1.1</td><td>TCP</td><td>Keep-Alive, chunked encoding</td><td>Connection-per-request waste</td><td>HOL blocking (application layer)</td></tr>
+<tr><td>HTTP/2</td><td>TCP + TLS</td><td>Multiplexing, HPACK, binary</td><td>App-layer HOL blocking</td><td>TCP-level HOL blocking</td></tr>
+<tr><td>HTTP/3</td><td>QUIC (UDP)</td><td>Independent streams, 0-RTT</td><td>TCP-level HOL blocking</td><td>UDP blocking by some firewalls</td></tr>
+</tbody></table></div>
+
+<hr>
+
+<h1 id="9-http-caching">9. HTTP Caching<a class="anchor" href="#9-http-caching">#</a></h1>
+
+<h2 id="91-definition">9.1 Definition<a class="anchor" href="#91-definition">#</a></h2>
+<p>Caching is a mechanism that <strong>stores HTTP responses</strong> so they can be served faster on future requests without hitting the origin server. The goal is simple: do not fetch what you already have.</p>
+
+<h3>Without caching vs with caching</h3>
+<div class="table-wrap"><table><thead><tr><th></th><th>Without caching</th><th>With caching</th></tr></thead><tbody>
+<tr><td>Every request</td><td>Hits the server</td><td>Served from cache if valid</td></tr>
+<tr><td>Latency</td><td>Network round-trip every time</td><td>Near-instant for cache hits</td></tr>
+<tr><td>Server load</td><td>High</td><td>Reduced</td></tr>
+<tr><td>Bandwidth</td><td>Full response every time</td><td>Zero bytes on 304 Not Modified</td></tr>
+</tbody></table></div>
+
+<h2 id="92-caching-flow">9.2 Caching flow<a class="anchor" href="#92-caching-flow">#</a></h2>
+<ol>
+<li><strong>First request</strong> &mdash; browser sends request; server responds with caching headers (<code>Cache-Control</code>, <code>ETag</code>, <code>Last-Modified</code>).</li>
+<li><strong>Browser stores</strong> the response in its cache.</li>
+<li><strong>Next request for the same resource</strong>:
+  <ul>
+    <li>If the cache entry is still <strong>valid</strong> (not expired) &rarr; <strong>cache hit</strong>, served instantly.</li>
+    <li>If the cache entry is <strong>expired</strong> &rarr; browser sends a <strong>conditional request</strong> (<code>If-None-Match</code> or <code>If-Modified-Since</code>) to revalidate.</li>
+    <li>Server returns <strong>304 Not Modified</strong> (use the cached version) or <strong>200 OK</strong> with fresh content.</li>
+  </ul>
+</li>
+</ol>
+
+<h2 id="93-etag">9.3 ETag (Entity Tag)<a class="anchor" href="#93-etag">#</a></h2>
+<p>A <strong>unique fingerprint</strong> (hash) of a resource. The server sends it with the response; the browser stores it and sends it back on the next request.</p>
+<pre><code># First response
+HTTP/1.1 200 OK
+ETag: "33a64df551425fcc55e4d42a148795d9f25f89d4"
+
+# Next request (conditional)
+GET /style.css HTTP/1.1
+If-None-Match: "33a64df551425fcc55e4d42a148795d9f25f89d4"
+
+# Server response (resource unchanged)
+HTTP/1.1 304 Not Modified</code></pre>
+<p>If the resource <em>has</em> changed, the server returns <code>200 OK</code> with the new content and a new ETag.</p>
+
+<h2 id="94-heuristic-caching">9.4 Heuristic caching<a class="anchor" href="#94-heuristic-caching">#</a></h2>
+<p>When the server sends <strong>no</strong> <code>Cache-Control</code> or <code>Expires</code> header, the browser falls back to a heuristic: it uses the <code>Last-Modified</code> date and caches the resource for roughly <strong>10% of the time since it was last modified</strong>.</p>
+<blockquote><p>A file last modified 100 days ago would be heuristically cached for about 10 days. This is why setting explicit <code>Cache-Control</code> headers is important &mdash; heuristic caching is unpredictable.</p></blockquote>
+
+<h2 id="95-cache-control-headers">9.5 Cache-Control headers<a class="anchor" href="#95-cache-control-headers">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>Directive</th><th>Meaning</th></tr></thead><tbody>
+<tr><td><code>max-age=3600</code></td><td>Cache for 3600 seconds (1 hour). After that, revalidate.</td></tr>
+<tr><td><code>no-cache</code></td><td>Always revalidate with the server before using the cached version. The response <em>is</em> stored; it is just never used without checking first.</td></tr>
+<tr><td><code>no-store</code></td><td>Do not cache at all. Not in memory, not on disk.</td></tr>
+<tr><td><code>public</code></td><td>Any cache (browser, CDN, proxy) may store this.</td></tr>
+<tr><td><code>private</code></td><td>Only the end user's browser may cache this. CDNs and proxies must not.</td></tr>
+<tr><td><code>must-revalidate</code></td><td>Once expired, the cache must not serve stale content &mdash; it must revalidate.</td></tr>
+<tr><td><code>immutable</code></td><td>The resource will never change. Do not even revalidate. Used with hashed filenames (<code>app.a1b2c3.js</code>).</td></tr>
+</tbody></table></div>
+<pre><code># Typical for a hashed static asset:
+Cache-Control: public, max-age=31536000, immutable
+
+# Typical for an API response:
+Cache-Control: private, no-cache
+
+# Sensitive data (bank statements, health records):
+Cache-Control: no-store</code></pre>
+
+<hr>
+
+<h1 id="10-cdn-caching">10. CDN Caching<a class="anchor" href="#10-cdn-caching">#</a></h1>
+
+<h2 id="101-definition">10.1 Definition<a class="anchor" href="#101-definition">#</a></h2>
+<p>A <strong>CDN (Content Delivery Network)</strong> is a network of servers distributed geographically that stores copies of content <strong>close to users</strong>. Instead of every request travelling to the origin server, most requests are served by a nearby <strong>edge node</strong>.</p>
+
+<h2 id="102-cdn-caching-flow">10.2 CDN caching flow<a class="anchor" href="#102-cdn-caching-flow">#</a></h2>
+<h4>First request (cache miss)</h4>
+<pre><code>User  →  CDN edge (miss)  →  Origin server
+                               ↓
+User  ←  CDN edge (stores) ←  Response</code></pre>
+<h4>Subsequent requests (cache hit)</h4>
+<pre><code>User  →  CDN edge (hit)  →  User
+         (no origin hit)</code></pre>
+
+<h2 id="103-additional-cdn-benefits">10.3 Additional CDN benefits<a class="anchor" href="#103-additional-cdn-benefits">#</a></h2>
+<ul>
+<li><strong>DDoS protection</strong> &mdash; absorbs attack traffic at the edge before it reaches the origin.</li>
+<li><strong>TLS termination</strong> &mdash; handles HTTPS at the edge, reducing load on the origin.</li>
+<li><strong>Load distribution</strong> &mdash; spreads traffic across many servers.</li>
+<li><strong>Geographic performance</strong> &mdash; a user in Tokyo gets content from a Tokyo edge node, not from a server in Virginia.</li>
+</ul>
+
+<hr>
+
+<h1 id="11-server-cache">11. Server Cache<a class="anchor" href="#11-server-cache">#</a></h1>
+
+<h2 id="111-what-to-cache">11.1 What to cache<a class="anchor" href="#111-what-to-cache">#</a></h2>
+<ul>
+<li><strong>Database query results</strong> &mdash; expensive queries that return the same data for many requests.</li>
+<li><strong>Computed / aggregated data</strong> &mdash; dashboards, analytics, leaderboards.</li>
+<li><strong>Session data</strong> &mdash; user sessions stored in Redis or Memcached.</li>
+<li><strong>External API responses</strong> &mdash; third-party data that does not change frequently.</li>
+<li><strong>Rendered HTML fragments</strong> &mdash; partial page renders, template fragments.</li>
+</ul>
+
+<h2 id="112-validation-strategies">11.2 Validation strategies<a class="anchor" href="#112-validation-strategies">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>Strategy</th><th>How it works</th></tr></thead><tbody>
+<tr><td><strong>TTL (Time to Live)</strong></td><td>Cache entry expires after a fixed duration. Simple but allows stale reads.</td></tr>
+<tr><td><strong>Event-based invalidation</strong></td><td>When data changes, an event (webhook, message) explicitly invalidates the cache entry.</td></tr>
+<tr><td><strong>Cache-aside (lazy loading)</strong></td><td>App checks cache first; on miss, loads from DB and writes to cache. Most common pattern.</td></tr>
+<tr><td><strong>Write-through</strong></td><td>Every write goes to cache and DB simultaneously. Cache is always fresh but writes are slower.</td></tr>
+<tr><td><strong>Cache versioning</strong></td><td>Append a version key to cache entries. Bump the version to invalidate all entries at once.</td></tr>
+</tbody></table></div>
+
+<h2 id="113-cache-invalidation">11.3 Cache invalidation<a class="anchor" href="#113-cache-invalidation">#</a></h2>
+<blockquote><p>"There are only two hard things in computer science: cache invalidation and naming things." &mdash; Phil Karlton</p></blockquote>
+<p>The hard problem is knowing <strong>when exactly to invalidate</strong>. There is always a trade-off:</p>
+<ul>
+<li><strong>Consistency (freshness)</strong> &mdash; how quickly do users see updated data?</li>
+<li><strong>Performance (fewer DB hits)</strong> &mdash; how long can we serve from cache before checking?</li>
+</ul>
+<p>There is no universal answer. The right TTL depends on the use case: a stock price needs sub-second freshness; a blog post can be cached for hours.</p>
+
+<hr>
+
+<h1 id="12-quick-revision-sheet">12. Quick revision sheet<a class="anchor" href="#12-quick-revision-sheet">#</a></h1>
+
+<div class="table-wrap"><table><thead><tr><th>Version</th><th>Year</th><th>Transport</th><th>Connection model</th><th>Key innovation</th><th>Weakness</th></tr></thead><tbody>
+<tr><td>HTTP/0.9</td><td>1991</td><td>TCP</td><td>One request, close</td><td>Simplicity</td><td>No headers, no status codes</td></tr>
+<tr><td>HTTP/1.0</td><td>1996</td><td>TCP</td><td>One request per connection</td><td>Headers, status codes, content types</td><td>New TCP handshake per request</td></tr>
+<tr><td>HTTP/1.1</td><td>1997</td><td>TCP</td><td>Persistent (Keep-Alive)</td><td>Connection reuse, chunked encoding, caching</td><td>HOL blocking (app layer)</td></tr>
+<tr><td>HTTP/2</td><td>2015</td><td>TCP + TLS</td><td>Multiplexed streams</td><td>Binary framing, HPACK, server push</td><td>HOL blocking (TCP layer)</td></tr>
+<tr><td>HTTP/3</td><td>2022</td><td>QUIC (UDP)</td><td>Independent streams</td><td>0-RTT, no TCP HOL, connection migration</td><td>UDP firewall blocking, newer ecosystem</td></tr>
+</tbody></table></div>
+
+<h3>One sentence each</h3>
+<ul>
+<li><strong>HTTP/1.0</strong> &mdash; one connection, one request, throw it away.</li>
+<li><strong>HTTP/1.1</strong> &mdash; keep the connection alive but still queue responses one at a time.</li>
+<li><strong>HTTP/2</strong> &mdash; multiplex many streams over one TCP connection, but a single lost packet stalls them all.</li>
+<li><strong>HTTP/3</strong> &mdash; replace TCP with QUIC so each stream is independent and a lost packet only affects its own stream.</li>
+</ul>
+
+<footer>
+<p><strong>Previous:</strong> <a href="../OSI_LAYERS_5-6-7_SESSION_PRESENTATION_APPLICATION/index.html">OSI Layers 5, 6 &amp; 7 &mdash; Session, Presentation &amp; Application</a></p>
+<p><strong>Next:</strong> <a href="../DNS_LOAD_BALANCING/index.html">DNS &amp; Load Balancing</a></p>
+</footer>
+</main>
+</div>
+</body>
+</html>

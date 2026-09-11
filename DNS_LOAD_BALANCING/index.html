@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="en" data-theme-auto>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DNS &amp; Load Balancing</title>
+<style>
+:root{
+  --bg:#fbfbf9; --surface:#ffffff; --ink:#1c1c1a; --muted:#5c5c56;
+  --line:#e3e3dd; --accent:#8a4b2a; --accent-soft:#f3ece7;
+  --code-bg:#f5f4f0; --quote-bg:#f7f5f1;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#16161a; --surface:#1d1d22; --ink:#e8e8e4; --muted:#a0a099;
+    --line:#32323a; --accent:#e0a077; --accent-soft:#2a2320;
+    --code-bg:#232329; --quote-bg:#202026;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#16161a; --surface:#1d1d22; --ink:#e8e8e4; --muted:#a0a099;
+  --line:#32323a; --accent:#e0a077; --accent-soft:#2a2320;
+  --code-bg:#232329; --quote-bg:#202026;
+}
+*{box-sizing:border-box}
+body{
+  background:var(--bg); color:var(--ink); margin:0;
+  font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,
+       "Helvetica Neue",Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.layout{max-width:1180px;margin:0 auto;padding:0 24px;
+  display:grid;grid-template-columns:236px minmax(0,1fr);gap:48px}
+nav.toc{position:sticky;top:0;align-self:start;max-height:100vh;
+  overflow-y:auto;padding:40px 0 40px;font-size:13.5px}
+nav.toc .label{text-transform:uppercase;letter-spacing:.09em;
+  font-size:11px;color:var(--muted);font-weight:700;margin-bottom:12px}
+nav.toc a{display:block;color:var(--muted);text-decoration:none;
+  padding:4px 10px;border-left:2px solid transparent;line-height:1.4}
+nav.toc a:hover{color:var(--accent);border-left-color:var(--accent);
+  background:var(--accent-soft)}
+nav.toc a.lvl2{padding-left:22px;font-size:13px}
+main{padding:40px 0 96px;min-width:0}
+h1,h2,h3,h4{line-height:1.25;font-weight:650;
+  scroll-margin-top:24px;position:relative}
+h1{font-size:2.05rem;margin:.2em 0 .6em;letter-spacing:-.02em}
+h2{font-size:1.5rem;margin:2.2em 0 .7em;padding-bottom:.3em;
+  border-bottom:1px solid var(--line)}
+h3{font-size:1.16rem;margin:1.9em 0 .5em}
+h4{font-size:1rem;margin:1.5em 0 .4em;color:var(--muted)}
+.anchor{position:absolute;margin-left:.4em;color:var(--line);
+  text-decoration:none;opacity:0;font-weight:400}
+h1:hover .anchor,h2:hover .anchor,h3:hover .anchor{opacity:1}
+.anchor:hover{color:var(--accent)}
+p{margin:0 0 1em}
+a{color:var(--accent)}
+ul,ol{margin:0 0 1.15em;padding-left:1.45em}
+li{margin:.32em 0}
+li::marker{color:var(--muted)}
+hr{border:0;border-top:1px solid var(--line);margin:2.6em 0}
+code{background:var(--code-bg);border:1px solid var(--line);
+  border-radius:4px;padding:.12em .38em;font-size:.875em;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+pre{background:var(--code-bg);border:1px solid var(--line);
+  border-radius:8px;padding:16px 18px;overflow-x:auto;margin:0 0 1.3em}
+pre code{background:none;border:0;padding:0;font-size:13px;line-height:1.55}
+blockquote{margin:0 0 1.3em;padding:14px 18px;background:var(--quote-bg);
+  border-left:3px solid var(--accent);border-radius:0 8px 8px 0}
+blockquote p{margin:0 0 .6em}
+blockquote p:last-child{margin:0}
+.table-wrap{overflow-x:auto;margin:0 0 1.5em;border:1px solid var(--line);
+  border-radius:8px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:14.5px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);
+  vertical-align:top}
+th{background:var(--accent-soft);font-weight:650;white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+figure{margin:0 0 1.6em;text-align:center}
+img{max-width:100%;height:auto;border:1px solid var(--line);
+  border-radius:8px;background:var(--surface)}
+footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--line);
+  font-size:13px;color:var(--muted)}
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr;gap:0}
+  nav.toc{position:static;max-height:none;padding:28px 0 0;
+    border-bottom:1px solid var(--line);margin-bottom:8px}
+  nav.toc a.lvl2{display:none}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="toc"><div class="label">On this page</div>
+<a class="lvl1" href="#dns-and-load-balancing">DNS &amp; Load Balancing</a>
+<a class="lvl1" href="#1-dns-domain-name-system">1. DNS (Domain Name System)</a>
+<a class="lvl2" href="#11-definition">1.1 Definition</a>
+<a class="lvl2" href="#12-dns-hierarchy">1.2 DNS Hierarchy</a>
+<a class="lvl2" href="#13-key-terms">1.3 Key Terms</a>
+<a class="lvl2" href="#14-isp-vs-dns-resolver">1.4 ISP vs DNS Resolver</a>
+<a class="lvl2" href="#15-dns-resolver-deep-behaviour">1.5 DNS Resolver Deep Behaviour</a>
+<a class="lvl2" href="#16-dns-transport">1.6 DNS Transport</a>
+<a class="lvl2" href="#17-dns-packet-structure">1.7 DNS Packet Structure</a>
+<a class="lvl2" href="#18-zone-files-and-zones">1.8 Zone Files &amp; Zones</a>
+<a class="lvl2" href="#19-dns-caching">1.9 DNS Caching</a>
+<a class="lvl2" href="#110-dns-cache-poisoning">1.10 DNS Cache Poisoning</a>
+<a class="lvl2" href="#111-flushing-dns-cache">1.11 Flushing DNS Cache</a>
+<a class="lvl2" href="#112-dns-caching-strategy">1.12 DNS Caching Strategy</a>
+<a class="lvl2" href="#113-resolution-flow">1.13 Resolution Flow</a>
+<a class="lvl2" href="#114-recursive-vs-iterative-queries">1.14 Recursive vs Iterative Queries</a>
+<a class="lvl2" href="#115-ptr-records">1.15 PTR Records</a>
+<a class="lvl2" href="#116-dns-propagation">1.16 DNS Propagation</a>
+<a class="lvl2" href="#117-anycast">1.17 Anycast</a>
+<a class="lvl2" href="#118-qa">1.18 Q&amp;A</a>
+<a class="lvl1" href="#2-load-balancing">2. Load Balancing</a>
+<a class="lvl2" href="#21-vips-virtual-ips">2.1 VIPs (Virtual IPs)</a>
+<a class="lvl2" href="#22-proxy-servers">2.2 Proxy Servers</a>
+<a class="lvl2" href="#23-dns-based-load-balancing">2.3 DNS-based Load Balancing</a>
+<a class="lvl2" href="#24-where-load-balancing-connects-to-dns">2.4 Where Load Balancing Connects to DNS</a>
+<a class="lvl1" href="#3-quick-revision-sheet">3. Quick Revision Sheet</a>
+</nav>
+<main>
+<h1 id="dns-and-load-balancing">DNS &amp; Load Balancing<a class="anchor" href="#dns-and-load-balancing">#</a></h1>
+<blockquote><p>Scope: how domain names become IP addresses and how traffic is distributed across servers. Covers the full DNS resolution pipeline, record types, caching, security, and the load-balancing techniques that build on top of DNS.</p><p>Source: extracted and reorganised from <code>md/DOCUMENTATIONS ...md</code> &rarr; <code>SYSTEM_DESIGN vs BACKEND</code> &rarr; <code>PREVIOUS, OSI LAYERS, API DESIGN, Networking Essentials</code> &rarr; <code>DNS &amp; Load Balancing</code>.</p></blockquote>
+<hr>
+
+<h1 id="1-dns-domain-name-system">1. DNS (Domain Name System)<a class="anchor" href="#1-dns-domain-name-system">#</a></h1>
+
+<h2 id="11-definition">1.1 Definition<a class="anchor" href="#11-definition">#</a></h2>
+<p>DNS is a <strong>distributed system</strong> that translates human-readable domain names (like <code>example.com</code>) into IP addresses (like <code>93.184.216.34</code>) so that computers can find and communicate with each other over the network.</p>
+<p>Without DNS, every website visit would require typing a numeric IP address. DNS is often called the <strong>phonebook of the internet</strong>.</p>
+
+<h2 id="12-dns-hierarchy">1.2 DNS Hierarchy<a class="anchor" href="#12-dns-hierarchy">#</a></h2>
+<p>DNS is organised in a strict hierarchy. A query travels down the tree until an authoritative answer is found.</p>
+
+<h3>Root DNS Servers</h3>
+<ul>
+<li>Represented as <code>.</code> (a single dot).</li>
+<li>There are 13 logical root server clusters (A through M), but hundreds of physical instances distributed globally.</li>
+<li>Distributed using <strong>anycast</strong> &mdash; the same IP address is announced from many locations, and the network routes each query to the nearest one.</li>
+<li>Root servers do not know the final answer; they point you to the correct <strong>TLD server</strong>.</li>
+</ul>
+
+<h3>TLD Servers (Top-Level Domain)</h3>
+<ul>
+<li><strong>gTLD</strong> (generic): <code>.com</code>, <code>.org</code>, <code>.net</code>, <code>.io</code></li>
+<li><strong>ccTLD</strong> (country-code): <code>.uz</code>, <code>.uk</code>, <code>.de</code>, <code>.jp</code></li>
+<li>TLD servers know which <strong>authoritative name server</strong> is responsible for each domain registered under that TLD.</li>
+</ul>
+
+<h3>Authoritative DNS Servers</h3>
+<ul>
+<li>Contain the <strong>actual DNS records</strong> for a domain.</li>
+<li>Return the final answer: the IP address (or other record data) for the queried name.</li>
+<li>Common record types held here:</li>
+</ul>
+<div class="table-wrap"><table><thead><tr><th>Record</th><th>Purpose</th><th>Example</th></tr></thead><tbody>
+<tr><td><code>A</code></td><td>Maps domain to IPv4 address</td><td><code>example.com &rarr; 93.184.216.34</code></td></tr>
+<tr><td><code>AAAA</code></td><td>Maps domain to IPv6 address</td><td><code>example.com &rarr; 2606:2800:220:1:...</code></td></tr>
+<tr><td><code>MX</code></td><td>Mail exchange server</td><td><code>example.com &rarr; mail.example.com</code></td></tr>
+<tr><td><code>CNAME</code></td><td>Alias &mdash; points one name to another</td><td><code>www.example.com &rarr; example.com</code></td></tr>
+<tr><td><code>TXT</code></td><td>Arbitrary text (SPF, DKIM, verification)</td><td><code>"v=spf1 include:_spf.google.com ~all"</code></td></tr>
+</tbody></table></div>
+
+<h2 id="13-key-terms">1.3 Key Terms<a class="anchor" href="#13-key-terms">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>Term</th><th>Meaning</th><th>Example</th></tr></thead><tbody>
+<tr><td><strong>DNS</strong></td><td>Domain Name System</td><td>The entire resolution infrastructure</td></tr>
+<tr><td><strong>TLD</strong></td><td>Top-Level Domain</td><td><code>.com</code>, <code>.org</code>, <code>.uz</code></td></tr>
+<tr><td><strong>SLD</strong></td><td>Second-Level Domain</td><td><code>example</code> in <code>example.com</code></td></tr>
+<tr><td><strong>RD</strong></td><td>Root Domain (the trailing dot)</td><td><code>.</code></td></tr>
+</tbody></table></div>
+<p>A fully qualified domain name (FQDN) reads right to left: <code>www.example.com.</code> &rarr; <code>.</code> (root) &rarr; <code>com</code> (TLD) &rarr; <code>example</code> (SLD) &rarr; <code>www</code> (subdomain).</p>
+
+<h2 id="14-isp-vs-dns-resolver">1.4 ISP vs DNS Resolver<a class="anchor" href="#14-isp-vs-dns-resolver">#</a></h2>
+<p>These two are often confused because your ISP usually provides both, but they are fundamentally different services.</p>
+<div class="table-wrap"><table><thead><tr><th>Concept</th><th>ISP</th><th>DNS Resolver</th></tr></thead><tbody>
+<tr><td>What it is</td><td>Infrastructure provider &mdash; the physical connection to the internet</td><td>Directory service &mdash; translates domain names to IP addresses</td></tr>
+<tr><td>Analogy</td><td>The road system</td><td>The address book / GPS</td></tr>
+<tr><td>Can you swap it?</td><td>Switching ISP means changing contracts</td><td>Switching DNS is one settings change</td></tr>
+<tr><td>Examples</td><td>Comcast, BT, Beeline</td><td>Google DNS (<code>8.8.8.8</code>), Cloudflare (<code>1.1.1.1</code>)</td></tr>
+</tbody></table></div>
+
+<h2 id="15-dns-resolver-deep-behaviour">1.5 DNS Resolver Deep Behaviour<a class="anchor" href="#15-dns-resolver-deep-behaviour">#</a></h2>
+<p>A <strong>Recursive DNS Resolver</strong> performs the full DNS lookup on behalf of the client. The client sends a single query; the resolver handles everything: recursion, caching, retries, and optimisation.</p>
+<ul>
+<li>The client (browser, OS stub resolver) sends one recursive query to the resolver.</li>
+<li>The resolver walks the hierarchy: Root &rarr; TLD &rarr; Authoritative.</li>
+<li>Results are cached according to the record's <strong>TTL</strong>.</li>
+<li>If the cache already has the answer, no hierarchy walk is needed &mdash; the resolver returns immediately.</li>
+</ul>
+<p>Well-known public resolvers:</p>
+<div class="table-wrap"><table><thead><tr><th>Provider</th><th>Primary</th><th>Secondary</th></tr></thead><tbody>
+<tr><td>Google Public DNS</td><td><code>8.8.8.8</code></td><td><code>8.8.4.4</code></td></tr>
+<tr><td>Cloudflare</td><td><code>1.1.1.1</code></td><td><code>1.0.0.1</code></td></tr>
+<tr><td>Quad9</td><td><code>9.9.9.9</code></td><td><code>149.112.112.112</code></td></tr>
+</tbody></table></div>
+
+<h2 id="16-dns-transport">1.6 DNS Transport<a class="anchor" href="#16-dns-transport">#</a></h2>
+<p>DNS uses <strong>UDP on port 53</strong> by default. UDP is preferred because DNS queries are small and the overhead of a TCP handshake is unnecessary for most lookups.</p>
+<p>TCP (also port 53) is used when:</p>
+<ul>
+<li>The response exceeds 512 bytes (the original UDP limit) or the EDNS0 buffer size.</li>
+<li><strong>Zone transfers</strong> (AXFR/IXFR) between primary and secondary name servers.</li>
+<li><strong>DNSSEC</strong> responses, which tend to be large due to cryptographic signatures.</li>
+</ul>
+<p>Modern encrypted DNS transports:</p>
+<ul>
+<li><strong>DNS over HTTPS (DoH)</strong> &mdash; port 443, looks like normal HTTPS traffic.</li>
+<li><strong>DNS over TLS (DoT)</strong> &mdash; port 853, dedicated encrypted channel.</li>
+</ul>
+
+<h2 id="17-dns-packet-structure">1.7 DNS Packet Structure<a class="anchor" href="#17-dns-packet-structure">#</a></h2>
+<p>Every DNS message (query and response) follows the same packet format:</p>
+<div class="table-wrap"><table><thead><tr><th>Section</th><th>Contents</th></tr></thead><tbody>
+<tr><td><strong>Header</strong></td><td>Transaction ID, Flags (QR, Opcode, AA, TC, RD, RA, RCODE), Question Count, Answer Count, Authority Count, Additional Count</td></tr>
+<tr><td><strong>Question</strong></td><td>The domain name being queried, query Type (A, AAAA, MX...), query Class (usually IN for Internet)</td></tr>
+<tr><td><strong>Answer</strong></td><td>Resource Records: the IP address (or other data), TTL, record type</td></tr>
+<tr><td><strong>Authority</strong></td><td>NS records for the authoritative name servers for the zone</td></tr>
+<tr><td><strong>Additional</strong></td><td>Glue records &mdash; IP addresses of name servers listed in the Authority section, so an extra lookup is avoided</td></tr>
+</tbody></table></div>
+<pre><code>+---------------------+
+|       Header        |  ID, Flags, Counts
++---------------------+
+|      Question       |  What are you asking?
++---------------------+
+|       Answer        |  Here is the IP
++---------------------+
+|     Authority       |  Who is authoritative?
++---------------------+
+|     Additional      |  Glue records
++---------------------+</code></pre>
+
+<h2 id="18-zone-files-and-zones">1.8 Zone Files &amp; Zones<a class="anchor" href="#18-zone-files-and-zones">#</a></h2>
+<h3>What is a Zone?</h3>
+<p>A <strong>zone</strong> is a portion of the DNS namespace that is managed by a specific authoritative DNS server. A domain can be split into multiple zones &mdash; for example, <code>example.com</code> could delegate <code>us.example.com</code> to a separate zone with its own name server.</p>
+
+<h3>Zone vs Domain</h3>
+<ul>
+<li>A <strong>domain</strong> is a name in the hierarchy (<code>example.com</code>).</li>
+<li>A <strong>zone</strong> is the administrative boundary &mdash; the set of records one server is authoritative for.</li>
+<li>A domain can span multiple zones (via delegation), but a zone always belongs to exactly one authoritative server (or its replicas).</li>
+</ul>
+
+<h3>What is a Zone File?</h3>
+<p>A <strong>zone file</strong> is a plain-text file stored on the authoritative server. It contains the actual DNS records for that zone.</p>
+<pre><code>$TTL 3600
+@   IN  SOA   ns1.example.com. admin.example.com. (
+            2024010101 ; Serial
+            3600       ; Refresh
+            900        ; Retry
+            604800     ; Expire
+            86400 )    ; Minimum TTL
+
+@   IN  NS    ns1.example.com.
+@   IN  NS    ns2.example.com.
+@   IN  A     93.184.216.34
+www IN  CNAME example.com.
+@   IN  MX 10 mail.example.com.
+mail IN A     93.184.216.35</code></pre>
+
+<h3>Key records in a zone file</h3>
+<ul>
+<li><code>$TTL</code> &mdash; default Time To Live for all records in the file.</li>
+<li><strong>SOA</strong> (Start of Authority) &mdash; identifies the primary name server, contact email, serial number, and timing parameters.</li>
+<li><strong>NS</strong> &mdash; name server records for the zone.</li>
+<li><strong>A / AAAA</strong> &mdash; address records.</li>
+<li><strong>CNAME</strong> &mdash; canonical name aliases.</li>
+<li><strong>MX</strong> &mdash; mail exchange records with priority.</li>
+</ul>
+
+<h3>Forward vs Reverse Lookup Zones</h3>
+<ul>
+<li><strong>Forward lookup zone</strong>: domain name &rarr; IP address (the normal case).</li>
+<li><strong>Reverse lookup zone</strong>: IP address &rarr; domain name (uses <code>in-addr.arpa</code> for IPv4, <code>ip6.arpa</code> for IPv6).</li>
+</ul>
+
+<h2 id="19-dns-caching">1.9 DNS Caching<a class="anchor" href="#19-dns-caching">#</a></h2>
+<p>DNS responses are cached at multiple levels to reduce latency and load on authoritative servers.</p>
+
+<h3>Cache layers (checked in order)</h3>
+<ol>
+<li><strong>Browser cache</strong> &mdash; Chrome, Firefox, etc. maintain their own DNS cache.</li>
+<li><strong>OS cache</strong> &mdash; the operating system's stub resolver (e.g. <code>systemd-resolved</code>, macOS <code>mDNSResponder</code>).</li>
+<li><strong>Resolver cache</strong> &mdash; the recursive DNS resolver (ISP or public DNS like <code>8.8.8.8</code>).</li>
+<li><strong>CDN / Edge cache</strong> &mdash; CDN providers may cache DNS responses at their edge nodes.</li>
+</ol>
+
+<h3>How caching works</h3>
+<pre><code>User types URL
+    &darr;
+Browser cache hit? &rarr; yes &rarr; use cached IP
+    &darr; no
+OS cache hit?      &rarr; yes &rarr; use cached IP
+    &darr; no
+Resolver cache hit? &rarr; yes &rarr; use cached IP
+    &darr; no
+Full resolution: Root &rarr; TLD &rarr; Authoritative
+    &darr;
+Cache the result at every level (with TTL)</code></pre>
+
+<h3>TTL (Time To Live)</h3>
+<p>TTL defines how long (in seconds) a DNS record may be cached before it must be re-queried. Set by the domain owner on the authoritative server.</p>
+<ul>
+<li><strong>Positive caching</strong>: caching a successful response (the normal case).</li>
+<li><strong>Negative caching</strong>: caching the fact that a name does <em>not</em> exist (NXDOMAIN). Governed by the SOA record's minimum TTL.</li>
+</ul>
+<p><strong>Cache hit</strong>: the record is found in cache and still within its TTL &mdash; no network query needed.<br>
+<strong>Cache miss</strong>: the record is not cached or the TTL has expired &mdash; a full or partial resolution is triggered.</p>
+
+<h2 id="110-dns-cache-poisoning">1.10 DNS Cache Poisoning<a class="anchor" href="#110-dns-cache-poisoning">#</a></h2>
+<p>An attacker injects <strong>fake DNS data</strong> into a resolver's cache, causing it to return a malicious IP address for a legitimate domain. Users are then silently redirected to attacker-controlled servers.</p>
+<h3>How it works</h3>
+<ol>
+<li>Attacker observes or predicts the query ID and source port of an outgoing DNS query.</li>
+<li>Attacker sends a forged response before the real authoritative server replies.</li>
+<li>The forged record is cached and served to all subsequent clients until the TTL expires.</li>
+</ol>
+<h3>Defences</h3>
+<ul>
+<li><strong>DNSSEC</strong> &mdash; cryptographically signs DNS records so forged responses are detected and rejected.</li>
+<li><strong>Randomised query IDs</strong> &mdash; makes it much harder for an attacker to guess the transaction ID.</li>
+<li><strong>Source port randomisation</strong> &mdash; instead of using a predictable source port, each query uses a random one.</li>
+<li><strong>DNS over HTTPS / TLS</strong> &mdash; encrypts the channel, preventing interception and injection.</li>
+</ul>
+
+<h2 id="111-flushing-dns-cache">1.11 Flushing DNS Cache<a class="anchor" href="#111-flushing-dns-cache">#</a></h2>
+<p>Sometimes you need to clear the local DNS cache manually:</p>
+<ul>
+<li>A domain's IP address has changed and you are still reaching the old server.</li>
+<li>Troubleshooting DNS resolution issues.</li>
+<li>Development and testing against staging/production environments.</li>
+</ul>
+<pre><code># macOS
+sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
+
+# Windows
+ipconfig /flushdns
+
+# Linux (systemd-resolved)
+sudo systemd-resolve --flush-caches</code></pre>
+
+<h2 id="112-dns-caching-strategy">1.12 DNS Caching Strategy<a class="anchor" href="#112-dns-caching-strategy">#</a></h2>
+<p>Choosing the right TTL is a trade-off:</p>
+<div class="table-wrap"><table><thead><tr><th></th><th>High TTL (e.g. 86400 &mdash; 24h)</th><th>Low TTL (e.g. 60 &mdash; 1min)</th></tr></thead><tbody>
+<tr><td><strong>Speed</strong></td><td>Faster &mdash; most lookups served from cache</td><td>Slower &mdash; more frequent authoritative queries</td></tr>
+<tr><td><strong>Load</strong></td><td>Less load on authoritative servers</td><td>More queries hit the authoritative server</td></tr>
+<tr><td><strong>Freshness</strong></td><td>Risk of stale records if IP changes</td><td>Near-real-time propagation of changes</td></tr>
+<tr><td><strong>Use case</strong></td><td>Stable services with fixed IPs</td><td>Failover, blue-green deployments, CDN steering</td></tr>
+</tbody></table></div>
+<blockquote><p>A common migration pattern: lower the TTL to 60s <em>before</em> a planned DNS change, wait for the old high TTL to expire, make the change, then raise the TTL back once the new record is confirmed.</p></blockquote>
+
+<h2 id="113-resolution-flow">1.13 Resolution Flow<a class="anchor" href="#113-resolution-flow">#</a></h2>
+<p>The full journey from URL to IP address:</p>
+<ol>
+<li>User enters <code>www.example.com</code> in the browser.</li>
+<li><strong>Browser cache</strong> &mdash; checked first. If a valid cached entry exists, done.</li>
+<li><strong>OS cache</strong> &mdash; the stub resolver checks the system-level cache and <code>/etc/hosts</code>.</li>
+<li><strong>Recursive DNS Resolver</strong> &mdash; the configured resolver (e.g. <code>8.8.8.8</code>) is queried.</li>
+<li>Resolver contacts a <strong>Root server</strong> &rarr; gets a referral to the <code>.com</code> TLD server.</li>
+<li>Resolver contacts the <strong>TLD server</strong> &rarr; gets a referral to <code>example.com</code>'s authoritative server.</li>
+<li>Resolver contacts the <strong>Authoritative server</strong> &rarr; gets the A record: <code>93.184.216.34</code>.</li>
+<li>Resolver caches the result and returns the IP to the client.</li>
+<li>Browser opens a TCP connection to <code>93.184.216.34</code>.</li>
+</ol>
+<pre><code>Browser &rarr; OS Stub &rarr; Recursive Resolver &rarr; Root &rarr; TLD &rarr; Authoritative
+                                   &larr; IP cached &amp; returned at each hop</code></pre>
+
+<h2 id="114-recursive-vs-iterative-queries">1.14 Recursive vs Iterative Queries<a class="anchor" href="#114-recursive-vs-iterative-queries">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>Aspect</th><th>Recursive Query</th><th>Iterative Query</th></tr></thead><tbody>
+<tr><td>Who does the work?</td><td>The resolver does ALL the work and returns the final IP</td><td>Each server returns the next server to ask; the querier does the walking</td></tr>
+<tr><td>Who uses it?</td><td>Client (browser / OS) &rarr; Recursive Resolver</td><td>Recursive Resolver &rarr; Root / TLD / Authoritative servers</td></tr>
+<tr><td>Response type</td><td>Final answer or error</td><td>Referral: "I don't know, but ask this server"</td></tr>
+</tbody></table></div>
+<ul>
+<li>The <strong>browser / OS</strong> always sends a <strong>recursive query</strong> to the configured resolver &mdash; "give me the answer, don't send me elsewhere."</li>
+<li>The <strong>resolver</strong> uses <strong>iterative queries</strong> internally when walking the hierarchy (Root &rarr; TLD &rarr; Authoritative).</li>
+<li>When the resolver already has the answer cached, it returns a <strong>non-recursive response</strong> immediately &mdash; no hierarchy walk needed.</li>
+</ul>
+
+<h2 id="115-ptr-records">1.15 PTR Records<a class="anchor" href="#115-ptr-records">#</a></h2>
+<p>A <strong>PTR (Pointer) record</strong> performs a <strong>reverse DNS lookup</strong> &mdash; it maps an IP address back to a domain name. This is the opposite of an A record.</p>
+<ul>
+<li>IPv4 reverse lookups use the <code>in-addr.arpa</code> domain. The IP octets are reversed: <code>93.184.216.34</code> becomes <code>34.216.184.93.in-addr.arpa</code>.</li>
+<li>IPv6 reverse lookups use the <code>ip6.arpa</code> domain, with each hex nibble reversed.</li>
+</ul>
+<h3>Use cases</h3>
+<ul>
+<li><strong>Email spam filtering</strong> &mdash; mail servers check whether the sending IP has a valid PTR record matching the mail domain. No PTR often means rejection.</li>
+<li><strong>Security auditing and logging</strong> &mdash; turning IP addresses in logs into readable hostnames.</li>
+<li><strong>Network troubleshooting</strong> &mdash; <code>traceroute</code> and similar tools use reverse DNS to show hostnames alongside IP addresses.</li>
+</ul>
+<pre><code># Reverse lookup with dig
+dig -x 93.184.216.34
+
+# Reverse lookup with nslookup
+nslookup 93.184.216.34</code></pre>
+
+<h2 id="116-dns-propagation">1.16 DNS Propagation<a class="anchor" href="#116-dns-propagation">#</a></h2>
+<p>When DNS records are changed (new IP, new MX, etc.), the update does <strong>not take effect globally at once</strong>. Caches at every level &mdash; browser, OS, resolver, CDN &mdash; hold the old record until its TTL expires. This delay is called <strong>DNS propagation</strong>.</p>
+<ul>
+<li>Propagation can take anywhere from minutes to 48 hours, depending on TTL values across the caching chain.</li>
+<li>Lowering TTL before a planned change reduces propagation time.</li>
+<li>There is no way to force every cache on the internet to flush simultaneously.</li>
+</ul>
+
+<h2 id="117-anycast">1.17 Anycast<a class="anchor" href="#117-anycast">#</a></h2>
+<p><strong>Anycast</strong> is a network addressing method where the <strong>same IP address</strong> is announced from multiple physical locations. The network's routing protocol (BGP) automatically sends each client to the <strong>nearest instance</strong>.</p>
+<ul>
+<li>DNS root servers use anycast &mdash; all 13 logical root servers share the same set of IPs, but hundreds of physical nodes answer worldwide.</li>
+<li>Benefits: <strong>lower latency</strong> (shortest-path routing), <strong>DDoS resilience</strong> (attack traffic is absorbed across all nodes), and <strong>automatic failover</strong> (if one node goes down, traffic reroutes to the next nearest).</li>
+<li>CDNs and public DNS resolvers (Cloudflare <code>1.1.1.1</code>) rely heavily on anycast.</li>
+</ul>
+
+<h2 id="118-qa">1.18 Q&amp;A<a class="anchor" href="#118-qa">#</a></h2>
+<p><strong>Do developers choose between recursive and iterative queries?</strong><br>
+No. The query type is determined automatically by the software. The client (browser/OS) always sends a recursive query. The resolver uses iterative queries internally. Developers do not normally configure this.</p>
+<p><strong>Can I force a specific query type?</strong><br>
+For diagnostic purposes, <code>dig</code> and <code>nslookup</code> allow control. <code>dig +norecurse</code> sends a non-recursive (iterative-style) query. But in production applications, you use the system resolver and it handles everything.</p>
+<pre><code># dig with recursion (default)
+dig example.com
+
+# dig without recursion (iterative-style, for diagnostics)
+dig +norecurse example.com
+
+# nslookup
+nslookup example.com 8.8.8.8</code></pre>
+<p><strong>What happens if all root servers go down?</strong><br>
+In practice this has never happened. Anycast distribution, geographic redundancy, and aggressive caching at every level make a total root server outage effectively impossible. Even if reachability were lost temporarily, cached records would continue to function until their TTL expired.</p>
+
+<hr>
+
+<h1 id="2-load-balancing">2. Load Balancing<a class="anchor" href="#2-load-balancing">#</a></h1>
+<p>Load balancing distributes incoming traffic across multiple backend servers to improve availability, reliability, and performance. This section covers the concepts most tightly connected to DNS.</p>
+
+<h2 id="21-vips-virtual-ips">2.1 VIPs (Virtual IPs)<a class="anchor" href="#21-vips-virtual-ips">#</a></h2>
+<p>A <strong>Virtual IP (VIP)</strong> is a single IP address that maps to multiple backend servers. Clients connect to the VIP; the load balancer decides which backend server actually handles each request.</p>
+<ul>
+<li>The VIP is what DNS points to &mdash; an A record for <code>api.example.com</code> resolves to the VIP, not to individual server IPs.</li>
+<li>Backends can be added, removed, or replaced without changing the DNS record.</li>
+<li>Health checks ensure that only healthy backends receive traffic.</li>
+</ul>
+
+<h2 id="22-proxy-servers">2.2 Proxy Servers<a class="anchor" href="#22-proxy-servers">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>Type</th><th>Direction</th><th>Purpose</th><th>Examples</th></tr></thead><tbody>
+<tr><td><strong>Forward proxy</strong></td><td>Client-side</td><td>Sits between the client and the internet. Anonymises requests, filters content, caches responses.</td><td>Squid, corporate proxies</td></tr>
+<tr><td><strong>Reverse proxy</strong></td><td>Server-side</td><td>Sits in front of backend servers. Distributes load, terminates TLS, caches content, provides a single entry point.</td><td>Nginx, HAProxy, Envoy, AWS ALB</td></tr>
+</tbody></table></div>
+<blockquote><p>A reverse proxy <strong>is</strong> the most common form of load balancer in web infrastructure. DNS points clients to the reverse proxy's VIP; the proxy fans traffic out to backend servers.</p></blockquote>
+
+<h2 id="23-dns-based-load-balancing">2.3 DNS-based Load Balancing<a class="anchor" href="#23-dns-based-load-balancing">#</a></h2>
+<p>DNS itself can distribute traffic without a separate load balancer, though with less control.</p>
+
+<h3>Round-robin DNS</h3>
+<p>Multiple A records are returned for the same domain. Clients (or resolvers) rotate through the list, distributing requests across servers.</p>
+<pre><code>example.com.  300  IN  A  10.0.0.1
+example.com.  300  IN  A  10.0.0.2
+example.com.  300  IN  A  10.0.0.3</code></pre>
+<ul>
+<li>Simple, no extra infrastructure.</li>
+<li>No health checking &mdash; DNS will continue returning a dead server's IP until the record is manually removed.</li>
+<li>No session awareness &mdash; consecutive requests from the same client may go to different servers.</li>
+</ul>
+
+<h3>GeoDNS</h3>
+<p>The authoritative DNS server returns different IP addresses based on the <strong>geographic location</strong> of the client (determined by the source IP of the query). Users in Europe get European servers; users in Asia get Asian servers.</p>
+
+<h3>Anycast routing</h3>
+<p>As described in <a href="#117-anycast">section 1.17</a>, the same IP is announced from multiple data centres. BGP routing sends each client to the nearest one. This is load balancing at the network layer, entirely transparent to DNS.</p>
+
+<h2 id="24-where-load-balancing-connects-to-dns">2.4 Where Load Balancing Connects to DNS<a class="anchor" href="#24-where-load-balancing-connects-to-dns">#</a></h2>
+<p>The two systems work together in layers:</p>
+<ol>
+<li><strong>DNS resolves the domain</strong> to one or more IP addresses (VIPs or direct server IPs).</li>
+<li><strong>The load balancer at that IP</strong> (if present) distributes each connection to a healthy backend.</li>
+</ol>
+<pre><code>Client &rarr; DNS resolution &rarr; VIP (e.g. 203.0.113.10)
+                                 &darr;
+                          Load Balancer
+                         /      |      \
+                   Server A  Server B  Server C</code></pre>
+<p>In large-scale systems, these are combined:</p>
+<ul>
+<li><strong>GeoDNS</strong> picks the closest data centre (DNS layer).</li>
+<li><strong>Anycast</strong> routes to the nearest edge node within that data centre's address space (network layer).</li>
+<li><strong>Reverse proxy / L7 load balancer</strong> (Nginx, Envoy) distributes requests to backend instances (application layer).</li>
+</ul>
+
+<hr>
+
+<h1 id="3-quick-revision-sheet">3. Quick Revision Sheet<a class="anchor" href="#3-quick-revision-sheet">#</a></h1>
+<div class="table-wrap"><table><thead><tr><th>Question</th><th>Answer</th></tr></thead><tbody>
+<tr><td>What does DNS do?</td><td>Translates domain names to IP addresses</td></tr>
+<tr><td>DNS hierarchy order</td><td>Root (<code>.</code>) &rarr; TLD (<code>.com</code>) &rarr; Authoritative &rarr; Record</td></tr>
+<tr><td>Default transport</td><td>UDP port 53; TCP for large responses, zone transfers, DNSSEC</td></tr>
+<tr><td>Recursive vs Iterative</td><td>Client sends recursive to resolver; resolver uses iterative to walk the hierarchy</td></tr>
+<tr><td>What is a zone file?</td><td>Plain-text file with SOA, NS, A, CNAME, MX records for a zone</td></tr>
+<tr><td>TTL</td><td>How long a cached DNS record is valid (seconds)</td></tr>
+<tr><td>Cache layers (order)</td><td>Browser &rarr; OS &rarr; Resolver &rarr; CDN/Edge</td></tr>
+<tr><td>Cache poisoning defence</td><td>DNSSEC, randomised query IDs, source port randomisation</td></tr>
+<tr><td>PTR record</td><td>Reverse lookup: IP &rarr; domain (<code>in-addr.arpa</code>)</td></tr>
+<tr><td>Anycast</td><td>Same IP, many locations; BGP routes to nearest</td></tr>
+<tr><td>VIP</td><td>Single IP mapping to multiple backend servers</td></tr>
+<tr><td>Forward vs Reverse proxy</td><td>Forward = client-side; Reverse = server-side (Nginx, HAProxy)</td></tr>
+<tr><td>Round-robin DNS</td><td>Multiple A records; no health checks, no session affinity</td></tr>
+<tr><td>GeoDNS</td><td>Returns IPs based on client location</td></tr>
+<tr><td>DNS propagation</td><td>Delay for changes to reach all caches; driven by TTL</td></tr>
+</tbody></table></div>
+
+<p><strong>One sentence each</strong></p>
+<ul>
+<li><strong>DNS</strong> is the distributed phonebook that turns names into numbers so the internet works without memorising IP addresses.</li>
+<li><strong>Load balancing</strong> spreads traffic across servers so no single machine bears the full load, using DNS, VIPs, and reverse proxies as complementary mechanisms.</li>
+</ul>
+
+<footer>
+<p><strong>Previous:</strong> <a href="../OSI_LAYERS_5-6-7_SESSION_PRESENTATION_APPLICATION/index.html">OSI Layers 5, 6 &amp; 7 &mdash; Session, Presentation &amp; Application</a></p>
+<p><strong>Next:</strong> <a href="../HTTP_EVOLUTION_HTTP1.1_HTTP2_HTTP3/index.html">HTTP Evolution &mdash; HTTP/1.1, HTTP/2 &amp; HTTP/3</a></p>
+</footer>
+</main>
+</div>
+</body>
+</html>
