@@ -894,6 +894,6 @@ const server = new ApolloServer({
 
 ---
 
-**Previous:** [HTTP Evolution](../4.%20HTTP_EVOLUTION_HTTP1.1_HTTP2_HTTP3/README.md)
+**Previous:** [gRPC Practical Patterns & Streaming](../8.%20GRPC_PRACTICAL_PATTERNS_STREAMING/README.md)
 
-**Next:** [GraphQL Practical Challenges](../7.%20GRAPHQL_PRACTICAL_CHALLENGES/README.md)
+**Next:** [GraphQL Practical Challenges](../10.%20GRAPHQL_PRACTICAL_CHALLENGES/README.md)

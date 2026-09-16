@@ -983,6 +983,6 @@ type User {
 
 ---
 
-**Previous:** [GraphQL Architecture & Schema Design](../6.%20GRAPHQL_ARCHITECTURE_SCHEMA_DESIGN/README.md)
+**Previous:** [GraphQL Architecture & Schema Design](../9.%20GRAPHQL_ARCHITECTURE_SCHEMA_DESIGN/README.md)
 
-**Next:** [Short Polling, Long Polling & SSE](../8.%20SHORT_POLLING_LONG_POLLING_SSE/README.md)
+**Next:** [Short Polling, Long Polling & SSE](../11.%20SHORT_POLLING_LONG_POLLING_SSE/README.md)
