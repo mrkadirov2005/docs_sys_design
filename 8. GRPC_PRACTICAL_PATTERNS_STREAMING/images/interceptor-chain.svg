@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 380" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+  <title>Client and server interceptor chains wrapping a gRPC call</title>
+  <defs>
+    <marker id="i" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#2a78d6"/></marker>
+    <marker id="o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#eb6834"/></marker>
+  </defs>
+  <rect width="880" height="380" rx="14" fill="#fbfbf9"/>
+  <text x="440" y="38" text-anchor="middle" font-size="20" font-weight="700" fill="#1c1c1a">Interceptors: middleware for RPCs</text>
+  <text x="440" y="60" text-anchor="middle" font-size="13" fill="#5c5c56">The request passes through each layer in order. The response and status pass back through in reverse.</text>
+
+  <g font-size="12.5" fill="#1c1c1a" text-anchor="middle">
+    <text x="215" y="92" font-size="13" font-weight="700">Client process</text>
+    <text x="665" y="92" font-size="13" font-weight="700">Server process</text>
+
+    <rect x="30" y="104" width="88" height="170" rx="8" fill="#fff" stroke="#1c1c1a"/>
+    <text x="74" y="184" font-weight="700">your</text><text x="74" y="200" font-weight="700">code</text>
+
+    <rect x="130" y="104" width="88" height="170" rx="8" fill="#e4eefa" stroke="#2a78d6"/>
+    <text x="174" y="180" font-weight="700">metrics</text><text x="174" y="198" font-size="11" fill="#5c5c56">latency, code</text>
+    <rect x="224" y="104" width="88" height="170" rx="8" fill="#e4eefa" stroke="#2a78d6"/>
+    <text x="268" y="180" font-weight="700">auth</text><text x="268" y="198" font-size="11" fill="#5c5c56">adds token</text>
+    <rect x="318" y="104" width="88" height="170" rx="8" fill="#e4eefa" stroke="#2a78d6"/>
+    <text x="362" y="180" font-weight="700">deadline</text><text x="362" y="198" font-size="11" fill="#5c5c56">default 2 s</text>
+
+    <rect x="412" y="104" width="56" height="170" rx="8" fill="#f3ece7" stroke="#c99f84"/>
+    <text x="440" y="185" font-size="11.5" transform="rotate(-90 440 185)">network</text>
+
+    <rect x="474" y="104" width="98" height="170" rx="8" fill="#fcebe4" stroke="#eb6834"/>
+    <text x="523" y="180" font-weight="700">logging</text><text x="523" y="198" font-size="10.5" fill="#5c5c56">method, code, ms</text>
+    <rect x="578" y="104" width="98" height="170" rx="8" fill="#fcebe4" stroke="#eb6834"/>
+    <text x="627" y="180" font-weight="700">auth</text><text x="627" y="198" font-size="11" fill="#5c5c56">verifies token</text>
+    <rect x="682" y="104" width="168" height="170" rx="8" fill="#fff" stroke="#1c1c1a"/>
+    <text x="766" y="184" font-weight="700">handler</text><text x="766" y="202" font-size="11" fill="#5c5c56">business logic</text>
+  </g>
+
+  <path d="M40 132 H840" stroke="#2a78d6" stroke-width="2" marker-end="url(#i)"/>
+  <text x="52" y="120" font-size="11.5" fill="#2a78d6">request</text>
+  <path d="M840 248 H44" stroke="#eb6834" stroke-width="2" marker-end="url(#o)"/>
+  <text x="838" y="292" text-anchor="end" font-size="11.5" fill="#c4521f">response + status + trailers</text>
+
+  <path d="M627 226 C 627 244, 600 248, 566 248" stroke="#b3261e" stroke-width="1.5" stroke-dasharray="5 4" fill="none"/>
+  <text x="627" y="312" text-anchor="middle" font-size="12" font-weight="700" fill="#b3261e">bad token: short-circuit with</text>
+  <text x="627" y="328" text-anchor="middle" font-size="12" font-weight="700" fill="#b3261e">UNAUTHENTICATED, handler never runs</text>
+
+  <g font-size="12" fill="#5c5c56">
+    <text x="30" y="300">Typical uses:</text>
+    <text x="30" y="318">auth · logging · metrics · tracing</text>
+    <text x="30" y="336">default deadlines · retries · error mapping</text>
+    <text x="30" y="354">rate limiting · request validation</text>
+  </g>
+</svg>

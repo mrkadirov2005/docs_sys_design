@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 430" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+  <title>Deadline propagation: one time budget shared across a chain of services</title>
+  <defs>
+    <marker id="d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#1c1c1a"/></marker>
+    <marker id="dr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#b3261e"/></marker>
+  </defs>
+  <rect width="880" height="430" rx="14" fill="#fbfbf9"/>
+  <text x="440" y="38" text-anchor="middle" font-size="20" font-weight="700" fill="#1c1c1a">Deadline propagation</text>
+  <text x="440" y="60" text-anchor="middle" font-size="13" fill="#5c5c56">One absolute deadline travels down the call chain. Every hop sees only the time that is left.</text>
+
+  <g font-size="13" fill="#1c1c1a" text-anchor="middle">
+    <rect x="40"  y="86" width="150" height="54" rx="10" fill="#fff" stroke="#1c1c1a"/><text x="115" y="110" font-weight="700">Checkout BFF</text><text x="115" y="128" font-size="12" fill="#5c5c56">sets deadline</text>
+    <rect x="280" y="86" width="150" height="54" rx="10" fill="#fff" stroke="#1c1c1a"/><text x="355" y="110" font-weight="700">OrderService</text><text x="355" y="128" font-size="12" fill="#5c5c56">propagates it</text>
+    <rect x="520" y="86" width="150" height="54" rx="10" fill="#fff" stroke="#1c1c1a"/><text x="595" y="110" font-weight="700">Inventory</text><text x="595" y="128" font-size="12" fill="#5c5c56">propagates it</text>
+    <rect x="740" y="86" width="110" height="54" rx="10" fill="#fff" stroke="#1c1c1a"/><text x="795" y="110" font-weight="700">Database</text><text x="795" y="128" font-size="12" fill="#5c5c56">slow query</text>
+  </g>
+  <g font-family="ui-monospace,Menlo,Consolas,monospace" font-size="11.5" fill="#1c1c1a" text-anchor="middle">
+    <path d="M190 113 H276" stroke="#1c1c1a" stroke-width="1.5" marker-end="url(#d)"/><text x="233" y="104">grpc-timeout</text><text x="233" y="130">300m</text>
+    <path d="M430 113 H516" stroke="#1c1c1a" stroke-width="1.5" marker-end="url(#d)"/><text x="473" y="104">grpc-timeout</text><text x="473" y="130">260m</text>
+    <path d="M670 113 H736" stroke="#1c1c1a" stroke-width="1.5" marker-end="url(#d)"/><text x="703" y="104">timeout</text><text x="703" y="130">220 ms</text>
+  </g>
+
+  <text x="40" y="184" font-size="14" font-weight="700" fill="#1c1c1a">Shared time budget (300 ms)</text>
+  <g font-size="12">
+    <line x1="40" y1="200" x2="840" y2="200" stroke="#e3e3dd"/>
+    <rect x="40"  y="212" width="800" height="26" rx="5" fill="#e4eefa"/><text x="52" y="230" fill="#1c1c1a">BFF waits: 300 ms left at start</text>
+    <rect x="147" y="246" width="693" height="26" rx="5" fill="#d3e3f7"/><text x="159" y="264" fill="#1c1c1a">OrderService: 260 ms left (40 ms spent on network + auth)</text>
+    <rect x="253" y="280" width="587" height="26" rx="5" fill="#bcd4f2"/><text x="265" y="298" fill="#1c1c1a">Inventory: 220 ms left</text>
+    <rect x="253" y="314" width="605" height="26" rx="5" fill="#fde8e6" stroke="#b3261e" stroke-dasharray="4 3"/><text x="265" y="332" fill="#b3261e">DB query would need 400 ms, past the deadline</text>
+    <line x1="840" y1="206" x2="840" y2="352" stroke="#b3261e" stroke-width="2"/>
+    <text x="836" y="366" text-anchor="end" font-weight="700" fill="#b3261e">deadline</text>
+    <text x="40" y="366" fill="#5c5c56">t = 0</text>
+  </g>
+
+  <g font-size="12.5">
+    <path d="M836 390 H48" stroke="#b3261e" stroke-width="2" marker-end="url(#dr)"/>
+    <text x="440" y="384" text-anchor="middle" font-weight="700" fill="#b3261e">at the deadline: every hop is cancelled at once, each caller gets DEADLINE_EXCEEDED</text>
+    <text x="440" y="414" text-anchor="middle" fill="#5c5c56">Without propagation, Inventory and the DB keep working for a caller that already gave up.</text>
+  </g>
+</svg>

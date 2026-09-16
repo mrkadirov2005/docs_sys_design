@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 420" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+  <rect width="880" height="420" rx="14" fill="#fbfbf9"/>
+  <text x="440" y="40" text-anchor="middle" font-size="21" font-weight="700" fill="#1c1c1a">Richardson Maturity Model</text>
+  <text x="440" y="63" text-anchor="middle" font-size="13.5" fill="#5c5c56">How far an HTTP API goes toward REST. Most production "REST" APIs sit at Level 2.</text>
+  <g font-size="13">
+    <rect x="30"  y="320" width="200" height="70"  rx="8" fill="#efe7e1" stroke="#d9c9bd"/>
+    <rect x="240" y="250" width="200" height="140" rx="8" fill="#e5d4c8" stroke="#cdb3a1"/>
+    <rect x="450" y="180" width="200" height="210" rx="8" fill="#c99f84" stroke="#b5876a"/>
+    <rect x="660" y="95"  width="200" height="295" rx="8" fill="#8a4b2a" stroke="#6f3b20"/>
+
+    <text x="130" y="344" text-anchor="middle" font-weight="700" fill="#1c1c1a">Level 0 · Swamp of POX</text>
+    <text x="130" y="364" text-anchor="middle" fill="#5c5c56">One URI, one verb</text>
+    <text x="130" y="381" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#5c5c56">POST /api</text>
+
+    <text x="340" y="274" text-anchor="middle" font-weight="700" fill="#1c1c1a">Level 1 · Resources</text>
+    <text x="340" y="294" text-anchor="middle" fill="#5c5c56">Many URIs, still one verb</text>
+    <text x="292" y="318" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#5c5c56">POST /users/42</text>
+    <text x="292" y="334" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#5c5c56">POST /orders/7</text>
+
+    <text x="550" y="204" text-anchor="middle" font-weight="700" fill="#1c1c1a">Level 2 · HTTP Verbs</text>
+    <text x="550" y="224" text-anchor="middle" fill="#2b1a10">Correct methods + status codes</text>
+    <text x="470" y="250" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#2b1a10" xml:space="preserve">GET    /users/42 → 200</text>
+    <text x="470" y="266" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#2b1a10" xml:space="preserve">POST   /users    → 201</text>
+    <text x="470" y="282" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#2b1a10" xml:space="preserve">DELETE /users/42 → 204</text>
+    <text x="550" y="366" text-anchor="middle" font-size="12" font-weight="700" fill="#2b1a10">◀ most APIs live here</text>
+
+    <text x="760" y="119" text-anchor="middle" font-weight="700" fill="#fff">Level 3 · Hypermedia</text>
+    <text x="760" y="139" text-anchor="middle" fill="#f3ece7">Responses carry links</text>
+    <text x="760" y="156" text-anchor="middle" font-size="12" fill="#f3ece7">(HATEOAS)</text>
+    <text x="690" y="184" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#f3ece7">"_links": {</text>
+    <text x="700" y="200" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#f3ece7">"cancel": "/orders/7"</text>
+    <text x="690" y="216" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#f3ece7">}</text>
+    <text x="760" y="366" text-anchor="middle" font-size="12" fill="#f3ece7">"Truly RESTful" per Fielding</text>
+  </g>
+  <path d="M40 300 L 830 80" stroke="#8a4b2a" stroke-width="1.5" stroke-dasharray="5 5" fill="none" opacity=".45"/>
+</svg>

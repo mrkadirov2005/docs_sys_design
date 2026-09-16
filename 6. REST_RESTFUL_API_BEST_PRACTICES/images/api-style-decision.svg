@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 440" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+  <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#1c1c1a"/></marker></defs>
+  <rect width="880" height="440" rx="14" fill="#fbfbf9"/>
+  <text x="440" y="38" text-anchor="middle" font-size="20" font-weight="700" fill="#1c1c1a">Choosing an API style</text>
+  <text x="440" y="60" text-anchor="middle" font-size="13" fill="#5c5c56">Redrawn from the decision tree in the notes. REST is the default.</text>
+  <g font-size="14" fill="#1c1c1a" text-anchor="middle">
+    <path d="M540 80 L640 135 L540 190 L440 135 Z" fill="#fff" stroke="#1c1c1a" stroke-width="1.5"/>
+    <text x="540" y="130">Client-facing</text><text x="540" y="148">or internal?</text>
+
+    <path d="M440 135 L300 135 L300 205" stroke="#1c1c1a" stroke-width="1.5" fill="none" marker-end="url(#a)"/>
+    <text x="370" y="125" font-size="13" fill="#5c5c56">client-facing</text>
+    <path d="M640 135 L760 135 L760 330" stroke="#1c1c1a" stroke-width="1.5" fill="none" marker-end="url(#a)"/>
+    <text x="700" y="125" font-size="13" fill="#5c5c56">internal</text>
+
+    <path d="M300 210 L410 265 L300 320 L190 265 Z" fill="#fff" stroke="#1c1c1a" stroke-width="1.5"/>
+    <text x="300" y="260">Over/under-fetching</text><text x="300" y="278">a real concern?</text>
+
+    <path d="M190 265 L110 265 L110 330" stroke="#1c1c1a" stroke-width="1.5" fill="none" marker-end="url(#a)"/>
+    <text x="150" y="255" font-size="13" fill="#5c5c56">yes</text>
+    <path d="M410 265 L470 265 L470 330" stroke="#1c1c1a" stroke-width="1.5" fill="none" marker-end="url(#a)"/>
+    <text x="440" y="255" font-size="13" fill="#5c5c56">no</text>
+
+    <rect x="30" y="335" width="160" height="70" rx="10" fill="#e8f0fb" stroke="#2f6fbf" stroke-width="1.5"/>
+    <text x="110" y="364" font-weight="700" fill="#2f6fbf">GraphQL</text>
+    <text x="110" y="385" font-size="12" fill="#3d5a80">varied client needs</text>
+
+    <rect x="390" y="335" width="160" height="70" rx="10" fill="#f3ece7" stroke="#8a4b2a" stroke-width="2.5"/>
+    <text x="470" y="364" font-weight="700" fill="#8a4b2a">REST</text>
+    <text x="470" y="385" font-size="12" fill="#6f3b20">CRUD over resources</text>
+
+    <rect x="680" y="335" width="160" height="70" rx="10" fill="#e9f5ec" stroke="#2e8b57" stroke-width="1.5"/>
+    <text x="760" y="364" font-weight="700" fill="#2e8b57">RPC / gRPC</text>
+    <text x="760" y="385" font-size="12" fill="#2f5e44">service-to-service, speed</text>
+  </g>
+</svg>

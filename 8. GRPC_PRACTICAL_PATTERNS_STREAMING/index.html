@@ -1,0 +1,923 @@
+<!doctype html>
+<html lang="en" data-theme-auto>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>gRPC Practical Patterns &amp; Streaming</title>
+<style>
+:root{
+  --bg:#fbfbf9; --surface:#ffffff; --ink:#1c1c1a; --muted:#5c5c56;
+  --line:#e3e3dd; --accent:#8a4b2a; --accent-soft:#f3ece7;
+  --code-bg:#f5f4f0; --quote-bg:#f7f5f1;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#16161a; --surface:#1d1d22; --ink:#e8e8e4; --muted:#a0a099;
+    --line:#32323a; --accent:#e0a077; --accent-soft:#2a2320;
+    --code-bg:#232329; --quote-bg:#202026;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#16161a; --surface:#1d1d22; --ink:#e8e8e4; --muted:#a0a099;
+  --line:#32323a; --accent:#e0a077; --accent-soft:#2a2320;
+  --code-bg:#232329; --quote-bg:#202026;
+}
+*{box-sizing:border-box}
+body{
+  background:var(--bg); color:var(--ink); margin:0;
+  font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,
+       "Helvetica Neue",Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.layout{max-width:1180px;margin:0 auto;padding:0 24px;
+  display:grid;grid-template-columns:236px minmax(0,1fr);gap:48px}
+nav.toc{position:sticky;top:0;align-self:start;max-height:100vh;
+  overflow-y:auto;padding:40px 0 40px;font-size:13.5px}
+nav.toc .label{text-transform:uppercase;letter-spacing:.09em;
+  font-size:11px;color:var(--muted);font-weight:700;margin-bottom:12px}
+nav.toc a{display:block;color:var(--muted);text-decoration:none;
+  padding:4px 10px;border-left:2px solid transparent;line-height:1.4}
+nav.toc a:hover{color:var(--accent);border-left-color:var(--accent);
+  background:var(--accent-soft)}
+nav.toc a.lvl2{padding-left:22px;font-size:13px}
+main{padding:40px 0 96px;min-width:0}
+h1,h2,h3,h4{line-height:1.25;font-weight:650;
+  scroll-margin-top:24px;position:relative}
+h1{font-size:2.05rem;margin:.2em 0 .6em;letter-spacing:-.02em}
+h2{font-size:1.5rem;margin:2.2em 0 .7em;padding-bottom:.3em;
+  border-bottom:1px solid var(--line)}
+h3{font-size:1.16rem;margin:1.9em 0 .5em}
+h4{font-size:1rem;margin:1.5em 0 .4em;color:var(--muted)}
+.anchor{position:absolute;margin-left:.4em;color:var(--line);
+  text-decoration:none;opacity:0;font-weight:400}
+h1:hover .anchor,h2:hover .anchor,h3:hover .anchor{opacity:1}
+.anchor:hover{color:var(--accent)}
+p{margin:0 0 1em}
+a{color:var(--accent)}
+ul,ol{margin:0 0 1.15em;padding-left:1.45em}
+li{margin:.32em 0}
+li::marker{color:var(--muted)}
+li.task{list-style:none;margin-left:-1.45em}
+li.task input{accent-color:var(--accent);margin:0 .5em 0 0;vertical-align:-1px}
+li.task label{cursor:pointer}
+hr{border:0;border-top:1px solid var(--line);margin:2.6em 0}
+code{background:var(--code-bg);border:1px solid var(--line);
+  border-radius:4px;padding:.12em .38em;font-size:.875em;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+pre{background:var(--code-bg);border:1px solid var(--line);
+  border-radius:8px;padding:16px 18px;overflow-x:auto;margin:0 0 1.3em}
+pre code{background:none;border:0;padding:0;font-size:13px;line-height:1.55}
+blockquote{margin:0 0 1.3em;padding:14px 18px;background:var(--quote-bg);
+  border-left:3px solid var(--accent);border-radius:0 8px 8px 0}
+blockquote p{margin:0 0 .6em}
+blockquote p:last-child{margin:0}
+.table-wrap{overflow-x:auto;margin:0 0 1.5em;border:1px solid var(--line);
+  border-radius:8px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:14.5px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);
+  vertical-align:top}
+th{background:var(--accent-soft);font-weight:650;white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+figure{margin:0 0 1.6em;text-align:center}
+img{max-width:100%;height:auto;border:1px solid var(--line);
+  border-radius:8px;background:var(--surface)}
+footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--line);
+  font-size:13px;color:var(--muted)}
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr;gap:0}
+  nav.toc{position:static;max-height:none;padding:28px 0 0;
+    border-bottom:1px solid var(--line);margin-bottom:8px}
+  nav.toc a.lvl2{display:none}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="toc"><div class="label">On this page</div>
+<a class="lvl1" href="#grpc-practical-patterns-streaming">gRPC Practical Patterns &amp; Streaming</a>
+<a class="lvl2" href="#0-what-this-document-covers">0. What this document covers</a>
+<a class="lvl1" href="#1-the-example-service">1. The example service</a>
+<a class="lvl2" href="#11-the-contract">1.1 The contract</a>
+<a class="lvl2" href="#12-loading-it">1.2 Loading it</a>
+<a class="lvl1" href="#2-the-four-call-types">2. The four call types</a>
+<a class="lvl2" href="#21-the-server">2.1 The server</a>
+<a class="lvl2" href="#22-the-client">2.2 The client</a>
+<a class="lvl2" href="#23-unary">2.3 Unary</a>
+<a class="lvl2" href="#24-server-streaming">2.4 Server streaming</a>
+<a class="lvl2" href="#25-client-streaming">2.5 Client streaming</a>
+<a class="lvl2" href="#26-bidirectional-streaming">2.6 Bidirectional streaming</a>
+<a class="lvl1" href="#3-flow-control-and-backpressure">3. Flow control and backpressure</a>
+<a class="lvl2" href="#31-the-server-side-pattern">3.1 The server-side pattern</a>
+<a class="lvl2" href="#32-what-a-slow-consumer-actually-does">3.2 What a slow consumer actually does</a>
+<a class="lvl2" href="#33-practical-limits">3.3 Practical limits</a>
+<a class="lvl1" href="#4-deadlines-and-cancellation">4. Deadlines and cancellation</a>
+<a class="lvl2" href="#41-timeout-vs-deadline">4.1 Timeout vs deadline</a>
+<a class="lvl2" href="#42-propagation">4.2 Propagation</a>
+<a class="lvl2" href="#43-deadlines-do-not-stop-your-code">4.3 Deadlines do not stop your code</a>
+<a class="lvl2" href="#44-choosing-deadlines">4.4 Choosing deadlines</a>
+<a class="lvl2" href="#45-client-initiated-cancellation">4.5 Client-initiated cancellation</a>
+<a class="lvl1" href="#5-metadata">5. Metadata</a>
+<a class="lvl1" href="#6-interceptors">6. Interceptors</a>
+<a class="lvl2" href="#61-server-side">6.1 Server side</a>
+<a class="lvl2" href="#62-client-side">6.2 Client side</a>
+<a class="lvl2" href="#63-ordering">6.3 Ordering</a>
+<a class="lvl1" href="#7-error-handling">7. Error handling</a>
+<a class="lvl2" href="#71-the-status-model">7.1 The status model</a>
+<a class="lvl2" href="#72-choosing-between-the-confusing-ones">7.2 Choosing between the confusing ones</a>
+<a class="lvl2" href="#73-rich-machine-readable-errors">7.3 Rich, machine-readable errors</a>
+<a class="lvl2" href="#74-uncaught-exceptions-two-bad-defaults">7.4 Uncaught exceptions: two bad defaults</a>
+<a class="lvl2" href="#75-failure-modes-and-defences">7.5 Failure modes and defences</a>
+<a class="lvl1" href="#8-retries-and-reliability">8. Retries and reliability</a>
+<a class="lvl2" href="#81-two-kinds-of-retry">8.1 Two kinds of retry</a>
+<a class="lvl2" href="#82-a-policy-as-used-in-clientjs">8.2 A policy, as used in client.js</a>
+<a class="lvl2" href="#83-rules">8.3 Rules</a>
+<a class="lvl2" href="#84-circuit-breakers">8.4 Circuit breakers</a>
+<a class="lvl1" href="#9-streaming-patterns-in-practice">9. Streaming patterns in practice</a>
+<a class="lvl2" href="#91-resumable-streams">9.1 Resumable streams</a>
+<a class="lvl2" href="#92-heartbeats-and-idle-streams">9.2 Heartbeats and idle streams</a>
+<a class="lvl2" href="#93-stream-lifetime">9.3 Stream lifetime</a>
+<a class="lvl2" href="#94-fan-out">9.4 Fan-out</a>
+<a class="lvl2" href="#95-choosing-a-pattern">9.5 Choosing a pattern</a>
+<a class="lvl1" href="#10-production-concerns">10. Production concerns</a>
+<a class="lvl2" href="#101-connections-and-load-balancing">10.1 Connections and load balancing</a>
+<a class="lvl2" href="#102-security">10.2 Security</a>
+<a class="lvl2" href="#103-health-checking-and-reflection">10.3 Health checking and reflection</a>
+<a class="lvl2" href="#104-graceful-shutdown">10.4 Graceful shutdown</a>
+<a class="lvl2" href="#105-limits-and-compression">10.5 Limits and compression</a>
+<a class="lvl2" href="#106-observability">10.6 Observability</a>
+<a class="lvl2" href="#107-testing">10.7 Testing</a>
+<a class="lvl1" href="#11-corrections-to-the-notes">11. Corrections to the notes</a>
+<a class="lvl1" href="#12-production-checklist">12. Production checklist</a>
+<a class="lvl2" href="#contract">Contract</a>
+<a class="lvl2" href="#calls">Calls</a>
+<a class="lvl2" href="#errors">Errors</a>
+<a class="lvl2" href="#reliability">Reliability</a>
+<a class="lvl2" href="#operations">Operations</a>
+<a class="lvl1" href="#13-qa">13. Q&amp;A</a>
+<a class="lvl1" href="#14-quick-revision-sheet">14. Quick revision sheet</a>
+<a class="lvl1" href="#15-references">15. References</a>
+</nav>
+<main>
+<h1 id="grpc-practical-patterns-streaming">gRPC Practical Patterns &amp; Streaming<a class="anchor" href="#grpc-practical-patterns-streaming">#</a></h1>
+<blockquote><p>Scope: the working half of gRPC. All four call types with runnable code, flow control and backpressure, deadlines and cancellation with propagation, interceptors, the status code model and rich errors, retries, and the production patterns that keep streams healthy.</p><p>Source: extracted and reorganised from <code>0. md/DOCUMENTATIONS ...md</code> (and its HTML twin) → <code>GRAPHQL, gRPC… &gt; gRPC</code> (Overal, Docs, FAANG questions, Custom QA, 50 Q&amp;A) and <code>Handling Failures and Fault Mode &gt; gRPC Failure handling</code>. Gaps were filled from grpc.io and the gRPC proposals.</p><p><strong>Everything here was executed.</strong> The service in this document was built and run against @grpc/grpc-js 1.14.4 on Node.js 24.15.0, and 36 behavioural checks pass: the four call types, deadline propagation, cancellation, backpressure, interceptor ordering, rich errors, retries and message limits. Where behaviour differs from the common wisdom, the measured result is stated. Schema and encoding questions are covered in <a href="../7.%20PROTOBUF_GRPC_DEEP_DIVE/index.html">Protocol Buffers &amp; gRPC Deep Dive</a>.</p></blockquote>
+<hr>
+<h2 id="0-what-this-document-covers">0. What this document covers<a class="anchor" href="#0-what-this-document-covers">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>Topic</th><th>One-line summary</th></tr></thead><tbody><tr><td>Call types</td><td>Unary, server streaming, client streaming, bidirectional, with code for each</td></tr><tr><td>Flow control</td><td><code>write()</code> and <code>drain</code>, and what a slow consumer really does</td></tr><tr><td>Deadlines</td><td>Absolute time budgets that propagate down the call chain</td></tr><tr><td>Cancellation</td><td>How a client giving up reaches every downstream service</td></tr><tr><td>Metadata</td><td>Headers and trailers, including binary values</td></tr><tr><td>Interceptors</td><td>Middleware on both sides: auth, logging, metrics, default deadlines</td></tr><tr><td>Errors</td><td>17 status codes, choosing the right one, and rich machine-readable details</td></tr><tr><td>Retries</td><td>Service-config policies, which codes are safe, and how deadlines bound them</td></tr><tr><td>Production</td><td>Keepalive, load balancing, health checks, reflection, graceful shutdown, limits</td></tr><tr><td>Streaming patterns</td><td>Resumption, heartbeats, stream lifetime, fan-out, backpressure</td></tr></tbody></table></div>
+<hr>
+<h1 id="1-the-example-service">1. The example service<a class="anchor" href="#1-the-example-service">#</a></h1>
+<p>Every snippet below comes from one small but complete service: an <code>OrderService</code> with all four RPC types plus a downstream <code>InventoryService</code> used to demonstrate deadline propagation.</p>
+<pre><code class="lang-text">demo/
+  proto/
+    demo/v1/order_service.proto     # the contract
+    google/rpc/status.proto         # minimal copies, for rich error details
+    google/rpc/error_details.proto
+  load.js                           # loads the .proto once
+  errors.js                         # rich errors + the handler guard
+  interceptors-server.js            # auth + logging interceptors
+  server.js                         # the four handlers
+  client.js                         # interceptors, default deadlines, retries</code></pre>
+<pre><code class="lang-bash">npm install @grpc/grpc-js @grpc/proto-loader protobufjs
+node server.js</code></pre>
+<h2 id="11-the-contract">1.1 The contract<a class="anchor" href="#11-the-contract">#</a></h2>
+<p><code>order_service.proto</code></p>
+<pre><code class="lang-proto">syntax = &quot;proto3&quot;;
+
+package demo.v1;
+
+import &quot;google/protobuf/timestamp.proto&quot;;
+
+// The four RPC shapes, on one realistic service.
+service OrderService {
+  // Unary: one request, one response.
+  rpc GetOrder(GetOrderRequest) returns (Order);
+
+  // Server streaming: one request, a stream of status updates.
+  rpc WatchOrder(WatchOrderRequest) returns (stream OrderEvent);
+
+  // Client streaming: the client uploads many line items, gets one summary.
+  rpc UploadItems(stream LineItem) returns (UploadSummary);
+
+  // Bidirectional streaming: live support chat about an order.
+  rpc Chat(stream ChatMessage) returns (stream ChatMessage);
+}
+
+// A downstream dependency, used to show deadline propagation.
+service InventoryService {
+  rpc CheckStock(CheckStockRequest) returns (CheckStockResponse);
+}
+
+enum OrderStatus {
+  ORDER_STATUS_UNSPECIFIED = 0;
+  ORDER_STATUS_PENDING = 1;
+  ORDER_STATUS_PAID = 2;
+  ORDER_STATUS_SHIPPED = 3;
+  ORDER_STATUS_DELIVERED = 4;
+}
+
+message GetOrderRequest {
+  string order_id = 1;
+}
+
+message Order {
+  string order_id = 1;
+  OrderStatus status = 2;
+  repeated LineItem items = 3;
+  int64 total_cents = 4;
+  bool in_stock = 5;
+}
+
+message WatchOrderRequest {
+  string order_id = 1;
+}
+
+message OrderEvent {
+  string order_id = 1;
+  OrderStatus status = 2;
+  google.protobuf.Timestamp at = 3;
+}
+
+message LineItem {
+  string sku = 1;
+  int32 quantity = 2;
+  int64 unit_price_cents = 3;
+}
+
+message UploadSummary {
+  int32 item_count = 1;
+  int64 total_cents = 2;
+}
+
+message ChatMessage {
+  string from = 1;
+  string text = 2;
+}
+
+message CheckStockRequest {
+  repeated string skus = 1;
+}
+
+message CheckStockResponse {
+  bool all_in_stock = 1;
+}</code></pre>
+<h2 id="12-loading-it">1.2 Loading it<a class="anchor" href="#12-loading-it">#</a></h2>
+<p>This service loads the <code>.proto</code> at runtime with <code>@grpc/proto-loader</code>, so there is no build step. The loader options matter more than they look: <code>longs: String</code> prevents silent precision loss on <code>int64</code>, and <code>enums: String</code> gives readable values.</p>
+<p><code>load.js</code></p>
+<pre><code class="lang-js">// load.js — load the .proto files once, share them everywhere.
+const path = require(&quot;node:path&quot;);
+const grpc = require(&quot;@grpc/grpc-js&quot;);
+const protoLoader = require(&quot;@grpc/proto-loader&quot;);
+const protobuf = require(&quot;protobufjs&quot;);
+
+const PROTO_DIR = path.join(__dirname, &quot;proto&quot;);
+
+const packageDefinition = protoLoader.loadSync(&quot;demo/v1/order_service.proto&quot;, {
+  includeDirs: [PROTO_DIR],
+  keepCase: false,  // order_id -&gt; orderId in JS
+  longs: String,    // int64 -&gt; string, so large numbers don&#x27;t lose precision
+  enums: String,    // enums as &quot;ORDER_STATUS_PAID&quot;
+  defaults: true,   // unset fields come back as their zero values
+  oneofs: true,
+});
+const { demo } = grpc.loadPackageDefinition(packageDefinition);
+
+// Rich error details (google.rpc.Status) are encoded with plain protobufjs.
+const rpcRoot = new protobuf.Root();
+rpcRoot.resolvePath = (_origin, target) =&gt;
+  target.startsWith(&quot;google/protobuf/&quot;) ? target : path.join(PROTO_DIR, target);
+rpcRoot.loadSync([&quot;google/rpc/status.proto&quot;, &quot;google/rpc/error_details.proto&quot;]);
+
+module.exports = {
+  grpc,
+  OrderService: demo.v1.OrderService,
+  InventoryService: demo.v1.InventoryService,
+  RpcStatus: rpcRoot.lookupType(&quot;google.rpc.Status&quot;),
+  BadRequest: rpcRoot.lookupType(&quot;google.rpc.BadRequest&quot;),
+};</code></pre>
+<hr>
+<h1 id="2-the-four-call-types">2. The four call types<a class="anchor" href="#2-the-four-call-types">#</a></h1>
+<figure><img src="images/rpc-types.svg" alt="The four gRPC call types"></figure>
+<div class="table-wrap"><table><thead><tr><th>Type</th><th>Signature</th><th>Use when</th><th>Example</th></tr></thead><tbody><tr><td>Unary</td><td><code>rpc M(Req) returns (Res)</code></td><td>One question, one answer</td><td><code>GetOrder</code>, <code>CreateUser</code></td></tr><tr><td>Server streaming</td><td><code>returns (stream Res)</code></td><td>One request, many results over time</td><td>Live order tracking, tailing logs</td></tr><tr><td>Client streaming</td><td><code>(stream Req) returns (Res)</code></td><td>Many inputs, one summary</td><td>Uploads, metric batches</td></tr><tr><td>Bidirectional</td><td><code>(stream Req) returns (stream Res)</code></td><td>Ongoing two-way conversation</td><td>Chat, collaborative editing</td></tr></tbody></table></div>
+<p><strong>Default to unary.</strong> Streaming adds real complexity: lifecycle, backpressure, resumption and partial failure. The notes put this well: bidirectional streaming is a bad idea for simple CRUD, and should be reserved for genuinely real-time needs.</p>
+<h2 id="21-the-server">2.1 The server<a class="anchor" href="#21-the-server">#</a></h2>
+<p><code>server.js</code></p>
+<pre><code class="lang-js">// server.js — OrderService (all four RPC types) + a downstream InventoryService.
+const { setTimeout: sleep } = require(&quot;node:timers/promises&quot;);
+const { grpc, OrderService, InventoryService } = require(&quot;./load.js&quot;);
+const { invalidArgument, guardHandlers } = require(&quot;./errors.js&quot;);
+const { authInterceptor, loggingInterceptor } = require(&quot;./interceptors-server.js&quot;);
+
+const ORDERS = new Map([
+  [&quot;ord_1&quot;, { orderId: &quot;ord_1&quot;, status: &quot;ORDER_STATUS_PAID&quot;,
+              items: [{ sku: &quot;kb-01&quot;, quantity: 2, unitPriceCents: &quot;4999&quot; }], totalCents: &quot;9998&quot; }],
+  [&quot;ord_slow&quot;, { orderId: &quot;ord_slow&quot;, status: &quot;ORDER_STATUS_PENDING&quot;,
+              items: [{ sku: &quot;slow-sku&quot;, quantity: 1, unitPriceCents: &quot;100&quot; }], totalCents: &quot;100&quot; }],
+]);
+
+// Resolves true when the stream can take more data, false if the call was cancelled.
+// Awaiting &#x27;drain&#x27; alone hangs forever when the client cancels mid-wait.
+function waitWritable(call) {
+  if (call.cancelled) return Promise.resolve(false);
+  return new Promise((resolve) =&gt; {
+    const onDrain = () =&gt; { cleanup(); resolve(true); };
+    const onCancel = () =&gt; { cleanup(); resolve(false); };
+    const cleanup = () =&gt; { call.off(&quot;drain&quot;, onDrain); call.off(&quot;cancelled&quot;, onCancel); };
+    call.once(&quot;drain&quot;, onDrain);
+    call.once(&quot;cancelled&quot;, onCancel);
+  });
+}
+
+// ---------------------------------------------------------------- inventory (downstream)
+const inventoryHandlers = {
+  async checkStock(call, callback) {
+    if (call.request.skus.some((s) =&gt; s.startsWith(&quot;slow&quot;))) {
+      await sleep(500);                         // simulate a slow dependency
+      if (call.cancelled) return;               // caller gave up: stop working, send nothing
+    }
+    callback(null, { allInStock: true });
+  },
+};
+
+// ---------------------------------------------------------------- orders
+function orderHandlers(inventory) {
+  return {
+    // Unary
+    getOrder(call, callback) {
+      const { orderId } = call.request;
+      if (!orderId) {
+        return callback(invalidArgument(&quot;order_id is required&quot;,
+          [{ field: &quot;order_id&quot;, description: &quot;must not be empty&quot; }]));
+      }
+      const order = ORDERS.get(orderId);
+      if (!order) {
+        return callback({ code: grpc.status.NOT_FOUND, details: `Order ${orderId} not found` });
+      }
+      // Pass our own deadline and cancellation down to the dependency.
+      inventory.checkStock(
+        { skus: order.items.map((i) =&gt; i.sku) },
+        { parent: call, deadline: call.getDeadline() },
+        (err, stock) =&gt; {
+          if (err) return callback(err);          // DEADLINE_EXCEEDED, UNAVAILABLE... flow upward
+          callback(null, { ...order, inStock: stock.allInStock });
+        });
+    },
+
+    // Server streaming
+    async watchOrder(call) {
+      const { orderId } = call.request;
+      if (!ORDERS.has(orderId)) {
+        // Streams report errors by emitting them; grpc-js turns this into the final status.
+        // (call.destroy(err) would tear down the stream without ever sending a status.)
+        return call.emit(&quot;error&quot;, { code: grpc.status.NOT_FOUND, details: `Order ${orderId} not found` });
+      }
+      for (const status of [&quot;ORDER_STATUS_PAID&quot;, &quot;ORDER_STATUS_SHIPPED&quot;, &quot;ORDER_STATUS_DELIVERED&quot;]) {
+        if (call.cancelled) return;               // client went away: stop producing
+        const now = Date.now();
+        const event = { orderId, status, at: { seconds: Math.floor(now / 1000), nanos: (now % 1000) * 1e6 } };
+        if (!call.write(event) &amp;&amp; !(await waitWritable(call))) return;   // backpressure, cancel-safe
+        await sleep(Number(call.metadata.get(&quot;x-demo-interval-ms&quot;)[0] ?? 50));
+      }
+      call.end();                                 // OK status after the last message
+    },
+
+    // Client streaming
+    uploadItems(call, callback) {
+      let itemCount = 0;
+      let totalCents = 0n;                        // int64 arrives as a string: use BigInt
+      let failed = false;
+
+      call.on(&quot;data&quot;, (item) =&gt; {
+        if (failed) return;
+        if (item.quantity &lt;= 0) {
+          failed = true;
+          return callback(invalidArgument(&quot;invalid line item&quot;,
+            [{ field: `items[${itemCount}].quantity`, description: &quot;must be positive&quot; }]));
+        }
+        itemCount += 1;
+        totalCents += BigInt(item.unitPriceCents) * BigInt(item.quantity);
+      });
+      call.on(&quot;end&quot;, () =&gt; {
+        if (!failed) callback(null, { itemCount, totalCents: totalCents.toString() });
+      });
+    },
+
+    // Bidirectional streaming
+    chat(call) {
+      call.on(&quot;data&quot;, (msg) =&gt; {
+        call.write({ from: &quot;support&quot;, text: `Got it: &quot;${msg.text}&quot;` });
+      });
+      call.on(&quot;end&quot;, () =&gt; call.end());           // client finished sending -&gt; we finish too
+    },
+  };
+}
+
+// ---------------------------------------------------------------- bootstrap
+async function startServers({ log = () =&gt; {}, logError = console.error, validTokens = [&quot;secret-token&quot;] } = {}) {
+  const bind = (server) =&gt; new Promise((resolve, reject) =&gt;
+    server.bindAsync(&quot;127.0.0.1:0&quot;, grpc.ServerCredentials.createInsecure(),
+      (err, port) =&gt; (err ? reject(err) : resolve(port))));
+
+  const inventoryServer = new grpc.Server();
+  inventoryServer.addService(InventoryService.service, guardHandlers(inventoryHandlers, logError));
+  const inventoryPort = await bind(inventoryServer);
+
+  const inventory = new InventoryService(`127.0.0.1:${inventoryPort}`, grpc.credentials.createInsecure());
+
+  const orderServer = new grpc.Server({
+    interceptors: [loggingInterceptor(log), authInterceptor((t) =&gt; validTokens.includes(t))],
+    &quot;grpc.max_receive_message_length&quot;: 1024 * 1024,   // 1 MB instead of the 4 MB default
+  });
+  orderServer.addService(OrderService.service, guardHandlers(orderHandlers(inventory), logError));
+  const orderPort = await bind(orderServer);
+
+  return {
+    address: `127.0.0.1:${orderPort}`,
+    async stop() {
+      inventory.close();
+      await Promise.all([orderServer, inventoryServer].map((s) =&gt;
+        new Promise((resolve) =&gt; s.tryShutdown(() =&gt; resolve()))));
+    },
+  };
+}
+
+module.exports = { startServers };
+
+if (require.main === module) {
+  startServers({ log: console.log }).then(({ address }) =&gt; console.log(`OrderService on ${address}`));
+}</code></pre>
+<h2 id="22-the-client">2.2 The client<a class="anchor" href="#22-the-client">#</a></h2>
+<p><code>client.js</code></p>
+<pre><code class="lang-js">// client.js — a production-shaped client: interceptors, default deadlines, retries.
+const { grpc, OrderService } = require(&quot;./load.js&quot;);
+
+// Adds the bearer token to every outgoing call.
+const authInterceptor = (getToken) =&gt; (options, nextCall) =&gt;
+  new grpc.InterceptingCall(nextCall(options), {
+    start(metadata, listener, next) {
+      metadata.set(&quot;authorization&quot;, `Bearer ${getToken()}`);
+      next(metadata, listener);
+    },
+  });
+
+// Gives every unary call a deadline unless the caller set one. Streams are left alone.
+const defaultDeadlineInterceptor = (ms) =&gt; (options, nextCall) =&gt; {
+  const { requestStream, responseStream } = options.method_definition;
+  if (!options.deadline &amp;&amp; !requestStream &amp;&amp; !responseStream) {
+    options = { ...options, deadline: Date.now() + ms };
+  }
+  return nextCall(options);
+};
+
+// Records method, status and latency when each call finishes.
+const metricsInterceptor = (record) =&gt; (options, nextCall) =&gt; {
+  const started = Date.now();
+  return new grpc.InterceptingCall(nextCall(options), {
+    start(metadata, listener, next) {
+      next(metadata, {
+        onReceiveStatus(status, nextStatus) {
+          record({ method: options.method_definition.path, code: grpc.status[status.code], ms: Date.now() - started });
+          nextStatus(status);
+        },
+      });
+    },
+  });
+};
+
+// Retries are a channel-level policy: only safe, idempotent methods, only transient codes.
+const serviceConfig = {
+  loadBalancingConfig: [{ round_robin: {} }],
+  methodConfig: [{
+    name: [{ service: &quot;demo.v1.OrderService&quot;, method: &quot;GetOrder&quot; }],
+    retryPolicy: {
+      maxAttempts: 4,
+      initialBackoff: &quot;0.1s&quot;,
+      maxBackoff: &quot;1s&quot;,
+      backoffMultiplier: 2,
+      retryableStatusCodes: [&quot;UNAVAILABLE&quot;],
+    },
+  }],
+};
+
+function createOrderClient(address, { getToken, record = () =&gt; {}, defaultDeadlineMs = 2000 } = {}) {
+  return new OrderService(address, grpc.credentials.createInsecure(), {
+    // Interceptors run outermost-first: metrics sees the final outcome, including retries.
+    interceptors: [
+      metricsInterceptor(record),
+      authInterceptor(getToken),
+      defaultDeadlineInterceptor(defaultDeadlineMs),
+    ],
+    &quot;grpc.enable_retries&quot;: 1,
+    &quot;grpc.service_config&quot;: JSON.stringify(serviceConfig),
+    &quot;grpc.keepalive_time_ms&quot;: 30_000,
+    &quot;grpc.keepalive_timeout_ms&quot;: 10_000,
+  });
+}
+
+// async/await wrapper for unary calls.
+const unary = (client, method, request, options = {}) =&gt;
+  new Promise((resolve, reject) =&gt;
+    client[method](request, new grpc.Metadata(), options,
+      (err, response) =&gt; (err ? reject(err) : resolve(response))));
+
+module.exports = { createOrderClient, unary, serviceConfig };</code></pre>
+<h2 id="23-unary">2.3 Unary<a class="anchor" href="#23-unary">#</a></h2>
+<p>The simplest shape, and the one to reach for first.</p>
+<pre><code class="lang-js">// Callback style, as generated.
+client.getOrder({ orderId: &quot;ord_1&quot; }, (err, order) =&gt; {
+  if (err) return console.error(grpc.status[err.code], err.details);
+  console.log(order.status);
+});
+
+// Promise wrapper, from client.js.
+const order = await unary(client, &quot;getOrder&quot;, { orderId: &quot;ord_1&quot; });</code></pre>
+<p>The notes ask whether <code>async/await</code> works with gRPC in Node: yes, but only by wrapping the callback in a promise, as <code>unary()</code> does. Other languages, such as Go and Java, offer blocking, async and future-based stubs directly.</p>
+<p><strong>Tested:</strong> <code>int64</code> arrives as a string, <code>enum</code> as its name, and the downstream <code>InventoryService</code> call is made with the caller&#x27;s deadline attached.</p>
+<h2 id="24-server-streaming">2.4 Server streaming<a class="anchor" href="#24-server-streaming">#</a></h2>
+<p>The server writes many messages, then ends the stream. Three rules make it safe:</p>
+<ol><li><strong>Respect backpressure.</strong> <code>call.write()</code> returning <code>false</code> means the buffer is full.</li><li><strong>Stop when the client leaves.</strong> Check <code>call.cancelled</code> each iteration.</li><li><strong>Report errors by emitting them</strong>, not by destroying the stream.</li></ol>
+<pre><code class="lang-js">// Consuming it: a Node readable stream, so for-await works.
+try {
+  for await (const event of client.watchOrder({ orderId: &quot;ord_1&quot; })) {
+    console.log(event.status);
+  }
+} catch (err) {
+  // An error arrives as a throw out of the loop.
+  console.error(grpc.status[err.code], err.details);
+}</code></pre>
+<blockquote><p><strong>Gotcha found while testing this document.</strong> Reporting an error with <code>call.destroy({ code, details })</code> tears the stream down <strong>without ever sending a gRPC status</strong>, so the client hangs until its deadline. grpc-js only converts an error into a status when you emit it: <code>call.emit(&quot;error&quot;, { code, details })</code>. The <code>guardHandlers</code> wrapper in <code>errors.js</code> does this for you.</p></blockquote>
+<h2 id="25-client-streaming">2.5 Client streaming<a class="anchor" href="#25-client-streaming">#</a></h2>
+<p>The client writes many messages and half-closes; the server replies once.</p>
+<pre><code class="lang-js">const summary = await new Promise((resolve, reject) =&gt; {
+  const call = client.uploadItems((err, res) =&gt; (err ? reject(err) : resolve(res)));
+  for (const item of items) call.write(item);
+  call.end();                       // half-close: &quot;I&#x27;m done sending&quot;
+});</code></pre>
+<p><strong>Tested:</strong> 1,000 streamed items produced one summary, with the <code>int64</code> total accumulated as a <code>BigInt</code> to avoid precision loss. A validation failure on the second item returned <code>INVALID_ARGUMENT</code> with a field path, and the server stopped accumulating.</p>
+<p>The server can respond <strong>before</strong> the client finishes sending, which is how early validation failures work. A client that keeps writing after that gets a <code>CANCELLED</code> or write error.</p>
+<h2 id="26-bidirectional-streaming">2.6 Bidirectional streaming<a class="anchor" href="#26-bidirectional-streaming">#</a></h2>
+<p>Both sides send independently on one stream. There is no request-response pairing unless you build one, for example by putting a correlation ID in the message.</p>
+<pre><code class="lang-js">const call = client.chat();
+call.on(&quot;data&quot;, (msg) =&gt; console.log(`${msg.from}: ${msg.text}`));
+call.on(&quot;end&quot;, () =&gt; console.log(&quot;server finished&quot;));
+call.write({ from: &quot;alice&quot;, text: &quot;where is my order?&quot; });
+call.write({ from: &quot;alice&quot;, text: &quot;thanks&quot; });
+call.end();</code></pre>
+<p><strong>Tested:</strong> messages interleaved correctly, and the half-close from the client led to a clean end from the server.</p>
+<p>Design rules that prevent most bidi bugs:</p>
+<ul><li><strong>Decide who ends first.</strong> A common contract is: the client half-closes, then the server finishes.</li><li><strong>Carry a correlation ID</strong> if replies can arrive out of order.</li><li><strong>Keep per-stream state small</strong>; a stream pins memory on both sides for its whole life.</li><li><strong>Don&#x27;t use bidi as a message queue.</strong> If you need durability, replay or fan-out to many consumers, use Kafka or RabbitMQ and keep gRPC for the request path.</li></ul>
+<hr>
+<h1 id="3-flow-control-and-backpressure">3. Flow control and backpressure<a class="anchor" href="#3-flow-control-and-backpressure">#</a></h1>
+<p>HTTP/2 has per-stream flow control, so a sender cannot overwhelm the network. What that means for <strong>your code</strong> is more subtle, and it was measured.</p>
+<h2 id="31-the-server-side-pattern">3.1 The server-side pattern<a class="anchor" href="#31-the-server-side-pattern">#</a></h2>
+<p><code>call.write()</code> returns <code>false</code> when the outgoing buffer is full. The usual advice is to wait for <code>drain</code>, but doing only that introduces a leak.</p>
+<blockquote><p><strong>Gotcha found while testing this document.</strong> If the client cancels while the server is waiting on <code>drain</code>, that event never fires: the handler is stuck forever, holding its closure and any resources. Measured: a handler parked on <code>await once(call, &quot;drain&quot;)</code> was still parked long after the client had cancelled. Wait for <strong>either</strong> <code>drain</code> or <code>cancelled</code>:</p></blockquote>
+<pre><code class="lang-js">function waitWritable(call) {
+  if (call.cancelled) return Promise.resolve(false);
+  return new Promise((resolve) =&gt; {
+    const onDrain = () =&gt; { cleanup(); resolve(true); };
+    const onCancel = () =&gt; { cleanup(); resolve(false); };
+    const cleanup = () =&gt; { call.off(&quot;drain&quot;, onDrain); call.off(&quot;cancelled&quot;, onCancel); };
+    call.once(&quot;drain&quot;, onDrain);
+    call.once(&quot;cancelled&quot;, onCancel);
+  });
+}
+
+// in the handler
+if (!call.write(event) &amp;&amp; !(await waitWritable(call))) return;</code></pre>
+<p><strong>Tested:</strong> streaming 20,000 one-kilobyte messages, <code>write()</code> returned <code>false</code> 1,250 times, every wait resumed on <code>drain</code>, and all 20,000 arrived in order. The server&#x27;s own memory stayed flat at about 80 MB.</p>
+<h2 id="32-what-a-slow-consumer-actually-does">3.2 What a slow consumer actually does<a class="anchor" href="#32-what-a-slow-consumer-actually-does">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>Measurement</th><th>Result</th></tr></thead><tbody><tr><td>Client paused for 3 seconds, server sending 1 KB messages</td><td>Server wrote ~180,000 messages, about 180 MB</td></tr><tr><td>Server memory during that time</td><td>Flat, around 80 MB</td></tr><tr><td>Client memory during that time</td><td>Grew from ~125 MB to ~347 MB</td></tr></tbody></table></div>
+<p><strong>Pausing a grpc-js client stream does not slow the sender.</strong> The data keeps arriving and buffers in the client&#x27;s process. So:</p>
+<ul><li>**The <code>write</code>/<code>drain</code> pattern protects the server**, which is what it is for.</li><li><strong>It does not protect a slow client.</strong> A consumer that can&#x27;t keep up will grow its own heap until it dies.</li><li><strong>Other implementations differ.</strong> grpc-java exposes manual flow control, where the application requests messages explicitly, and grpc-go replenishes the receive window as the application reads. Don&#x27;t assume Node&#x27;s behaviour elsewhere, or the reverse.</li><li><strong>For genuinely fast producers, add application-level flow control</strong>: have the consumer request N more items over a bidirectional stream, the pattern used by reactive-streams style APIs.</li></ul>
+<h2 id="33-practical-limits">3.3 Practical limits<a class="anchor" href="#33-practical-limits">#</a></h2>
+<ul><li>Keep individual messages small; the default receive limit is 4 MB, and huge messages hurt latency and memory. <strong>Tested:</strong> a 2 MB request against a 1 MB limit failed with <code>RESOURCE_EXHAUSTED</code>.</li><li>For large payloads, stream chunks of 32 KB to 128 KB rather than one giant message.</li><li>Bound the number of concurrent streams per connection; the HTTP/2 default is often 100.</li></ul>
+<hr>
+<h1 id="4-deadlines-and-cancellation">4. Deadlines and cancellation<a class="anchor" href="#4-deadlines-and-cancellation">#</a></h1>
+<p>This is gRPC&#x27;s best feature, and the notes are right to call its failure handling the strongest of the three API styles.</p>
+<h2 id="41-timeout-vs-deadline">4.1 Timeout vs deadline<a class="anchor" href="#41-timeout-vs-deadline">#</a></h2>
+<ul><li>A <strong>timeout</strong> is a duration: &quot;wait 5 seconds&quot;.</li><li>A <strong>deadline</strong> is an absolute point in time: &quot;be finished by 10:00:03.250&quot;.</li></ul>
+<p>gRPC works with deadlines. The client computes the remaining time and sends it as the <code>grpc-timeout</code> header, so <strong>every hop in the chain shares one budget</strong> instead of each adding its own five seconds.</p>
+<pre><code class="lang-js">// Both forms exist in grpc-js; the deadline is what travels.
+client.getOrder(req, { deadline: Date.now() + 250 }, cb);
+client.getOrder(req, { deadline: new Date(&quot;2026-09-15T10:00:03.250Z&quot;) }, cb);</code></pre>
+<h2 id="42-propagation">4.2 Propagation<a class="anchor" href="#42-propagation">#</a></h2>
+<figure><img src="images/deadline-propagation.svg" alt="Deadline propagation across services"></figure>
+<p>Propagation is not automatic in Node: pass the incoming call as <code>parent</code>, and its deadline along with it.</p>
+<pre><code class="lang-js">inventory.checkStock(
+  { skus },
+  { parent: call, deadline: call.getDeadline() },   // inherit budget + cancellation
+  (err, stock) =&gt; { ... });</code></pre>
+<p><strong>Tested end to end:</strong> a client deadline of 200 ms reached a downstream service two hops away <strong>within 2 ms of the original</strong>, every hop was cancelled at once when it expired, and the caller got <code>DEADLINE_EXCEEDED</code>.</p>
+<h2 id="43-deadlines-do-not-stop-your-code">4.3 Deadlines do not stop your code<a class="anchor" href="#43-deadlines-do-not-stop-your-code">#</a></h2>
+<blockquote><p><strong>Tested:</strong> when the deadline expired, the downstream handler received a <code>cancelled</code> event, <strong>but its function kept running to completion</strong> and its callback was simply ignored.</p></blockquote>
+<p>A deadline frees the *caller*, not the *callee*. To actually stop work, check for cancellation:</p>
+<pre><code class="lang-js">async function checkStock(call, callback) {
+  await slowLookup();
+  if (call.cancelled) return;            // nobody is waiting: stop, send nothing
+  callback(null, { allInStock: true });
+}</code></pre>
+<p>Check <code>call.cancelled</code> before expensive steps, and pass an abort signal into database and HTTP calls so they stop too.</p>
+<h2 id="44-choosing-deadlines">4.4 Choosing deadlines<a class="anchor" href="#44-choosing-deadlines">#</a></h2>
+<ul><li><strong>Every unary call gets a deadline.</strong> A call without one can hang forever. The client interceptor in <code>client.js</code> applies a default, which is the cheapest way to guarantee it.</li><li><strong>Base the value on observed latency</strong>, roughly the p99 plus headroom, not on a round number.</li><li><strong>Budget down the chain.</strong> If the edge allows 300 ms, an inner service should be given less, not more.</li><li><strong>Don&#x27;t put a short default deadline on long-lived streams.</strong> The interceptor in <code>client.js</code> deliberately skips streaming methods. <strong>Tested:</strong> a 50 ms default would have killed a healthy 180 ms stream; skipping streams let it complete.</li><li><strong>Use keepalive and heartbeats for streams instead</strong>, covered in section 8.</li></ul>
+<h2 id="45-client-initiated-cancellation">4.5 Client-initiated cancellation<a class="anchor" href="#45-client-initiated-cancellation">#</a></h2>
+<pre><code class="lang-js">const stream = client.watchOrder({ orderId: &quot;ord_1&quot; });
+stream.on(&quot;data&quot;, (e) =&gt; { if (done(e)) stream.cancel(); });</code></pre>
+<p><strong>Tested:</strong> the client saw <code>CANCELLED</code>, and the server&#x27;s loop observed <code>call.cancelled</code> and stopped producing. Cancellation propagates to anything the handler called with <code>parent</code>, so an entire subtree of work unwinds.</p>
+<hr>
+<h1 id="5-metadata">5. Metadata<a class="anchor" href="#5-metadata">#</a></h1>
+<p>Metadata is gRPC&#x27;s equivalent of HTTP headers: key-value pairs travelling beside the message.</p>
+<pre><code class="lang-js">// Client: send
+const md = new grpc.Metadata();
+md.set(&quot;authorization&quot;, &quot;Bearer abc&quot;);
+md.set(&quot;x-request-id&quot;, requestId);
+client.getOrder(req, md, cb);
+
+// Server: read, and send some back
+function getOrder(call, callback) {
+  const requestId = call.metadata.get(&quot;x-request-id&quot;)[0];
+  const header = new grpc.Metadata();
+  header.set(&quot;x-served-by&quot;, process.env.HOSTNAME ?? &quot;local&quot;);
+  call.sendMetadata(header);
+  callback(null, order);
+}</code></pre>
+<p>Rules worth knowing:</p>
+<ul><li><strong>Keys are lowercase ASCII.</strong> Values are strings, unless the key ends in <code>-bin</code>, which carries raw bytes and is base64-encoded on the wire automatically.</li><li>**<code>grpc-</code> prefixed keys are reserved** for the protocol, such as <code>grpc-timeout</code>, <code>grpc-status</code> and <code>grpc-status-details-bin</code>.</li><li><strong>Headers arrive before the messages; trailers arrive after.</strong> Anything computed during the call, such as a final error detail, must go in trailers.</li><li><strong>Metadata is not encrypted by itself.</strong> Use TLS, and never put secrets in a <code>-bin</code> key expecting privacy.</li><li><strong>Propagate tracing headers</strong> such as <code>traceparent</code> through every hop.</li></ul>
+<hr>
+<h1 id="6-interceptors">6. Interceptors<a class="anchor" href="#6-interceptors">#</a></h1>
+<figure><img src="images/interceptor-chain.svg" alt="Client and server interceptor chains"></figure>
+<p>Interceptors are middleware for RPCs, the notes&#x27; comparison to Express middleware is exactly right. Typical uses: authentication, logging, metrics, tracing, default deadlines, retry bookkeeping, error mapping and rate limiting.</p>
+<h2 id="61-server-side">6.1 Server side<a class="anchor" href="#61-server-side">#</a></h2>
+<p><code>interceptors-server.js</code></p>
+<pre><code class="lang-js">// interceptors-server.js — cross-cutting concerns for every RPC on the server.
+const { grpc } = require(&quot;./load.js&quot;);
+
+// Rejects calls without a valid bearer token before any handler runs.
+function authInterceptor(isValidToken) {
+  return (methodDescriptor, call) =&gt;
+    new grpc.ServerInterceptingCall(call, {
+      start(next) {
+        next({
+          onReceiveMetadata(metadata, nextMetadata) {
+            const header = metadata.get(&quot;authorization&quot;)[0] ?? &quot;&quot;;
+            const token = String(header).replace(/^Bearer /, &quot;&quot;);
+            if (!isValidToken(token)) {
+              call.sendStatus({ code: grpc.status.UNAUTHENTICATED, details: &quot;Missing or invalid token&quot; });
+              return;
+            }
+            nextMetadata(metadata);
+          },
+        });
+      },
+    });
+}
+
+// Logs method, final status code and duration for every call.
+function loggingInterceptor(log) {
+  return (methodDescriptor, call) =&gt; {
+    const started = process.hrtime.bigint();
+    return new grpc.ServerInterceptingCall(call, {
+      sendStatus(status, next) {
+        const ms = Number(process.hrtime.bigint() - started) / 1e6;
+        log({ method: methodDescriptor.path, code: grpc.status[status.code], ms: +ms.toFixed(1) });
+        next(status);
+      },
+    });
+  };
+}
+
+module.exports = { authInterceptor, loggingInterceptor };</code></pre>
+<p><strong>Tested:</strong> a call with a bad token was rejected with <code>UNAUTHENTICATED</code> <strong>before the handler ran</strong>, and the logging interceptor recorded method, final status code and duration for every call including the rejected ones.</p>
+<h2 id="62-client-side">6.2 Client side<a class="anchor" href="#62-client-side">#</a></h2>
+<p>The three interceptors in <code>client.js</code> cover the common needs: metrics on the outcome, an auth token on every request, and a default deadline for unary calls.</p>
+<h2 id="63-ordering">6.3 Ordering<a class="anchor" href="#63-ordering">#</a></h2>
+<p><strong>Tested</strong> with three tagged interceptors:</p>
+<pre><code class="lang-text">A:start → B:start → C:start → C:status → B:status → A:status</code></pre>
+<p>The request passes through the array <strong>in order</strong>, and the response and status come back <strong>in reverse</strong>. So put cross-cutting observers first: the metrics interceptor listed first sees the final outcome of everything inside it.</p>
+<p><strong>Tested:</strong> with a retry policy in force, a call that made 4 attempts was recorded by the metrics interceptor <strong>once</strong>, with the total elapsed time including backoff. Interceptors sit above the retry machinery, which is usually what you want for latency metrics, and means per-attempt visibility needs server-side logging instead.</p>
+<hr>
+<h1 id="7-error-handling">7. Error handling<a class="anchor" href="#7-error-handling">#</a></h1>
+<h2 id="71-the-status-model">7.1 The status model<a class="anchor" href="#71-the-status-model">#</a></h2>
+<p>Every call ends with a status: <code>OK</code> or one of 16 error codes, plus a message and optional trailing metadata. A failed call is <strong>not</strong> signalled by the HTTP status, which stays 200.</p>
+<div class="table-wrap"><table><thead><tr><th>Code</th><th>#</th><th>Meaning</th><th>Usually retryable?</th></tr></thead><tbody><tr><td><code>OK</code></td><td>0</td><td>Success</td><td>n/a</td></tr><tr><td><code>CANCELLED</code></td><td>1</td><td>The caller cancelled</td><td>No</td></tr><tr><td><code>UNKNOWN</code></td><td>2</td><td>Unmapped error, often an uncaught exception</td><td>No</td></tr><tr><td><code>INVALID_ARGUMENT</code></td><td>3</td><td>Bad request regardless of system state</td><td>No</td></tr><tr><td><code>DEADLINE_EXCEEDED</code></td><td>4</td><td>Ran out of time</td><td>Only with a fresh, larger budget</td></tr><tr><td><code>NOT_FOUND</code></td><td>5</td><td>The resource does not exist</td><td>No</td></tr><tr><td><code>ALREADY_EXISTS</code></td><td>6</td><td>The resource already exists</td><td>No</td></tr><tr><td><code>PERMISSION_DENIED</code></td><td>7</td><td>Authenticated but not allowed</td><td>No</td></tr><tr><td><code>RESOURCE_EXHAUSTED</code></td><td>8</td><td>Quota, rate limit or message too large</td><td>Yes, with backoff</td></tr><tr><td><code>FAILED_PRECONDITION</code></td><td>9</td><td>System state is wrong; don&#x27;t retry until fixed</td><td>No</td></tr><tr><td><code>ABORTED</code></td><td>10</td><td>Concurrency conflict such as a transaction abort</td><td>Yes, at a higher level</td></tr><tr><td><code>OUT_OF_RANGE</code></td><td>11</td><td>Past the valid range, such as reading beyond EOF</td><td>No</td></tr><tr><td><code>UNIMPLEMENTED</code></td><td>12</td><td>Method not implemented</td><td>No</td></tr><tr><td><code>INTERNAL</code></td><td>13</td><td>A real bug or invariant violation</td><td>No</td></tr><tr><td><code>UNAVAILABLE</code></td><td>14</td><td>Transient: service down, connection lost</td><td><strong>Yes</strong></td></tr><tr><td><code>DATA_LOSS</code></td><td>15</td><td>Unrecoverable data loss or corruption</td><td>No</td></tr><tr><td><code>UNAUTHENTICATED</code></td><td>16</td><td>Missing or invalid credentials</td><td>No, refresh first</td></tr></tbody></table></div>
+<p>The gRPC documentation notes that some codes are <strong>never generated by the library</strong>, only by application code: <code>INVALID_ARGUMENT</code>, <code>NOT_FOUND</code>, <code>ALREADY_EXISTS</code>, <code>FAILED_PRECONDITION</code>, <code>ABORTED</code>, <code>OUT_OF_RANGE</code> and <code>DATA_LOSS</code>. So when you see one, your own code, or the service you called, produced it deliberately.</p>
+<h2 id="72-choosing-between-the-confusing-ones">7.2 Choosing between the confusing ones<a class="anchor" href="#72-choosing-between-the-confusing-ones">#</a></h2>
+<ul><li>**<code>INVALID_ARGUMENT</code> vs <code>FAILED_PRECONDITION</code>:** the argument is wrong no matter what the system state is, versus the argument is fine but the system isn&#x27;t ready, such as deleting a non-empty directory.</li><li>**<code>FAILED_PRECONDITION</code> vs <code>ABORTED</code> vs <code>UNAVAILABLE</code>:** don&#x27;t retry, retry at a higher level after resolving a conflict, retry the same call with backoff.</li><li>**<code>NOT_FOUND</code> vs <code>PERMISSION_DENIED</code>:** returning <code>NOT_FOUND</code> avoids revealing that a resource exists.</li><li>**<code>UNKNOWN</code> vs <code>INTERNAL</code>:** <code>UNKNOWN</code> usually means an exception escaped. Map it to something meaningful.</li></ul>
+<h2 id="73-rich-machine-readable-errors">7.3 Rich, machine-readable errors<a class="anchor" href="#73-rich-machine-readable-errors">#</a></h2>
+<p>A code plus a sentence is often not enough. The standard extension is <code>google.rpc.Status</code> carried in the <code>grpc-status-details-bin</code> trailer, holding typed details such as <code>BadRequest</code>, <code>RetryInfo</code>, <code>QuotaFailure</code> or <code>ErrorInfo</code>.</p>
+<p><code>errors.js</code></p>
+<pre><code class="lang-js">// errors.js — build and read gRPC errors with rich, machine-readable details.
+const { grpc, RpcStatus, BadRequest } = require(&quot;./load.js&quot;);
+
+const DETAILS_KEY = &quot;grpc-status-details-bin&quot;;
+
+// Server side: an error object grpc-js understands, carrying google.rpc.BadRequest.
+function invalidArgument(message, fieldViolations) {
+  const badRequest = BadRequest.encode(BadRequest.fromObject({ fieldViolations })).finish();
+  const status = RpcStatus.encode(RpcStatus.fromObject({
+    code: grpc.status.INVALID_ARGUMENT,
+    message,
+    details: [{ type_url: &quot;type.googleapis.com/google.rpc.BadRequest&quot;, value: badRequest }],
+  })).finish();
+
+  const metadata = new grpc.Metadata();
+  metadata.set(DETAILS_KEY, Buffer.from(status)); // &quot;-bin&quot; keys carry raw bytes
+  return { code: grpc.status.INVALID_ARGUMENT, details: message, metadata };
+}
+
+// Client side: turn an error back into plain objects.
+function readErrorDetails(err) {
+  const [raw] = err.metadata?.get(DETAILS_KEY) ?? [];
+  if (!raw) return [];
+  return RpcStatus.decode(raw).details.map((any) =&gt;
+    any.type_url.endsWith(&quot;/google.rpc.BadRequest&quot;)
+      ? { type: &quot;BadRequest&quot;, ...BadRequest.toObject(BadRequest.decode(any.value)) }
+      : { type: any.type_url });
+}
+
+// Wrap every handler so exceptions become a proper status instead of a leak or a hang.
+//  - grpc-js sends a synchronous throw to the client as UNKNOWN *with the raw message*.
+//  - a rejected async handler sends nothing: the client waits for its deadline, and the
+//    unhandled rejection can crash the process.
+// Errors that already carry a gRPC code pass through; anything else becomes a generic INTERNAL.
+function guardHandlers(handlers, logError = console.error) {
+  const toStatus = (err) =&gt; {
+    if (Number.isInteger(err?.code) &amp;&amp; err.code &gt; 0 &amp;&amp; err.code &lt;= 16) return err;
+    logError(err);                                   // full detail stays server-side
+    return { code: grpc.status.INTERNAL, details: &quot;Internal server error&quot; };
+  };
+  return Object.fromEntries(Object.entries(handlers).map(([name, handler]) =&gt; [name,
+    (call, callback) =&gt; {
+      const fail = (err) =&gt; {
+        const status = toStatus(err);
+        if (typeof callback === &quot;function&quot;) callback(status);   // unary, client streaming
+        else call.emit(&quot;error&quot;, status);                         // server streaming, bidi
+      };
+      try {
+        const result = handler(call, callback);
+        if (typeof result?.then === &quot;function&quot;) result.catch(fail);
+      } catch (err) {
+        fail(err);
+      }
+    }]));
+}
+
+module.exports = { invalidArgument, readErrorDetails, guardHandlers };</code></pre>
+<p><strong>Tested:</strong> an empty <code>order_id</code> produced <code>INVALID_ARGUMENT</code>, and the client decoded exactly <code>[{ type: &quot;BadRequest&quot;, fieldViolations: [{ field: &quot;order_id&quot;, description: &quot;must not be empty&quot; }] }]</code>.</p>
+<h2 id="74-uncaught-exceptions-two-bad-defaults">7.4 Uncaught exceptions: two bad defaults<a class="anchor" href="#74-uncaught-exceptions-two-bad-defaults">#</a></h2>
+<blockquote><p><strong>Tested, and both are traps.</strong></p><p>- **A synchronous <code>throw</code> in a handler** is sent to the client as <code>UNKNOWN</code> <strong>with the raw exception message</strong>. A message such as <code>boom: secret db password in message</code> goes straight over the wire to the caller. - <strong>A rejected async handler sends nothing at all.</strong> The client waits out its full deadline, and without a deadline it waits forever. Meanwhile Node raises an <code>unhandledRejection</code>, which terminates the process under the default settings.</p></blockquote>
+<p>The <code>guardHandlers</code> wrapper in <code>errors.js</code> fixes both, and <code>server.js</code> applies it to every service. <strong>Tested:</strong> the synchronous throw became <code>INTERNAL</code> with a generic message; the async rejection became <code>INTERNAL</code> in 9 ms instead of hanging; an error already carrying a gRPC code passed through unchanged; a stream that failed mid-flight delivered its first message then <code>INTERNAL</code>; and the real messages appeared only in the server log.</p>
+<h2 id="75-failure-modes-and-defences">7.5 Failure modes and defences<a class="anchor" href="#75-failure-modes-and-defences">#</a></h2>
+<p>The notes list gRPC&#x27;s failure modes as connection drops, deadline exceeded, stream interruption and backpressure issues. Matching defences:</p>
+<div class="table-wrap"><table><thead><tr><th>Failure</th><th>Defence</th></tr></thead><tbody><tr><td>Connection drop</td><td><code>UNAVAILABLE</code> plus a retry policy; keepalive to detect dead connections early</td></tr><tr><td>Deadline exceeded</td><td>Realistic deadlines, propagation, and cancellation checks in handlers</td></tr><tr><td>Stream interruption</td><td>Resumable streams with a cursor, section 9</td></tr><tr><td>Backpressure</td><td><code>write</code>/<code>drain</code> with cancel-awareness, section 3</td></tr><tr><td>Overload</td><td><code>RESOURCE_EXHAUSTED</code> plus rate limiting; load shedding</td></tr><tr><td>Bad input</td><td><code>INVALID_ARGUMENT</code> with <code>BadRequest</code> details</td></tr><tr><td>Bugs</td><td><code>guardHandlers</code>, generic <code>INTERNAL</code>, detailed server-side logs</td></tr></tbody></table></div>
+<hr>
+<h1 id="8-retries-and-reliability">8. Retries and reliability<a class="anchor" href="#8-retries-and-reliability">#</a></h1>
+<h2 id="81-two-kinds-of-retry">8.1 Two kinds of retry<a class="anchor" href="#81-two-kinds-of-retry">#</a></h2>
+<ul><li><strong>Transparent retries</strong> happen automatically when an RPC never reached the server&#x27;s application logic, for example it failed while leaving the client. These are always safe.</li><li><strong>Configured retries</strong> come from a <strong>service config</strong> retry policy and apply to failures the server did see.</li></ul>
+<p>The notes say gRPC has &quot;automatic retry policies&quot;. More precisely: retries are <strong>enabled</strong> by default, but there is <strong>no default policy</strong>, so without configuration only the transparent case is retried.</p>
+<h2 id="82-a-policy-as-used-in-clientjs">8.2 A policy, as used in <code>client.js</code><a class="anchor" href="#82-a-policy-as-used-in-clientjs">#</a></h2>
+<pre><code class="lang-js">const serviceConfig = {
+  methodConfig: [{
+    name: [{ service: &quot;demo.v1.OrderService&quot;, method: &quot;GetOrder&quot; }],  // only this method
+    retryPolicy: {
+      maxAttempts: 4,
+      initialBackoff: &quot;0.1s&quot;,
+      maxBackoff: &quot;1s&quot;,
+      backoffMultiplier: 2,
+      retryableStatusCodes: [&quot;UNAVAILABLE&quot;],
+    },
+  }],
+};</code></pre>
+<p><strong>Tested results:</strong></p>
+<ul><li>A server returning <code>UNAVAILABLE</code> twice then succeeding: the call <strong>succeeded on attempt 3</strong>, and retried attempts carried the <code>grpc-previous-rpc-attempts</code> header with values <code>1</code> and <code>2</code>.</li><li>A server returning <code>NOT_FOUND</code>: <strong>exactly one attempt</strong>, because the code isn&#x27;t in the list.</li><li>A server always returning <code>UNAVAILABLE</code>: 4 attempts, then <code>UNAVAILABLE</code> to the caller.</li><li><strong>One deadline bounds every attempt.</strong> With a 250 ms deadline against an always-failing server, the call gave up after 252 ms and 2 attempts with <code>DEADLINE_EXCEEDED</code>. The deadline is not per attempt.</li></ul>
+<h2 id="83-rules">8.3 Rules<a class="anchor" href="#83-rules">#</a></h2>
+<ul><li><strong>Only retry idempotent methods.</strong> Name them explicitly; never apply a blanket policy to every method, or a retried <code>CreateOrder</code> becomes two orders. For non-idempotent work, add an idempotency key to the request and deduplicate server-side.</li><li><strong>Only retry transient codes.</strong> <code>UNAVAILABLE</code> nearly always; <code>RESOURCE_EXHAUSTED</code> sometimes, with longer backoff. Never <code>INVALID_ARGUMENT</code>, <code>NOT_FOUND</code> or <code>PERMISSION_DENIED</code>.</li><li><strong>Always keep a deadline</strong>, since it is what stops retries from piling up.</li><li><strong>Add retry throttling.</strong> A <code>retryThrottling</code> block in the service config stops a struggling service being hammered by the whole fleet, the gRPC equivalent of a retry budget.</li><li><strong>Consider hedging</strong> for latency-critical reads: send the same request to a second server after a delay and take the first answer. Only for idempotent methods.</li></ul>
+<h2 id="84-circuit-breakers">8.4 Circuit breakers<a class="anchor" href="#84-circuit-breakers">#</a></h2>
+<p>gRPC has no built-in circuit breaker. Use a client interceptor that tracks failures per target and fails fast with <code>UNAVAILABLE</code> once a threshold is crossed, or let a service mesh such as Istio or Envoy do it with outlier detection.</p>
+<hr>
+<h1 id="9-streaming-patterns-in-practice">9. Streaming patterns in practice<a class="anchor" href="#9-streaming-patterns-in-practice">#</a></h1>
+<h2 id="91-resumable-streams">9.1 Resumable streams<a class="anchor" href="#91-resumable-streams">#</a></h2>
+<p>The notes list &quot;streaming recovery: resume streams&quot; as a gRPC feature. It is <strong>not</strong> built in. If a stream breaks, the client gets an error and must start a new call. Make that cheap by designing for it:</p>
+<pre><code class="lang-proto">message WatchOrderRequest {
+  string order_id = 1;
+  uint64 from_sequence = 2;   // resume after the last event the client processed
+}
+
+message OrderEvent {
+  uint64 sequence = 1;
+  // ...
+}</code></pre>
+<p>The client records the last <code>sequence</code> it handled and sends it on reconnect; the server replays from there. This is the same idea as Kafka offsets or the SSE <code>Last-Event-ID</code> header. Without it, reconnection silently loses events.</p>
+<h2 id="92-heartbeats-and-idle-streams">9.2 Heartbeats and idle streams<a class="anchor" href="#92-heartbeats-and-idle-streams">#</a></h2>
+<p>A stream with no traffic can be closed by a proxy or NAT device without either side noticing. Two defences:</p>
+<ul><li><strong>Transport keepalive</strong>, which pings the connection:</li></ul>
+<pre><code class="lang-js">const client = new OrderService(address, credentials, {
+  &quot;grpc.keepalive_time_ms&quot;: 30_000,          // ping after 30 s idle
+  &quot;grpc.keepalive_timeout_ms&quot;: 10_000,       // no pong in 10 s: connection is dead
+  &quot;grpc.keepalive_permit_without_calls&quot;: 1,
+});</code></pre>
+<p>Servers must permit that rate, with <code>grpc.http2.min_time_between_pings_ms</code> and <code>grpc.http2.min_ping_interval_without_data_ms</code>, or they will send <code>GOAWAY</code> with <code>too_many_pings</code>. Agree the values on both sides.</p>
+<ul><li><strong>Application heartbeats</strong>, an <code>OrderEvent</code> with a <code>heartbeat</code> variant every N seconds, which also tells the client the stream is alive and healthy.</li></ul>
+<h2 id="93-stream-lifetime">9.3 Stream lifetime<a class="anchor" href="#93-stream-lifetime">#</a></h2>
+<p>Long-lived streams pin clients to a specific server, which blocks rebalancing and rolling deploys. Bound them deliberately:</p>
+<ul><li><code>grpc.max_connection_age_ms</code> and <code>grpc.max_connection_age_grace_ms</code> on the server recycle connections so load can be redistributed.</li><li>Have clients reconnect on a schedule with jitter, resuming with <code>from_sequence</code>.</li><li>Treat a clean end of stream as normal, not an error.</li></ul>
+<h2 id="94-fan-out">9.4 Fan-out<a class="anchor" href="#94-fan-out">#</a></h2>
+<p>One stream per subscriber means the server holds state per connection. For broadcast to many consumers, put a real message bus behind the service, and let each gRPC stream be a thin subscriber to it. Don&#x27;t rebuild a durable broker on top of bidirectional streams.</p>
+<h2 id="95-choosing-a-pattern">9.5 Choosing a pattern<a class="anchor" href="#95-choosing-a-pattern">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>Requirement</th><th>Reach for</th></tr></thead><tbody><tr><td>Request and reply</td><td>Unary</td></tr><tr><td>Server pushes updates to one client</td><td>Server streaming, with resumption</td></tr><tr><td>Upload or batch ingest</td><td>Client streaming</td></tr><tr><td>Interactive two-way session</td><td>Bidirectional streaming</td></tr><tr><td>Durable, replayable events, many consumers</td><td>A message broker, not gRPC streaming</td></tr><tr><td>Browser needs live updates</td><td>SSE or WebSocket at the edge, gRPC behind it</td></tr></tbody></table></div>
+<hr>
+<h1 id="10-production-concerns">10. Production concerns<a class="anchor" href="#10-production-concerns">#</a></h1>
+<h2 id="101-connections-and-load-balancing">10.1 Connections and load balancing<a class="anchor" href="#101-connections-and-load-balancing">#</a></h2>
+<ul><li><strong>Create one client per target and reuse it.</strong> A client owns a channel and its connections; creating one per request leaks connections, which the notes list as a common production issue.</li><li><strong>Layer 4 load balancers don&#x27;t work well with gRPC.</strong> One long-lived HTTP/2 connection carries all calls, so a TCP-level balancer pins a client to one backend and load arrives unevenly. Options: client-side load balancing with <code>round_robin</code> over a DNS name that returns all backend addresses, such as a Kubernetes headless service; a Layer 7 proxy such as Envoy or NGINX that balances per request; or a service mesh.</li></ul>
+<pre><code class="lang-js">const client = new OrderService(`dns:///orders.svc.cluster.local:50051`, credentials, {
+  &quot;grpc.service_config&quot;: JSON.stringify({ loadBalancingConfig: [{ round_robin: {} }] }),
+});</code></pre>
+<h2 id="102-security">10.2 Security<a class="anchor" href="#102-security">#</a></h2>
+<ul><li><strong>Use TLS</strong>, <code>grpc.credentials.createSsl()</code>, and mTLS for service-to-service identity. <code>createInsecure()</code> belongs in tests and local development only, which is why this demo uses it.</li><li><strong>Authenticate with metadata</strong>, typically a JWT in <code>authorization</code>, verified in a server interceptor as shown above.</li><li><strong>Authorise per method and per object</strong> in the handler. An interceptor that only checks &quot;is the token valid&quot; is not authorisation.</li></ul>
+<h2 id="103-health-checking-and-reflection">10.3 Health checking and reflection<a class="anchor" href="#103-health-checking-and-reflection">#</a></h2>
+<ul><li><strong>Health checking:</strong> implement the standard <code>grpc.health.v1.Health</code> service so Kubernetes and load balancers can probe it, rather than inventing your own.</li><li><strong>Server reflection:</strong> lets tools discover your services without a local <code>.proto</code> copy. It makes <code>grpcurl</code> work, which is the answer to the notes&#x27; &quot;debugging is harder than REST&quot;:</li></ul>
+<pre><code class="lang-bash">grpcurl -plaintext localhost:50051 list
+grpcurl -plaintext -d &#x27;{&quot;orderId&quot;:&quot;ord_1&quot;}&#x27; localhost:50051 demo.v1.OrderService/GetOrder</code></pre>
+<p>Enable reflection in development and internal environments; consider disabling it on internet-facing servers.</p>
+<h2 id="104-graceful-shutdown">10.4 Graceful shutdown<a class="anchor" href="#104-graceful-shutdown">#</a></h2>
+<pre><code class="lang-js">process.on(&quot;SIGTERM&quot;, () =&gt; {
+  server.tryShutdown(() =&gt; process.exit(0));   // stop accepting, let in-flight calls finish
+});</code></pre>
+<p><code>tryShutdown</code> drains; <code>forceShutdown</code> cuts everything off immediately. Pair draining with a readiness probe that starts failing first, so no new traffic arrives.</p>
+<h2 id="105-limits-and-compression">10.5 Limits and compression<a class="anchor" href="#105-limits-and-compression">#</a></h2>
+<pre><code class="lang-js">new grpc.Server({
+  &quot;grpc.max_receive_message_length&quot;: 4 * 1024 * 1024,
+  &quot;grpc.max_send_message_length&quot;: 4 * 1024 * 1024,
+});</code></pre>
+<p>Set limits deliberately on both client and server. Enable gzip for large messages, remembering that compression costs CPU and, as measured in the companion document, gzip narrows Protobuf&#x27;s size advantage over JSON rather than widening it.</p>
+<h2 id="106-observability">10.6 Observability<a class="anchor" href="#106-observability">#</a></h2>
+<ul><li><strong>Server interceptor</strong> for structured logs: method, status code, duration, request ID.</li><li><strong>Metrics</strong> per method: request rate, error rate by status code, and latency percentiles.</li><li><strong>Tracing</strong> with OpenTelemetry&#x27;s gRPC instrumentation, propagating <code>traceparent</code> through metadata.</li><li>Remember interceptors see one logical call; use server-side logs for per-attempt visibility.</li></ul>
+<h2 id="107-testing">10.7 Testing<a class="anchor" href="#107-testing">#</a></h2>
+<p>The tests behind this document run a real server on an ephemeral port in-process, which is fast and needs no mocks:</p>
+<pre><code class="lang-js">const port = await new Promise((resolve, reject) =&gt;
+  server.bindAsync(&quot;127.0.0.1:0&quot;, grpc.ServerCredentials.createInsecure(),
+    (err, p) =&gt; (err ? reject(err) : resolve(p))));</code></pre>
+<p>Test the error paths, not just the happy one: deadlines, cancellation, oversized messages, missing handlers and bad tokens all have specific status codes worth asserting.</p>
+<hr>
+<h1 id="11-corrections-to-the-notes">11. Corrections to the notes<a class="anchor" href="#11-corrections-to-the-notes">#</a></h1>
+<div class="table-wrap"><table><thead><tr><th>Notes say</th><th>Accurate version</th></tr></thead><tbody><tr><td>Retries: &quot;built-in support, automatic retry policies&quot;</td><td>Retries are enabled but there is <strong>no default policy</strong>; without config only transparent retries happen</td></tr><tr><td>&quot;Streaming recovery: resume streams&quot;</td><td>Not built in; design a sequence number or cursor and resume explicitly</td></tr><tr><td>&quot;Load balancing: built-in support&quot;</td><td>Client-side policies exist, but the default is <code>pick_first</code>; Layer 4 balancers distribute gRPC badly</td></tr><tr><td><code>client.call(request, { deadline: Date.now()+3000 })</code></td><td>Correct for grpc-js; note the deadline is absolute and covers all retry attempts</td></tr><tr><td>&quot;If a request exceeds its deadline the server stops processing&quot;</td><td>The server is *notified*; handlers keep running unless they check <code>call.cancelled</code> (tested)</td></tr><tr><td>&quot;Errors: status codes + messages&quot;</td><td>Also <code>google.rpc.Status</code> details in <code>grpc-status-details-bin</code> for machine-readable errors</td></tr><tr><td>Error handling is simply &quot;status codes&quot;</td><td>Uncaught exceptions default to leaking the message (<code>UNKNOWN</code>) or hanging the call (async); guard handlers</td></tr><tr><td>gRPC N+1: &quot;batch requests&quot;</td><td>Right idea; add server-side batch RPCs such as <code>BatchGetOrders</code> to the contract</td></tr></tbody></table></div>
+<hr>
+<h1 id="12-production-checklist">12. Production checklist<a class="anchor" href="#12-production-checklist">#</a></h1>
+<h2 id="contract">Contract<a class="anchor" href="#contract">#</a></h2>
+<ul><li class="task"><label><input type="checkbox"> Each RPC has its own request and response message</label></li><li class="task"><label><input type="checkbox"> Package is versioned, such as <code>demo.v1</code></label></li><li class="task"><label><input type="checkbox"> Streaming is used only where it earns its complexity</label></li><li class="task"><label><input type="checkbox"> Streamed events carry a sequence number so clients can resume</label></li></ul>
+<h2 id="calls">Calls<a class="anchor" href="#calls">#</a></h2>
+<ul><li class="task"><label><input type="checkbox"> Every unary call has a deadline, applied by default in an interceptor</label></li><li class="task"><label><input type="checkbox"> Deadlines propagate to downstream calls with <code>parent</code></label></li><li class="task"><label><input type="checkbox"> Handlers check <code>call.cancelled</code> before expensive work</label></li><li class="task"><label><input type="checkbox"> Long-lived streams have keepalive and heartbeats, not short deadlines</label></li></ul>
+<h2 id="errors">Errors<a class="anchor" href="#errors">#</a></h2>
+<ul><li class="task"><label><input type="checkbox"> Handlers are wrapped so exceptions become <code>INTERNAL</code>, never a leaked message or a hang</label></li><li class="task"><label><input type="checkbox"> Status codes are chosen deliberately, not all <code>INTERNAL</code> or <code>UNKNOWN</code></label></li><li class="task"><label><input type="checkbox"> Validation failures return <code>INVALID_ARGUMENT</code> with <code>BadRequest</code> details</label></li><li class="task"><label><input type="checkbox"> Server streams report errors by emitting them, never by destroying the call</label></li></ul>
+<h2 id="reliability">Reliability<a class="anchor" href="#reliability">#</a></h2>
+<ul><li class="task"><label><input type="checkbox"> Retry policy names specific idempotent methods and retryable codes only</label></li><li class="task"><label><input type="checkbox"> Retry throttling or a circuit breaker protects failing dependencies</label></li><li class="task"><label><input type="checkbox"> Non-idempotent RPCs carry an idempotency key</label></li><li class="task"><label><input type="checkbox"> Message size limits are set on both sides</label></li></ul>
+<h2 id="operations">Operations<a class="anchor" href="#operations">#</a></h2>
+<ul><li class="task"><label><input type="checkbox"> One client per target, reused; no client per request</label></li><li class="task"><label><input type="checkbox"> Load balancing is client-side <code>round_robin</code> or a Layer 7 proxy</label></li><li class="task"><label><input type="checkbox"> <code>grpc.health.v1.Health</code> implemented and probed</label></li><li class="task"><label><input type="checkbox"> <code>SIGTERM</code> triggers <code>tryShutdown</code> after readiness starts failing</label></li><li class="task"><label><input type="checkbox"> TLS everywhere; tokens verified in an interceptor; authorisation in handlers</label></li><li class="task"><label><input type="checkbox"> Logs, metrics by status code, and traces propagated through metadata</label></li></ul>
+<hr>
+<h1 id="13-qa">13. Q&amp;A<a class="anchor" href="#13-qa">#</a></h1>
+<h3 id="call-types">Call types<a class="anchor" href="#call-types">#</a></h3>
+<p><strong>What are the four gRPC call types?</strong> Unary, server streaming, client streaming and bidirectional streaming.</p>
+<p><strong>When should you use bidirectional streaming?</strong> Only for genuinely interactive, real-time exchanges such as chat. It is the wrong tool for CRUD.</p>
+<p><strong>Is gRPC synchronous or asynchronous?</strong> Both, depending on the generated stub. In Node the API is callback and stream based; wrap unary calls in a promise to use <code>async/await</code>.</p>
+<p><strong>How do you consume a server stream in Node?</strong> It&#x27;s a readable stream: attach <code>data</code>, <code>end</code> and <code>error</code> listeners, or use <code>for await</code>, which throws the gRPC error out of the loop.</p>
+<p><strong>Who ends a bidirectional stream?</strong> Whatever the contract says. A common rule is that the client half-closes with <code>end()</code> and the server then finishes.</p>
+<h3 id="deadlines-and-cancellation">Deadlines and cancellation<a class="anchor" href="#deadlines-and-cancellation">#</a></h3>
+<p><strong>What is the difference between a timeout and a deadline?</strong> A timeout is a duration; a deadline is an absolute time. gRPC propagates the deadline, so one budget covers the whole call chain.</p>
+<p><strong>What happens when a deadline expires?</strong> The caller gets <code>DEADLINE_EXCEEDED</code> and downstream calls are cancelled. The server handler is notified but keeps running unless it checks <code>call.cancelled</code>.</p>
+<p><strong>How do you propagate a deadline in Node?</strong> Pass <code>{ parent: call, deadline: call.getDeadline() }</code> when making the downstream call.</p>
+<p><strong>Should streams get a default deadline?</strong> No. A default deadline kills healthy long-lived streams; use keepalive and heartbeats instead.</p>
+<p><strong>How does a client cancel a call?</strong> <code>call.cancel()</code>. The server sees <code>cancelled</code>, and the cancellation propagates to child calls.</p>
+<h3 id="errors-and-status-codes">Errors and status codes<a class="anchor" href="#errors-and-status-codes">#</a></h3>
+<p><strong>How does gRPC report errors?</strong> A status code and message in the trailers, plus optional <code>google.rpc.Status</code> details in <code>grpc-status-details-bin</code>. The HTTP status stays 200.</p>
+<p>**What does <code>DEADLINE_EXCEEDED</code> mean?** The call didn&#x27;t finish within its deadline.</p>
+<p>**What does <code>UNAVAILABLE</code> mean?** The service couldn&#x27;t be reached or is transiently down. It is the main retryable code.</p>
+<p><strong>Which codes never come from the library?</strong> <code>INVALID_ARGUMENT</code>, <code>NOT_FOUND</code>, <code>ALREADY_EXISTS</code>, <code>FAILED_PRECONDITION</code>, <code>ABORTED</code>, <code>OUT_OF_RANGE</code> and <code>DATA_LOSS</code>. Seeing one means application code produced it.</p>
+<p><strong>What happens if a handler throws?</strong> In grpc-js a synchronous throw becomes <code>UNKNOWN</code> with the raw message exposed to the client, and a rejected async handler sends nothing at all. Wrap handlers to return <code>INTERNAL</code> instead.</p>
+<p>**What happens if a method is in the <code>.proto</code> but not implemented?** The server still starts, and calls to it return <code>UNIMPLEMENTED</code>.</p>
+<h3 id="retries-and-reliability">Retries and reliability<a class="anchor" href="#retries-and-reliability">#</a></h3>
+<p><strong>Does gRPC retry automatically?</strong> Only transparent retries for RPCs that never reached the server. Anything else needs a retry policy in the service config.</p>
+<p><strong>Which methods should have a retry policy?</strong> Idempotent ones only, named explicitly.</p>
+<p><strong>Does a deadline apply per attempt or to the whole call?</strong> The whole call. Tested: a 250 ms deadline stopped retrying after 252 ms with <code>DEADLINE_EXCEEDED</code>.</p>
+<p><strong>How many times does an interceptor see a retried call?</strong> Once. Interceptors sit above the retry machinery, so latency metrics include all attempts and backoff.</p>
+<p><strong>What is hedging?</strong> Sending the same idempotent request to another server after a delay and using whichever response arrives first.</p>
+<h3 id="streaming-and-production">Streaming and production<a class="anchor" href="#streaming-and-production">#</a></h3>
+<p><strong>How does backpressure work?</strong> <code>write()</code> returns <code>false</code> when the buffer is full; wait for <code>drain</code>, and also for <code>cancelled</code>, or the handler leaks when a client disappears.</p>
+<p><strong>Does a slow client slow the server down?</strong> Measured in grpc-js: no. Pausing the client kept data flowing into the client&#x27;s memory. Other implementations expose stricter flow control.</p>
+<p><strong>How do you resume a broken stream?</strong> Design for it: number the events, have the client remember the last one it processed, and replay from there on reconnect.</p>
+<p><strong>Why does gRPC load-balance badly behind a Layer 4 balancer?</strong> All calls share one long-lived HTTP/2 connection, so connection-level balancing pins a client to one backend. Use client-side <code>round_robin</code> or a Layer 7 proxy.</p>
+<p><strong>How do you debug a gRPC service?</strong> <code>grpcurl</code> with server reflection, logging interceptors, and status codes with rich details.</p>
+<p><strong>How do you shut down without dropping calls?</strong> <code>server.tryShutdown()</code> on <code>SIGTERM</code>, after the readiness probe starts failing.</p>
+<hr>
+<h1 id="14-quick-revision-sheet">14. Quick revision sheet<a class="anchor" href="#14-quick-revision-sheet">#</a></h1>
+<div class="table-wrap"><table><thead><tr><th>Topic</th><th>Remember</th></tr></thead><tbody><tr><td>Unary</td><td>Default choice; always give it a deadline</td></tr><tr><td>Server streaming</td><td>Check <code>call.cancelled</code>; <code>write</code>/<code>drain</code>; <code>call.end()</code></td></tr><tr><td>Client streaming</td><td>Client <code>end()</code> half-closes; server may answer early</td></tr><tr><td>Bidirectional</td><td>Independent directions; agree who ends first</td></tr><tr><td>Stream errors</td><td><code>call.emit(&quot;error&quot;, status)</code>, never <code>destroy()</code></td></tr><tr><td>Backpressure</td><td>Wait for <code>drain</code> <strong>or</strong> <code>cancelled</code>, else the handler leaks</td></tr><tr><td>Slow consumer</td><td>grpc-js buffers in the client; add app-level flow control</td></tr><tr><td>Deadline</td><td>Absolute, propagated with <code>parent</code>, covers all retry attempts</td></tr><tr><td>Cancellation</td><td>Notifies; it does not stop your code running</td></tr><tr><td>Metadata</td><td>Headers before, trailers after; <code>-bin</code> keys carry bytes</td></tr><tr><td>Interceptors</td><td>In order out, reverse back; they see one call, not each retry</td></tr><tr><td>Status codes</td><td>17 of them; <code>UNAVAILABLE</code> is the retryable one</td></tr><tr><td>Rich errors</td><td><code>google.rpc.Status</code> in <code>grpc-status-details-bin</code></td></tr><tr><td>Exceptions</td><td>Guard every handler: leak or hang otherwise</td></tr><tr><td>Retries</td><td>Idempotent methods only, transient codes only, always with a deadline</td></tr><tr><td>Connections</td><td>One client per target, reused; L7 or client-side balancing</td></tr><tr><td>Shutdown</td><td><code>tryShutdown</code> after readiness fails</td></tr></tbody></table></div>
+<p><strong>One sentence each</strong></p>
+<ul><li>The call type is a design decision about who talks when, and unary is right far more often than it feels.</li><li>Deadlines and cancellation are gRPC&#x27;s best feature, and they only work if every hop propagates them and every handler checks them.</li><li>Most gRPC production incidents are not about encoding; they are missing deadlines, unguarded exceptions, retried non-idempotent calls, and connections that never rebalance.</li></ul>
+<hr>
+<h1 id="15-references">15. References<a class="anchor" href="#15-references">#</a></h1>
+<ul><li><a href="https://grpc.io/docs/what-is-grpc/core-concepts/">gRPC core concepts</a>, <a href="https://grpc.io/docs/guides/status-codes/">status codes</a>, <a href="https://grpc.io/docs/guides/error/">error handling</a>, <a href="https://grpc.io/docs/guides/deadlines/">deadlines</a>, <a href="https://grpc.io/docs/guides/cancellation/">cancellation</a>, <a href="https://grpc.io/docs/guides/retry/">retry</a>, <a href="https://grpc.io/docs/guides/keepalive/">keepalive</a>, <a href="https://grpc.io/docs/guides/health-checking/">health checking</a>, <a href="https://grpc.io/docs/guides/reflection/">reflection</a></li><li><a href="https://github.com/grpc/proposal/blob/master/A6-client-retries.md">gRFC A6: client retries</a> and <a href="https://github.com/grpc/proposal/blob/master/A2-service-configs-in-dns.md">gRFC A2: service configs</a></li><li><a href="https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md">gRPC over HTTP/2 protocol specification</a></li><li><a href="https://github.com/grpc/grpc-node/tree/master/examples">grpc-node examples, including interceptors</a></li><li><a href="https://google.aip.dev/193">Google API error model</a> and <a href="https://github.com/googleapis/googleapis/blob/master/google/rpc/status.proto">google.rpc.Status</a></li><li><a href="https://github.com/fullstorydev/grpcurl">grpcurl</a></li><li>Versions used: @grpc/grpc-js 1.14.4, @grpc/proto-loader 0.8.1, protobufjs 8.8.0, Node.js 24.15.0</li></ul>
+<hr>
+<p><strong>Previous:</strong> <a href="../7.%20PROTOBUF_GRPC_DEEP_DIVE/index.html">Protocol Buffers &amp; gRPC Deep Dive</a></p>
+<p><strong>Related:</strong> <a href="../6.%20REST_RESTFUL_API_BEST_PRACTICES/index.html">REST, RESTful APIs &amp; Best Practices</a></p>
+<footer>Extracted from the DOCUMENTATIONS export &middot; OSI model study notes &middot; see <code>README.md</code> for the markdown source.</footer>
+</main>
+</div>
+</body>
+</html>

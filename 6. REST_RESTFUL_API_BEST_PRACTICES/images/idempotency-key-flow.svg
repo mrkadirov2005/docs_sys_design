@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 500" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+  <defs>
+    <marker id="h" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#1c1c1a"/></marker>
+    <marker id="hr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#b3261e"/></marker>
+    <marker id="hg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#2e8b57"/></marker>
+  </defs>
+  <rect width="880" height="500" rx="14" fill="#fbfbf9"/>
+  <text x="440" y="38" text-anchor="middle" font-size="20" font-weight="700" fill="#1c1c1a">Safe retries with an Idempotency-Key</text>
+  <text x="440" y="60" text-anchor="middle" font-size="13" fill="#5c5c56">The client retries a POST after a lost response. The customer is charged exactly once.</text>
+  <g font-size="14" font-weight="700" text-anchor="middle" fill="#1c1c1a">
+    <rect x="70" y="80" width="140" height="40" rx="8" fill="#fff" stroke="#1c1c1a"/><text x="140" y="105">Client</text>
+    <rect x="370" y="80" width="140" height="40" rx="8" fill="#fff" stroke="#1c1c1a"/><text x="440" y="105">API</text>
+    <rect x="670" y="80" width="140" height="40" rx="8" fill="#fff" stroke="#1c1c1a"/><text x="740" y="105">Key store</text>
+  </g>
+  <g stroke="#b9b9b1" stroke-dasharray="4 4"><path d="M140 120 V480"/><path d="M440 120 V480"/><path d="M740 120 V480"/></g>
+  <g font-size="12.5" fill="#1c1c1a">
+    <path d="M140 150 H436" stroke="#1c1c1a" stroke-width="1.5" marker-end="url(#h)"/>
+    <text x="290" y="143" text-anchor="middle" font-family="ui-monospace,Menlo,monospace">POST /payments  Idempotency-Key: k-81f</text>
+
+    <path d="M440 185 H736" stroke="#1c1c1a" stroke-width="1.5" marker-end="url(#h)"/>
+    <text x="590" y="178" text-anchor="middle">key k-81f seen? → no, lock it</text>
+
+    <rect x="380" y="200" width="120" height="30" rx="6" fill="#f3ece7" stroke="#8a4b2a"/>
+    <text x="440" y="220" text-anchor="middle">charge card</text>
+
+    <path d="M440 255 H736" stroke="#1c1c1a" stroke-width="1.5" marker-end="url(#h)"/>
+    <text x="590" y="248" text-anchor="middle">store k-81f → 201 + body</text>
+
+    <path d="M436 290 H240" stroke="#b3261e" stroke-width="1.5" marker-end="url(#hr)"/>
+    <text x="330" y="283" text-anchor="middle" fill="#b3261e">201 Created</text>
+    <text x="222" y="295" text-anchor="middle" font-size="18" fill="#b3261e">✕</text>
+    <text x="222" y="316" text-anchor="middle" font-size="11.5" fill="#b3261e">response lost (timeout)</text>
+
+    <path d="M140 360 H436" stroke="#1c1c1a" stroke-width="1.5" marker-end="url(#h)"/>
+    <text x="290" y="353" text-anchor="middle" font-family="ui-monospace,Menlo,monospace">retry: same body, same key k-81f</text>
+
+    <path d="M440 395 H736" stroke="#1c1c1a" stroke-width="1.5" marker-end="url(#h)"/>
+    <text x="590" y="388" text-anchor="middle">key k-81f seen? → yes</text>
+
+    <path d="M736 425 H444" stroke="#1c1c1a" stroke-width="1.5" stroke-dasharray="6 3" marker-end="url(#h)"/>
+    <text x="590" y="418" text-anchor="middle">saved 201 + body</text>
+
+    <path d="M436 460 H144" stroke="#2e8b57" stroke-width="2" marker-end="url(#hg)"/>
+    <text x="290" y="447" text-anchor="middle" fill="#2e8b57" font-weight="700">replayed 201, no second charge</text>
+  </g>
+</svg>

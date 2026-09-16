@@ -123,8 +123,7 @@ def convert(md):
         # unordered list
         if re.match(r'^-\s+', stripped):
             items, i = _list(lines, i, r'^-\s+')
-            out.append('<ul>' + ''.join(f'<li>{inline(t)}</li>'
-                                        for t in items) + '</ul>')
+            out.append('<ul>' + ''.join(_li(t) for t in items) + '</ul>')
             continue
 
         # ordered list
@@ -147,6 +146,16 @@ def convert(md):
             out.append(f'<p>{body}</p>')
 
     return '\n'.join(out), toc
+
+
+def _li(text):
+    """List item, rendering GitHub-style task items `[ ]` / `[x]` as checkboxes."""
+    m = re.match(r'^\[([ xX])\]\s+(.*)$', text)
+    if not m:
+        return f'<li>{inline(text)}</li>'
+    checked = ' checked' if m.group(1) in 'xX' else ''
+    return (f'<li class="task"><label><input type="checkbox"{checked}> '
+            f'{inline(m.group(2))}</label></li>')
 
 
 def _is_block_start(line):
@@ -231,6 +240,9 @@ a{color:var(--accent)}
 ul,ol{margin:0 0 1.15em;padding-left:1.45em}
 li{margin:.32em 0}
 li::marker{color:var(--muted)}
+li.task{list-style:none;margin-left:-1.45em}
+li.task input{accent-color:var(--accent);margin:0 .5em 0 0;vertical-align:-1px}
+li.task label{cursor:pointer}
 hr{border:0;border-top:1px solid var(--line);margin:2.6em 0}
 code{background:var(--code-bg);border:1px solid var(--line);
   border-radius:4px;padding:.12em .38em;font-size:.875em;

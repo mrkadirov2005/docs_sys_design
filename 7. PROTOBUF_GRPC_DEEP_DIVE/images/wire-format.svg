@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 470" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+  <title>How a Protobuf message becomes bytes: tags, varints and length-delimited fields</title>
+  <rect width="880" height="470" rx="14" fill="#fbfbf9"/>
+  <text x="440" y="40" text-anchor="middle" font-size="20" font-weight="700" fill="#1c1c1a">From message to bytes</text>
+  <text x="440" y="62" text-anchor="middle" font-size="13" fill="#5c5c56">Field names never go on the wire, only field numbers. 8 bytes here vs 23 for the same JSON.</text>
+
+  <g font-family="ui-monospace,Menlo,Consolas,monospace" font-size="13" fill="#1c1c1a">
+    <rect x="40" y="82" width="370" height="84" rx="8" fill="#fff" stroke="#e3e3dd"/>
+    <text x="56" y="106">message User {</text>
+    <text x="72" y="126">int32  id   = <tspan fill="#2a78d6" font-weight="700">1</tspan>;</text>
+    <text x="72" y="146">string name = <tspan fill="#eb6834" font-weight="700">2</tspan>;</text>
+    <text x="56" y="162">}</text>
+    <rect x="470" y="82" width="370" height="84" rx="8" fill="#fff" stroke="#e3e3dd"/>
+    <text x="486" y="112" fill="#5c5c56">// value</text>
+    <text x="486" y="136">{ id: 150, name: "Ali" }</text>
+  </g>
+
+  <g font-family="ui-monospace,Menlo,Consolas,monospace" font-size="17" font-weight="700" text-anchor="middle">
+    <rect x="60"  y="200" width="80"  height="48" rx="6" fill="#e4eefa" stroke="#2a78d6"/><text x="100" y="231" fill="#1c1c1a">08</text>
+    <rect x="146" y="200" width="160" height="48" rx="6" fill="#e4eefa" stroke="#2a78d6"/><text x="226" y="231" fill="#1c1c1a">96 01</text>
+    <rect x="330" y="200" width="80"  height="48" rx="6" fill="#fcebe4" stroke="#eb6834"/><text x="370" y="231" fill="#1c1c1a">12</text>
+    <rect x="416" y="200" width="80"  height="48" rx="6" fill="#fcebe4" stroke="#eb6834"/><text x="456" y="231" fill="#1c1c1a">03</text>
+    <rect x="502" y="200" width="240" height="48" rx="6" fill="#fcebe4" stroke="#eb6834"/><text x="622" y="231" fill="#1c1c1a">41 6c 69</text>
+  </g>
+  <g font-size="12" fill="#5c5c56" text-anchor="middle">
+    <text x="100" y="272">tag</text><text x="100" y="288">field 1, VARINT</text>
+    <text x="226" y="272">value 150</text><text x="226" y="288">as a 2-byte varint</text>
+    <text x="370" y="272">tag</text><text x="370" y="288">field 2, LEN</text>
+    <text x="456" y="272">length</text><text x="456" y="288">3 bytes follow</text>
+    <text x="622" y="272">"Ali"</text><text x="622" y="288">UTF-8 bytes</text>
+  </g>
+  <text x="800" y="231" text-anchor="middle" font-size="13" font-weight="700" fill="#1c1c1a">= 8 B</text>
+
+  <line x1="40" y1="312" x2="840" y2="312" stroke="#e3e3dd"/>
+
+  <text x="40" y="340" font-size="14" font-weight="700" fill="#1c1c1a">Tag byte</text>
+  <g font-family="ui-monospace,Menlo,Consolas,monospace" font-size="12.5" fill="#1c1c1a">
+    <text x="40" y="364">tag = (field_number &lt;&lt; 3) | wire_type</text>
+    <text x="40" y="386">(1 &lt;&lt; 3) | 0 = 0x08      <tspan fill="#5c5c56">wire type 0 = VARINT</tspan></text>
+    <text x="40" y="408">(2 &lt;&lt; 3) | 2 = 0x12      <tspan fill="#5c5c56">wire type 2 = LEN</tspan></text>
+    <text x="40" y="438" fill="#5c5c56">fields 1–15 fit the tag in one byte</text>
+  </g>
+
+  <text x="470" y="340" font-size="14" font-weight="700" fill="#1c1c1a">Varint: 150</text>
+  <g font-family="ui-monospace,Menlo,Consolas,monospace" font-size="12.5" fill="#1c1c1a">
+    <text x="470" y="364">150 = 1001 0110 (binary)</text>
+    <text x="470" y="386">7-bit groups, low first: 0010110 · 0000001</text>
+    <text x="470" y="408"><tspan font-weight="700">1</tspan>0010110 = 0x96  <tspan font-weight="700">0</tspan>0000001 = 0x01</text>
+    <text x="470" y="438" fill="#5c5c56">top bit 1 = "more bytes follow"</text>
+  </g>
+</svg>

@@ -1,0 +1,859 @@
+<!doctype html>
+<html lang="en" data-theme-auto>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>REST, RESTful APIs &amp; Best Practices</title>
+<style>
+:root{
+  --bg:#fbfbf9; --surface:#ffffff; --ink:#1c1c1a; --muted:#5c5c56;
+  --line:#e3e3dd; --accent:#8a4b2a; --accent-soft:#f3ece7;
+  --code-bg:#f5f4f0; --quote-bg:#f7f5f1;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#16161a; --surface:#1d1d22; --ink:#e8e8e4; --muted:#a0a099;
+    --line:#32323a; --accent:#e0a077; --accent-soft:#2a2320;
+    --code-bg:#232329; --quote-bg:#202026;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#16161a; --surface:#1d1d22; --ink:#e8e8e4; --muted:#a0a099;
+  --line:#32323a; --accent:#e0a077; --accent-soft:#2a2320;
+  --code-bg:#232329; --quote-bg:#202026;
+}
+*{box-sizing:border-box}
+body{
+  background:var(--bg); color:var(--ink); margin:0;
+  font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,
+       "Helvetica Neue",Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.layout{max-width:1180px;margin:0 auto;padding:0 24px;
+  display:grid;grid-template-columns:236px minmax(0,1fr);gap:48px}
+nav.toc{position:sticky;top:0;align-self:start;max-height:100vh;
+  overflow-y:auto;padding:40px 0 40px;font-size:13.5px}
+nav.toc .label{text-transform:uppercase;letter-spacing:.09em;
+  font-size:11px;color:var(--muted);font-weight:700;margin-bottom:12px}
+nav.toc a{display:block;color:var(--muted);text-decoration:none;
+  padding:4px 10px;border-left:2px solid transparent;line-height:1.4}
+nav.toc a:hover{color:var(--accent);border-left-color:var(--accent);
+  background:var(--accent-soft)}
+nav.toc a.lvl2{padding-left:22px;font-size:13px}
+main{padding:40px 0 96px;min-width:0}
+h1,h2,h3,h4{line-height:1.25;font-weight:650;
+  scroll-margin-top:24px;position:relative}
+h1{font-size:2.05rem;margin:.2em 0 .6em;letter-spacing:-.02em}
+h2{font-size:1.5rem;margin:2.2em 0 .7em;padding-bottom:.3em;
+  border-bottom:1px solid var(--line)}
+h3{font-size:1.16rem;margin:1.9em 0 .5em}
+h4{font-size:1rem;margin:1.5em 0 .4em;color:var(--muted)}
+.anchor{position:absolute;margin-left:.4em;color:var(--line);
+  text-decoration:none;opacity:0;font-weight:400}
+h1:hover .anchor,h2:hover .anchor,h3:hover .anchor{opacity:1}
+.anchor:hover{color:var(--accent)}
+p{margin:0 0 1em}
+a{color:var(--accent)}
+ul,ol{margin:0 0 1.15em;padding-left:1.45em}
+li{margin:.32em 0}
+li::marker{color:var(--muted)}
+li.task{list-style:none;margin-left:-1.45em}
+li.task input{accent-color:var(--accent);margin:0 .5em 0 0;vertical-align:-1px}
+li.task label{cursor:pointer}
+hr{border:0;border-top:1px solid var(--line);margin:2.6em 0}
+code{background:var(--code-bg);border:1px solid var(--line);
+  border-radius:4px;padding:.12em .38em;font-size:.875em;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+pre{background:var(--code-bg);border:1px solid var(--line);
+  border-radius:8px;padding:16px 18px;overflow-x:auto;margin:0 0 1.3em}
+pre code{background:none;border:0;padding:0;font-size:13px;line-height:1.55}
+blockquote{margin:0 0 1.3em;padding:14px 18px;background:var(--quote-bg);
+  border-left:3px solid var(--accent);border-radius:0 8px 8px 0}
+blockquote p{margin:0 0 .6em}
+blockquote p:last-child{margin:0}
+.table-wrap{overflow-x:auto;margin:0 0 1.5em;border:1px solid var(--line);
+  border-radius:8px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:14.5px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);
+  vertical-align:top}
+th{background:var(--accent-soft);font-weight:650;white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+figure{margin:0 0 1.6em;text-align:center}
+img{max-width:100%;height:auto;border:1px solid var(--line);
+  border-radius:8px;background:var(--surface)}
+footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--line);
+  font-size:13px;color:var(--muted)}
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr;gap:0}
+  nav.toc{position:static;max-height:none;padding:28px 0 0;
+    border-bottom:1px solid var(--line);margin-bottom:8px}
+  nav.toc a.lvl2{display:none}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="toc"><div class="label">On this page</div>
+<a class="lvl1" href="#rest-restful-apis-best-practices">REST, RESTful APIs &amp; Best Practices</a>
+<a class="lvl2" href="#0-what-this-document-covers">0. What this document covers</a>
+<a class="lvl1" href="#1-what-rest-is">1. What REST is</a>
+<a class="lvl2" href="#11-definition">1.1 Definition</a>
+<a class="lvl2" href="#12-rest-vs-restful-api">1.2 REST vs RESTful API</a>
+<a class="lvl2" href="#13-why-rest-is-the-default">1.3 Why REST is the default</a>
+<a class="lvl1" href="#2-the-six-rest-constraints">2. The six REST constraints</a>
+<a class="lvl1" href="#3-richardson-maturity-model">3. Richardson Maturity Model</a>
+<a class="lvl1" href="#4-choosing-an-api-style">4. Choosing an API style</a>
+<a class="lvl2" href="#41-comparison">4.1 Comparison</a>
+<a class="lvl1" href="#5-resource-and-uri-design">5. Resource and URI design</a>
+<a class="lvl2" href="#51-think-in-resources-not-operations">5.1 Think in resources, not operations</a>
+<a class="lvl2" href="#52-uri-rules">5.2 URI rules</a>
+<a class="lvl2" href="#53-when-an-action-really-is-an-action">5.3 When an action really is an action</a>
+<a class="lvl1" href="#6-http-methods">6. HTTP methods</a>
+<a class="lvl2" href="#61-idempotency-precisely">6.1 Idempotency, precisely</a>
+<a class="lvl2" href="#62-put-vs-patch">6.2 PUT vs PATCH</a>
+<a class="lvl1" href="#7-status-codes">7. Status codes</a>
+<a class="lvl2" href="#71-the-codes-worth-knowing">7.1 The codes worth knowing</a>
+<a class="lvl2" href="#72-distinctions-that-come-up-constantly">7.2 Distinctions that come up constantly</a>
+<a class="lvl2" href="#73-anti-patterns">7.3 Anti-patterns</a>
+<a class="lvl1" href="#8-request-and-response-design">8. Request and response design</a>
+<a class="lvl2" href="#81-conventions-that-save-arguments-later">8.1 Conventions that save arguments later</a>
+<a class="lvl2" href="#82-envelope-or-no-envelope">8.2 Envelope or no envelope</a>
+<a class="lvl2" href="#83-never-trust-the-request-body">8.3 Never trust the request body</a>
+<a class="lvl2" href="#84-content-negotiation">8.4 Content negotiation</a>
+<a class="lvl1" href="#9-error-handling">9. Error handling</a>
+<a class="lvl2" href="#91-use-one-error-format-problem-details-rfc-9457">9.1 Use one error format: Problem Details, RFC 9457</a>
+<a class="lvl2" href="#92-error-handling-rules">9.2 Error handling rules</a>
+<a class="lvl1" href="#10-pagination-filtering-and-sorting">10. Pagination, filtering and sorting</a>
+<a class="lvl2" href="#101-offset-pagination">10.1 Offset pagination</a>
+<a class="lvl2" href="#102-cursor-keyset-pagination">10.2 Cursor (keyset) pagination</a>
+<a class="lvl2" href="#103-which-to-use">10.3 Which to use</a>
+<a class="lvl2" href="#104-response-shape-and-link-header">10.4 Response shape and Link header</a>
+<a class="lvl1" href="#11-idempotency-and-safe-retries">11. Idempotency and safe retries</a>
+<a class="lvl2" href="#111-the-idempotency-key-header">11.1 The Idempotency-Key header</a>
+<a class="lvl2" href="#112-server-side-algorithm">11.2 Server-side algorithm</a>
+<a class="lvl2" href="#113-retry-policy">11.3 Retry policy</a>
+<a class="lvl1" href="#12-versioning-and-api-evolution">12. Versioning and API evolution</a>
+<a class="lvl2" href="#121-the-best-version-is-the-one-you-never-ship">12.1 The best version is the one you never ship</a>
+<a class="lvl2" href="#122-versioning-strategies">12.2 Versioning strategies</a>
+<a class="lvl2" href="#123-deprecating-responsibly">12.3 Deprecating responsibly</a>
+<a class="lvl1" href="#13-caching-and-conditional-requests">13. Caching and conditional requests</a>
+<a class="lvl2" href="#131-cache-control">13.1 Cache-Control</a>
+<a class="lvl2" href="#132-etags-and-conditional-get">13.2 ETags and conditional GET</a>
+<a class="lvl2" href="#133-optimistic-concurrency-preventing-lost-updates">13.3 Optimistic concurrency: preventing lost updates</a>
+<a class="lvl1" href="#14-security">14. Security</a>
+<a class="lvl2" href="#141-baseline">14.1 Baseline</a>
+<a class="lvl2" href="#142-authentication-options">14.2 Authentication options</a>
+<a class="lvl2" href="#143-cors-and-csrf">14.3 CORS and CSRF</a>
+<a class="lvl2" href="#144-owasp-api-security-top-10-2023">14.4 OWASP API Security Top 10 (2023)</a>
+<a class="lvl1" href="#15-rate-limiting-and-throttling">15. Rate limiting and throttling</a>
+<a class="lvl2" href="#151-what-and-why">15.1 What and why</a>
+<a class="lvl2" href="#152-where-it-happens">15.2 Where it happens</a>
+<a class="lvl2" href="#153-algorithms">15.3 Algorithms</a>
+<a class="lvl2" href="#154-communicating-limits-to-clients">15.4 Communicating limits to clients</a>
+<a class="lvl2" href="#155-implementation">15.5 Implementation</a>
+<a class="lvl2" href="#156-common-problems-and-best-practices">15.6 Common problems and best practices</a>
+<a class="lvl1" href="#16-reliability-and-failure-handling">16. Reliability and failure handling</a>
+<a class="lvl2" href="#161-rest-failure-modes">16.1 REST failure modes</a>
+<a class="lvl2" href="#162-defences">16.2 Defences</a>
+<a class="lvl2" href="#163-long-running-operations">16.3 Long-running operations</a>
+<a class="lvl1" href="#17-documentation-tooling-and-observability">17. Documentation, tooling and observability</a>
+<a class="lvl2" href="#171-documentation">17.1 Documentation</a>
+<a class="lvl2" href="#172-observability">17.2 Observability</a>
+<a class="lvl1" href="#18-worked-example-an-orders-api">18. Worked example: an orders API</a>
+<a class="lvl2" href="#181-endpoints">18.1 Endpoints</a>
+<a class="lvl2" href="#182-a-full-exchange">18.2 A full exchange</a>
+<a class="lvl2" href="#183-express-implementation">18.3 Express implementation</a>
+<a class="lvl1" href="#19-best-practices-checklist">19. Best-practices checklist</a>
+<a class="lvl2" href="#design">Design</a>
+<a class="lvl2" href="#semantics">Semantics</a>
+<a class="lvl2" href="#evolution">Evolution</a>
+<a class="lvl2" href="#security">Security</a>
+<a class="lvl2" href="#operations">Operations</a>
+<a class="lvl1" href="#20-qa">20. Q&amp;A</a>
+<a class="lvl1" href="#21-quick-revision-sheet">21. Quick revision sheet</a>
+<a class="lvl1" href="#22-references">22. References</a>
+</nav>
+<main>
+<h1 id="rest-restful-apis-best-practices">REST, RESTful APIs &amp; Best Practices<a class="anchor" href="#rest-restful-apis-best-practices">#</a></h1>
+<blockquote><p>Scope: what REST actually is, how a RESTful API is designed resource by resource, and the production practices that separate a toy API from one other teams can depend on: status codes, errors, pagination, idempotency, versioning, caching, security, rate limiting and failure handling.</p><p>Source: extracted and reorganised from <code>0. md/DOCUMENTATIONS ...md</code> (and its HTML twin) → <code>SYSTEM_DESIGN vs BACKEND</code> → <code>API DESIGN</code>, <code>REST vs Restful API diff</code>, <code>REST: Simple and Flexible</code>, <code>Idempotency (HTTP Concept)</code>, <code>Handling Failures and Fault Mode</code>, <code>Rate Limiting and Throttling</code>, <code>JWT</code>, <code>CORS</code>, <code>CSRF token</code>. Gaps were filled from the HTTP RFCs, IETF drafts and OWASP. All diagrams in <code>images/</code> were drawn for this document.</p></blockquote>
+<hr>
+<h2 id="0-what-this-document-covers">0. What this document covers<a class="anchor" href="#0-what-this-document-covers">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>Topic</th><th>One-line summary</th></tr></thead><tbody><tr><td>REST vs RESTful</td><td>REST is the architectural style; a RESTful API is a real API that follows it</td></tr><tr><td>Constraints</td><td>Six rules from Fielding&#x27;s dissertation that define REST</td></tr><tr><td>Maturity</td><td>Richardson levels 0–3, and why most APIs stop at level 2</td></tr><tr><td>Choosing a style</td><td>REST by default, GraphQL for flexible fetching, gRPC for internal speed</td></tr><tr><td>Resource design</td><td>Nouns, plural collections, shallow nesting, actions modelled as state</td></tr><tr><td>Methods &amp; status codes</td><td>Which verb, which code, and the common mistakes</td></tr><tr><td>Errors</td><td>One machine-readable error shape: Problem Details (RFC 9457)</td></tr><tr><td>Pagination</td><td>Offset vs cursor, and why cursor wins at scale</td></tr><tr><td>Idempotency</td><td>Safe retries, including the <code>Idempotency-Key</code> header for POST</td></tr><tr><td>Versioning</td><td>URI vs header versioning, additive change, Deprecation and Sunset headers</td></tr><tr><td>Caching</td><td><code>Cache-Control</code>, <code>ETag</code>, conditional requests, optimistic locking</td></tr><tr><td>Security</td><td>Auth, object-level authorization, CORS, CSRF, OWASP API Top 10</td></tr><tr><td>Rate limiting</td><td>Algorithms, <code>429</code>, <code>Retry-After</code>, distributed limits</td></tr><tr><td>Reliability</td><td>Timeouts, retries with backoff and jitter, circuit breakers</td></tr><tr><td>Worked example</td><td>A complete orders API plus an Express implementation</td></tr></tbody></table></div>
+<p>REST lives at the application layer. For the protocol underneath it, see <a href="../4.%20HTTP_EVOLUTION_HTTP1.1_HTTP2_HTTP3/index.html">HTTP Evolution</a> and <a href="../3.%20OSI_LAYERS_5-6-7_SESSION_PRESENTATION_APPLICATION/index.html">OSI Layers 5, 6 &amp; 7</a>.</p>
+<hr>
+<h1 id="1-what-rest-is">1. What REST is<a class="anchor" href="#1-what-rest-is">#</a></h1>
+<h2 id="11-definition">1.1 Definition<a class="anchor" href="#11-definition">#</a></h2>
+<p><strong>REST (Representational State Transfer)</strong> is an architectural style for designing networked applications. Resources are identified by URLs and manipulated through a small, uniform set of operations, which on the web are the standard HTTP methods.</p>
+<p>Roy Fielding defined it in his 2000 PhD dissertation, describing the principles that had made the web itself scale. REST is therefore not a protocol, a library or a specification. It is a set of constraints.</p>
+<p>The name explains the mechanism. A client never touches a resource directly. It receives a <strong>representation</strong> of the resource&#x27;s <strong>state</strong>, typically JSON, and <strong>transfers</strong> a new representation back to change it.</p>
+<h2 id="12-rest-vs-restful-api">1.2 REST vs RESTful API<a class="anchor" href="#12-rest-vs-restful-api">#</a></h2>
+<ul><li><strong>REST</strong> is an architectural style: a set of rules and constraints for designing APIs and web services.</li><li><strong>RESTful API</strong> is an actual API built following REST principles.</li><li>In short: <strong>REST = concept and rules. RESTful API = implementation of those rules in a real system.</strong></li></ul>
+<div class="table-wrap"><table><thead><tr><th>Feature</th><th>REST</th><th>RESTful</th></tr></thead><tbody><tr><td>Type</td><td>Concept / architecture</td><td>Implementation</td></tr><tr><td>Nature</td><td>Theoretical rules</td><td>Real, running API</td></tr><tr><td>Usage</td><td>Design guideline</td><td>Working system</td></tr><tr><td>Example</td><td>&quot;Use GET for fetching&quot;</td><td><code>GET /users</code> endpoint</td></tr></tbody></table></div>
+<p>A RESTful API follows the core constraints: stateless communication, proper HTTP methods, resource-based URLs and a uniform interface.</p>
+<h3 id="sample-restful-apis">Sample RESTful APIs<a class="anchor" href="#sample-restful-apis">#</a></h3>
+<p>GitHub API:</p>
+<pre><code class="lang-http">GET https://api.github.com/users
+GET https://api.github.com/users/octocat</code></pre>
+<p>E-commerce API:</p>
+<pre><code class="lang-http">GET    /products
+POST   /products
+PUT    /products/10
+DELETE /products/10</code></pre>
+<h2 id="13-why-rest-is-the-default">1.3 Why REST is the default<a class="anchor" href="#13-why-rest-is-the-default">#</a></h2>
+<ul><li>It rides on HTTP, so every language, proxy, CDN, browser and debugging tool already understands it.</li><li>Resources map naturally onto database entities and CRUD operations.</li><li>Statelessness makes horizontal scaling straightforward: any server can answer any request.</li><li>GET responses are cacheable by browsers and CDNs for free.</li></ul>
+<p>Its known costs:</p>
+<ul><li>JSON is verbose and slow to serialise compared with binary formats such as Protobuf.</li><li>Fixed endpoints cause <strong>over-fetching</strong> (too much data) and <strong>under-fetching</strong> (several round trips to assemble one screen).</li><li>It is not the most performant option for very high-throughput internal traffic.</li></ul>
+<p>Most applications are never bottlenecked by JSON serialisation, which is why REST is the right starting point, especially in system design interviews. Reach for GraphQL, gRPC, SSE or WebSockets only when there is a specific need REST cannot meet.</p>
+<hr>
+<h1 id="2-the-six-rest-constraints">2. The six REST constraints<a class="anchor" href="#2-the-six-rest-constraints">#</a></h1>
+<figure><img src="images/rest-constraints.svg" alt="The six REST architectural constraints"></figure>
+<div class="table-wrap"><table><thead><tr><th>#</th><th>Constraint</th><th>What it means</th><th>What you gain</th></tr></thead><tbody><tr><td>1</td><td>Client–server</td><td>UI concerns are separated from data storage</td><td>Client and server evolve independently</td></tr><tr><td>2</td><td>Stateless</td><td>Each request contains everything needed to process it; no session held on the server</td><td>Any instance can serve any request; easy horizontal scaling</td></tr><tr><td>3</td><td>Cacheable</td><td>Responses label themselves as cacheable or not</td><td>Fewer requests, lower latency, less server load</td></tr><tr><td>4</td><td>Uniform interface</td><td>Resources identified by URI, manipulated via representations, self-descriptive messages, hypermedia links</td><td>Generic clients, proxies and tools work with every API</td></tr><tr><td>5</td><td>Layered system</td><td>A client cannot tell whether it talks to the origin or an intermediary</td><td>Load balancers, CDNs, gateways slot in transparently</td></tr><tr><td>6</td><td>Code on demand (optional)</td><td>Server may send executable code to the client</td><td>Clients can be extended at runtime</td></tr></tbody></table></div>
+<h3 id="stateless-does-not-mean-the-application-has-no-state">Stateless does not mean the application has no state<a class="anchor" href="#stateless-does-not-mean-the-application-has-no-state">#</a></h3>
+<p>HTTP is stateless, but applications obviously remember who you are. The state simply lives with the client or in a shared store rather than in server memory. It is carried by:</p>
+<ul><li><strong>Tokens</strong> such as a JWT in the <code>Authorization</code> header.</li><li><strong>Cookies</strong>, sent automatically by the browser.</li><li><strong>Sessions</strong> held in a shared store like Redis, keyed by a session ID the client sends.</li></ul>
+<p>The rule is that a request must never depend on which server instance handled the previous one.</p>
+<hr>
+<h1 id="3-richardson-maturity-model">3. Richardson Maturity Model<a class="anchor" href="#3-richardson-maturity-model">#</a></h1>
+<figure><img src="images/richardson-maturity.svg" alt="Richardson Maturity Model levels 0 to 3"></figure>
+<p>Leonard Richardson&#x27;s model grades how fully an HTTP API uses the web&#x27;s features.</p>
+<div class="table-wrap"><table><thead><tr><th>Level</th><th>Name</th><th>Characteristics</th><th>Example</th></tr></thead><tbody><tr><td>0</td><td>Swamp of POX</td><td>One endpoint, one method, operation named in the body</td><td><code>POST /api</code> with <code>{&quot;action&quot;:&quot;getUser&quot;}</code></td></tr><tr><td>1</td><td>Resources</td><td>Separate URIs per resource, but still one method</td><td><code>POST /users/42</code> to read a user</td></tr><tr><td>2</td><td>HTTP verbs</td><td>Correct methods and status codes</td><td><code>GET /users/42</code> returns <code>200</code></td></tr><tr><td>3</td><td>Hypermedia controls</td><td>Responses include links describing the next valid actions</td><td><code>_links.cancel</code> on an order</td></tr></tbody></table></div>
+<h3 id="hateoas">HATEOAS<a class="anchor" href="#hateoas">#</a></h3>
+<p><strong>Hypermedia As The Engine Of Application State</strong> is level 3. The client discovers what it may do next from links in the response, rather than hard-coding URL patterns.</p>
+<pre><code class="lang-json">{
+  &quot;id&quot;: &quot;ord_7&quot;,
+  &quot;status&quot;: &quot;pending&quot;,
+  &quot;total&quot;: { &quot;amount&quot;: 4999, &quot;currency&quot;: &quot;USD&quot; },
+  &quot;_links&quot;: {
+    &quot;self&quot;:    { &quot;href&quot;: &quot;/orders/ord_7&quot; },
+    &quot;pay&quot;:     { &quot;href&quot;: &quot;/orders/ord_7/payment&quot;, &quot;method&quot;: &quot;POST&quot; },
+    &quot;cancel&quot;:  { &quot;href&quot;: &quot;/orders/ord_7&quot;, &quot;method&quot;: &quot;PATCH&quot; }
+  }
+}</code></pre>
+<p>Once the order ships, the server simply stops including <code>cancel</code>. In practice few public APIs go fully to level 3. Level 2 done well, with good documentation, is the realistic target.</p>
+<hr>
+<h1 id="4-choosing-an-api-style">4. Choosing an API style<a class="anchor" href="#4-choosing-an-api-style">#</a></h1>
+<figure><img src="images/api-style-decision.svg" alt="Decision tree: GraphQL, REST or RPC"></figure>
+<p>The three main paradigms, as captured in the notes:</p>
+<ol><li><strong>REST</strong> uses standard HTTP methods on resources identified by URLs. It maps naturally to CRUD and database operations, which makes it the go-to protocol for most web and mobile services. This should be your default choice.</li><li><strong>GraphQL</strong> exposes a single endpoint and a query language, so each client asks for exactly the fields it needs. A mobile app needing a user&#x27;s name and a dashboard needing full analytics can share one API without extra endpoints. Signals to consider it: &quot;flexible data fetching&quot;, &quot;over-fetching&quot;, &quot;under-fetching&quot;, many different clients.</li><li><strong>RPC</strong>, such as gRPC, uses binary serialisation over HTTP/2 and models <strong>actions</strong> rather than resources. A call like <code>checkPermission(userId, resource)</code> between an auth service and a user service is more natural as RPC than as a resource. Signals: microservices, internal APIs, performance-critical service-to-service calls.</li></ol>
+<h2 id="41-comparison">4.1 Comparison<a class="anchor" href="#41-comparison">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>Feature</th><th>REST</th><th>GraphQL</th><th>gRPC</th></tr></thead><tbody><tr><td>Endpoints</td><td>Many, one per resource</td><td>One, usually <code>/graphql</code></td><td>Methods on a service</td></tr><tr><td>Data shape</td><td>Fixed by server</td><td>Chosen by client</td><td>Fixed by <code>.proto</code> contract</td></tr><tr><td>Format</td><td>JSON (text)</td><td>JSON (text)</td><td>Protobuf (binary)</td></tr><tr><td>Transport</td><td>HTTP/1.1, 2 or 3</td><td>Usually HTTP POST</td><td>HTTP/2</td></tr><tr><td>HTTP caching</td><td>Excellent for GET</td><td>Hard, single POST endpoint</td><td>None built in</td></tr><tr><td>Error model</td><td>HTTP status codes</td><td><code>data</code> plus <code>errors</code> array, often with 200</td><td>gRPC status codes</td></tr><tr><td>Partial success</td><td>No</td><td>Yes</td><td>No</td></tr><tr><td>Timeouts</td><td>Client-side</td><td>Per resolver</td><td>Deadlines, propagated</td></tr><tr><td>Streaming</td><td>No (use SSE or WebSocket)</td><td>Subscriptions</td><td>Native bidirectional</td></tr><tr><td>Browser support</td><td>Native</td><td>Native</td><td>Needs gRPC-Web proxy</td></tr><tr><td>Best for</td><td>Public and CRUD APIs</td><td>Many clients with varied needs</td><td>Internal, low-latency services</td></tr></tbody></table></div>
+<p>A common real-world architecture uses all three: REST or GraphQL at the edge for clients, gRPC between internal services.</p>
+<hr>
+<h1 id="5-resource-and-uri-design">5. Resource and URI design<a class="anchor" href="#5-resource-and-uri-design">#</a></h1>
+<h2 id="51-think-in-resources-not-operations">5.1 Think in resources, not operations<a class="anchor" href="#51-think-in-resources-not-operations">#</a></h2>
+<p>The central design task in REST is modelling <strong>resources</strong> and the operations allowed on them. Resources are usually the core entities of the system, which often map to database tables.</p>
+<p>Many engineers instinctively design endpoints like <code>updateUser</code> or <code>startGame</code>. Those are operations, not resources, so they are not RESTful. Rewrite them as a method on a resource:</p>
+<div class="table-wrap"><table><thead><tr><th>RPC-style (avoid)</th><th>RESTful</th></tr></thead><tbody><tr><td><code>POST /getUser?id=42</code></td><td><code>GET /users/42</code></td></tr><tr><td><code>POST /createUser</code></td><td><code>POST /users</code></td></tr><tr><td><code>POST /updateUser</code></td><td><code>PUT /users/42</code> or <code>PATCH /users/42</code></td></tr><tr><td><code>POST /deleteUser?id=42</code></td><td><code>DELETE /users/42</code></td></tr><tr><td><code>POST /startGame</code></td><td><code>PATCH /games/9</code> with <code>{&quot;status&quot;:&quot;started&quot;}</code></td></tr><tr><td><code>GET /getUserPosts?user=42</code></td><td><code>GET /users/42/posts</code></td></tr></tbody></table></div>
+<h2 id="52-uri-rules">5.2 URI rules<a class="anchor" href="#52-uri-rules">#</a></h2>
+<ul><li><strong>Use nouns, not verbs.</strong> The HTTP method is the verb.</li><li><strong>Use plural collection names.</strong> <code>/users</code> and <code>/users/42</code>, never mixing <code>/user/42</code>.</li><li><strong>Use lowercase kebab-case for multi-word paths.</strong> <code>/order-items</code>, not <code>/orderItems</code>.</li><li><strong>Nest only to express ownership, and keep it shallow.</strong> <code>/users/42/posts</code> is fine. <code>/users/42/posts/9/comments/3/likes</code> is not; expose <code>/comments/3/likes</code> instead.</li><li><strong>Keep file extensions out of URIs.</strong> Use <code>Accept: application/json</code>, not <code>/users.json</code>.</li><li><strong>Use query parameters for filtering, sorting, searching and pagination</strong>, never for identity.</li><li><strong>Never put secrets or personal data in URLs.</strong> URLs are logged by proxies, servers and browsers.</li><li><strong>Avoid trailing slashes</strong>, or redirect them consistently.</li></ul>
+<pre><code class="lang-http">GET /users?role=admin&amp;status=active          # filter
+GET /users?sort=-created_at,name             # sort: minus = descending
+GET /users?q=alice                           # search
+GET /users?fields=id,name,email              # sparse fieldset
+GET /users?limit=20&amp;cursor=eyJpZCI6NDJ9      # paginate</code></pre>
+<h2 id="53-when-an-action-really-is-an-action">5.3 When an action really is an action<a class="anchor" href="#53-when-an-action-really-is-an-action">#</a></h2>
+<p>Some operations do not map cleanly onto CRUD, for example sending an email or recalculating a report. Three accepted approaches, in order of preference:</p>
+<ol><li><strong>Model the action as a state change.</strong> Cancelling an order becomes <code>PATCH /orders/7</code> with <code>{&quot;status&quot;:&quot;cancelled&quot;}</code>.</li><li><strong>Model the action as a sub-resource that gets created.</strong> <code>POST /orders/7/refunds</code> creates a refund resource you can later <code>GET</code>.</li><li><strong>Use a controller resource as a last resort.</strong> <code>POST /reports/12/recalculate</code>. This is common in well-known APIs such as Stripe and GitHub, and is acceptable when used sparingly.</li></ol>
+<hr>
+<h1 id="6-http-methods">6. HTTP methods<a class="anchor" href="#6-http-methods">#</a></h1>
+<div class="table-wrap"><table><thead><tr><th>Method</th><th>Purpose</th><th>Safe</th><th>Idempotent</th><th>Request body</th><th>Typical success</th></tr></thead><tbody><tr><td>GET</td><td>Read a resource or collection</td><td>Yes</td><td>Yes</td><td>No</td><td>200</td></tr><tr><td>HEAD</td><td>Same as GET, headers only</td><td>Yes</td><td>Yes</td><td>No</td><td>200</td></tr><tr><td>OPTIONS</td><td>Discover allowed methods, CORS preflight</td><td>Yes</td><td>Yes</td><td>No</td><td>204</td></tr><tr><td>POST</td><td>Create in a collection, or trigger processing</td><td>No</td><td><strong>No</strong></td><td>Yes</td><td>201 or 202</td></tr><tr><td>PUT</td><td>Replace a resource entirely, or create at a known URI</td><td>No</td><td>Yes</td><td>Yes</td><td>200 or 204, 201 if created</td></tr><tr><td>PATCH</td><td>Partially update a resource</td><td>No</td><td><strong>Not guaranteed</strong></td><td>Yes</td><td>200 or 204</td></tr><tr><td>DELETE</td><td>Remove a resource</td><td>No</td><td>Yes</td><td>Rarely</td><td>204</td></tr></tbody></table></div>
+<p><strong>Safe</strong> means the method does not change server state. <strong>Idempotent</strong> means sending the same request once or many times leaves the server in the same final state.</p>
+<h2 id="61-idempotency-precisely">6.1 Idempotency, precisely<a class="anchor" href="#61-idempotency-precisely">#</a></h2>
+<p>From the notes: an operation is idempotent if making the same request multiple times results in the same <strong>final state</strong> on the server.</p>
+<ul><li><strong>GET</strong> only retrieves data, so state never changes.</li><li><strong>PUT</strong> replaces a resource. Sending the same body three times gives the same result.</li><li><strong>DELETE</strong> removes a resource. Deleting again leaves it still deleted.</li></ul>
+<p>Non-idempotent:</p>
+<ul><li><strong>POST</strong> creates resources or triggers actions such as sending an email or charging a card. Repeating it can create duplicate orders or payments.</li><li><strong>PATCH</strong> depends on current state. A patch meaning &quot;increment counter by 1&quot; changes state every time. A patch that sets a field to a fixed value happens to be idempotent, but the method makes no promise.</li><li><strong>CONNECT</strong> opens a tunnel through a proxy and is not idempotent.</li></ul>
+<p><strong>Idempotent does not mean identical responses.</strong> The first <code>DELETE /users/42</code> returns <code>204</code>; the second may return <code>404</code>. The server state is the same after both, which is what counts.</p>
+<h2 id="62-put-vs-patch">6.2 PUT vs PATCH<a class="anchor" href="#62-put-vs-patch">#</a></h2>
+<p><code>PUT</code> sends the <strong>complete</strong> representation. Omitted fields are cleared or reset to defaults.</p>
+<pre><code class="lang-http">PUT /users/42
+Content-Type: application/json
+
+{ &quot;name&quot;: &quot;John Doe&quot;, &quot;email&quot;: &quot;john.doe@example.com&quot;, &quot;role&quot;: &quot;admin&quot; }</code></pre>
+<p><code>PATCH</code> sends only the <strong>changes</strong>. Two standard formats exist.</p>
+<p>JSON Merge Patch, RFC 7396, is simple and covers most needs. A <code>null</code> value deletes the field.</p>
+<pre><code class="lang-http">PATCH /users/42
+Content-Type: application/merge-patch+json
+
+{ &quot;email&quot;: &quot;new@example.com&quot;, &quot;nickname&quot;: null }</code></pre>
+<p>JSON Patch, RFC 6902, is a list of operations. It can express array edits and conditional <code>test</code> operations that merge patch cannot.</p>
+<pre><code class="lang-http">PATCH /users/42
+Content-Type: application/json-patch+json
+
+[
+  { &quot;op&quot;: &quot;test&quot;,    &quot;path&quot;: &quot;/version&quot;, &quot;value&quot;: 3 },
+  { &quot;op&quot;: &quot;replace&quot;, &quot;path&quot;: &quot;/email&quot;,   &quot;value&quot;: &quot;new@example.com&quot; },
+  { &quot;op&quot;: &quot;add&quot;,     &quot;path&quot;: &quot;/tags/-&quot;,  &quot;value&quot;: &quot;vip&quot; }
+]</code></pre>
+<p>In practice most APIs accept a plain JSON object on <code>PATCH</code> with merge-patch semantics.</p>
+<hr>
+<h1 id="7-status-codes">7. Status codes<a class="anchor" href="#7-status-codes">#</a></h1>
+<p>Status codes are the API&#x27;s first and cheapest error channel. Clients, retries, monitoring and caches all key off them, so pick precisely.</p>
+<h2 id="71-the-codes-worth-knowing">7.1 The codes worth knowing<a class="anchor" href="#71-the-codes-worth-knowing">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>Code</th><th>Name</th><th>Use it when</th></tr></thead><tbody><tr><td>200</td><td>OK</td><td>Successful GET, PUT or PATCH that returns a body</td></tr><tr><td>201</td><td>Created</td><td>POST created a resource. Include a <code>Location</code> header with its URL</td></tr><tr><td>202</td><td>Accepted</td><td>Request queued for asynchronous processing</td></tr><tr><td>204</td><td>No Content</td><td>Success with nothing to return, typically DELETE</td></tr><tr><td>301</td><td>Moved Permanently</td><td>Resource moved for good; clients should update links</td></tr><tr><td>302</td><td>Found</td><td>Temporary redirect</td></tr><tr><td>304</td><td>Not Modified</td><td>Conditional GET matched; client&#x27;s cached copy is still valid</td></tr><tr><td>400</td><td>Bad Request</td><td>Malformed syntax: invalid JSON, wrong type, missing required parameter</td></tr><tr><td>401</td><td>Unauthorized</td><td>Not authenticated: no credentials, or invalid or expired token</td></tr><tr><td>403</td><td>Forbidden</td><td>Authenticated, but not allowed to do this</td></tr><tr><td>404</td><td>Not Found</td><td>Resource does not exist, or you choose not to reveal that it does</td></tr><tr><td>405</td><td>Method Not Allowed</td><td>Method not supported on this resource. Send an <code>Allow</code> header</td></tr><tr><td>409</td><td>Conflict</td><td>State conflict: duplicate unique field, or an invalid state transition</td></tr><tr><td>412</td><td>Precondition Failed</td><td><code>If-Match</code> ETag did not match, so the resource changed meanwhile</td></tr><tr><td>415</td><td>Unsupported Media Type</td><td>Request <code>Content-Type</code> not accepted</td></tr><tr><td>422</td><td>Unprocessable Content</td><td>Well-formed JSON that fails business validation</td></tr><tr><td>429</td><td>Too Many Requests</td><td>Rate limit exceeded. Send <code>Retry-After</code></td></tr><tr><td>500</td><td>Internal Server Error</td><td>Unexpected bug on the server</td></tr><tr><td>502</td><td>Bad Gateway</td><td>A proxy or gateway got an invalid response from upstream</td></tr><tr><td>503</td><td>Service Unavailable</td><td>Overloaded or in maintenance. Send <code>Retry-After</code></td></tr><tr><td>504</td><td>Gateway Timeout</td><td>Upstream did not respond in time</td></tr></tbody></table></div>
+<h2 id="72-distinctions-that-come-up-constantly">7.2 Distinctions that come up constantly<a class="anchor" href="#72-distinctions-that-come-up-constantly">#</a></h2>
+<ul><li><strong>401 vs 403.</strong> 401 means &quot;I don&#x27;t know who you are&quot;. 403 means &quot;I know who you are, and the answer is no&quot;. Despite its name, 401 is about authentication.</li><li><strong>400 vs 422.</strong> 400 for a request the server cannot parse. 422 for a request it parsed but whose content is invalid, such as an end date before a start date. Using 400 for both is acceptable if applied consistently.</li><li><strong>403 vs 404.</strong> Returning 404 for a resource that exists but belongs to someone else avoids leaking its existence. GitHub does this for private repositories.</li><li><strong>409 vs 412.</strong> 409 is a general state conflict. 412 is specifically a failed precondition header.</li><li><strong>4xx vs 5xx decides retries.</strong> 4xx means the client must change something, so retrying the same request is pointless, with 408 and 429 as the exceptions. 5xx means the server failed and a retry may succeed.</li></ul>
+<h2 id="73-anti-patterns">7.3 Anti-patterns<a class="anchor" href="#73-anti-patterns">#</a></h2>
+<ul><li><strong>200 with an error body</strong>, such as <code>200 {&quot;success&quot;: false}</code>. Monitoring counts it as success, caches may store it and client libraries will not raise.</li><li><strong>500 for bad input.</strong> It pages the on-call engineer for a client mistake and hides real bugs.</li><li><strong>Always 400.</strong> Clients cannot distinguish &quot;fix your JSON&quot; from &quot;you&#x27;re not allowed&quot;.</li><li>**201 without <code>Location</code>.** The client then has to guess the new resource&#x27;s URL.</li></ul>
+<hr>
+<h1 id="8-request-and-response-design">8. Request and response design<a class="anchor" href="#8-request-and-response-design">#</a></h1>
+<h2 id="81-conventions-that-save-arguments-later">8.1 Conventions that save arguments later<a class="anchor" href="#81-conventions-that-save-arguments-later">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>Concern</th><th>Recommendation</th><th>Why</th></tr></thead><tbody><tr><td>Format</td><td>JSON, <code>Content-Type: application/json</code></td><td>Universal tooling</td></tr><tr><td>Field naming</td><td>Pick <code>camelCase</code> or <code>snake_case</code> and never mix</td><td>Consistency beats either choice</td></tr><tr><td>Dates and times</td><td>ISO 8601 in UTC: <code>2026-09-13T14:05:00Z</code></td><td>Unambiguous, sortable, time-zone safe</td></tr><tr><td>IDs</td><td>Strings, even if numeric internally</td><td>Lets you move to UUIDs or prefixed IDs without breaking clients</td></tr><tr><td>Money</td><td>Integer minor units plus currency: <code>{&quot;amount&quot;:4999,&quot;currency&quot;:&quot;USD&quot;}</code></td><td>Floating point cannot represent cents exactly</td></tr><tr><td>Enums</td><td>Lowercase strings: <code>&quot;pending&quot;</code>, not <code>2</code></td><td>Self-documenting, safe to extend</td></tr><tr><td>Booleans</td><td><code>true</code> or <code>false</code>, named positively: <code>isActive</code></td><td>Avoids double negatives</td></tr><tr><td>Empty collections</td><td><code>[]</code>, never <code>null</code></td><td>Clients can iterate without a null check</td></tr><tr><td>Absent vs null</td><td>Document the difference and keep it consistent</td><td>Matters for PATCH semantics</td></tr></tbody></table></div>
+<h2 id="82-envelope-or-no-envelope">8.2 Envelope or no envelope<a class="anchor" href="#82-envelope-or-no-envelope">#</a></h2>
+<p>A bare resource is simplest for single items:</p>
+<pre><code class="lang-json">{ &quot;id&quot;: &quot;usr_42&quot;, &quot;name&quot;: &quot;Alice&quot;, &quot;email&quot;: &quot;alice@example.com&quot; }</code></pre>
+<p>Collections benefit from a wrapper, because pagination metadata needs somewhere to live:</p>
+<pre><code class="lang-json">{
+  &quot;data&quot;: [ { &quot;id&quot;: &quot;usr_42&quot;, &quot;name&quot;: &quot;Alice&quot; } ],
+  &quot;pagination&quot;: { &quot;nextCursor&quot;: &quot;eyJpZCI6NDJ9&quot;, &quot;hasMore&quot;: true }
+}</code></pre>
+<p>Do <strong>not</strong> duplicate HTTP in the body with fields like <code>&quot;status&quot;: 200</code> or <code>&quot;success&quot;: true</code>. The status line already says that.</p>
+<h2 id="83-never-trust-the-request-body">8.3 Never trust the request body<a class="anchor" href="#83-never-trust-the-request-body">#</a></h2>
+<p>HTTPS encrypts traffic in transit, but it does not prove the request was produced by your own client. Anyone can craft a request with <code>curl</code>.</p>
+<p>A classic mistake is reading the user&#x27;s ID from the request body and using it in a database query. An attacker simply changes the ID and reads another user&#x27;s data. Derive identity from the verified token on the server, and validate every ID the client sends against what that identity is allowed to access.</p>
+<pre><code class="lang-js">// ❌ trusts the client
+app.get(&quot;/orders&quot;, (req, res) =&gt; db.orders.find({ userId: req.body.userId }));
+
+// ✅ identity comes from the verified token
+app.get(&quot;/orders&quot;, auth, (req, res) =&gt; db.orders.find({ userId: req.user.id }));</code></pre>
+<h2 id="84-content-negotiation">8.4 Content negotiation<a class="anchor" href="#84-content-negotiation">#</a></h2>
+<p>HTTP headers are a good model of extensible interface design. The client states what it can handle and the server picks the best match, which gives backward compatibility and graceful degradation.</p>
+<pre><code class="lang-http">GET /reports/9
+Accept: application/json
+Accept-Encoding: gzip, br
+Accept-Language: en-GB
+
+HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Encoding: br
+Vary: Accept-Encoding</code></pre>
+<hr>
+<h1 id="9-error-handling">9. Error handling<a class="anchor" href="#9-error-handling">#</a></h1>
+<h2 id="91-use-one-error-format-problem-details-rfc-9457">9.1 Use one error format: Problem Details, RFC 9457<a class="anchor" href="#91-use-one-error-format-problem-details-rfc-9457">#</a></h2>
+<p>RFC 9457 (July 2023, replacing RFC 7807) standardises a JSON error body with media type <code>application/problem+json</code>. Using it means clients write one error parser for your whole API.</p>
+<pre><code class="lang-http">HTTP/1.1 422 Unprocessable Content
+Content-Type: application/problem+json
+
+{
+  &quot;type&quot;: &quot;https://api.example.com/problems/validation-error&quot;,
+  &quot;title&quot;: &quot;Your request parameters didn&#x27;t validate.&quot;,
+  &quot;status&quot;: 422,
+  &quot;detail&quot;: &quot;2 fields failed validation.&quot;,
+  &quot;instance&quot;: &quot;/orders&quot;,
+  &quot;traceId&quot;: &quot;4bf92f3577b34da6a3ce929d0e0e4736&quot;,
+  &quot;errors&quot;: [
+    { &quot;pointer&quot;: &quot;/items/0/quantity&quot;, &quot;detail&quot;: &quot;must be at least 1&quot; },
+    { &quot;pointer&quot;: &quot;/shippingAddress/postcode&quot;, &quot;detail&quot;: &quot;is required&quot; }
+  ]
+}</code></pre>
+<div class="table-wrap"><table><thead><tr><th>Member</th><th>Meaning</th></tr></thead><tbody><tr><td><code>type</code></td><td>URI identifying the problem type; ideally a page documenting it</td></tr><tr><td><code>title</code></td><td>Short, human-readable summary that does not change between occurrences</td></tr><tr><td><code>status</code></td><td>The HTTP status code, repeated for convenience</td></tr><tr><td><code>detail</code></td><td>Explanation specific to this occurrence</td></tr><tr><td><code>instance</code></td><td>URI identifying this specific occurrence</td></tr><tr><td>extensions</td><td>Any extra members, such as <code>errors</code> or <code>traceId</code></td></tr></tbody></table></div>
+<h2 id="92-error-handling-rules">9.2 Error handling rules<a class="anchor" href="#92-error-handling-rules">#</a></h2>
+<ul><li><strong>Return every validation error at once</strong>, not one per round trip.</li><li>**Give each error a stable machine-readable code or <code>type</code>.** Clients branch on it; the human message can then change freely.</li><li><strong>Never leak internals.</strong> No stack traces, SQL, file paths or library versions in production.</li><li><strong>Include a correlation or trace ID</strong> so a support ticket can be matched to server logs.</li><li><strong>Log the full detail server-side</strong> and return only what the client needs.</li><li><strong>Treat unexpected errors as 500 with a generic body</strong>, and alert on them.</li></ul>
+<hr>
+<h1 id="10-pagination-filtering-and-sorting">10. Pagination, filtering and sorting<a class="anchor" href="#10-pagination-filtering-and-sorting">#</a></h1>
+<p>Any collection that can grow must be paginated from day one. Adding pagination later is a breaking change, because clients that expected every item will silently receive only the first page.</p>
+<figure><img src="images/pagination-offset-vs-cursor.svg" alt="Offset vs cursor pagination"></figure>
+<h2 id="101-offset-pagination">10.1 Offset pagination<a class="anchor" href="#101-offset-pagination">#</a></h2>
+<pre><code class="lang-http">GET /posts?limit=20&amp;offset=40</code></pre>
+<pre><code class="lang-sql">SELECT * FROM posts ORDER BY created_at DESC LIMIT 20 OFFSET 40;</code></pre>
+<ul><li>✅ Simple, and supports jumping to an arbitrary page number.</li><li>❌ <strong>Gets slower on deep pages.</strong> The database still reads and discards every skipped row.</li><li>❌ <strong>Unstable under writes.</strong> An insert or delete between requests shifts rows, so items are duplicated or skipped.</li></ul>
+<h2 id="102-cursor-keyset-pagination">10.2 Cursor (keyset) pagination<a class="anchor" href="#102-cursor-keyset-pagination">#</a></h2>
+<pre><code class="lang-http">GET /posts?limit=20&amp;cursor=eyJjcmVhdGVkX2F0IjoiMjAyNi0wOS0xM1QxMDowMDowMFoiLCJpZCI6OTg3fQ</code></pre>
+<p>The cursor is an opaque, usually base64-encoded, pointer to the last item seen. The server decodes it into a <code>WHERE</code> clause that uses an index:</p>
+<pre><code class="lang-sql">SELECT * FROM posts
+WHERE (created_at, id) &lt; (&#x27;2026-09-13T10:00:00Z&#x27;, 987)
+ORDER BY created_at DESC, id DESC
+LIMIT 21;              -- fetch one extra row to compute hasMore</code></pre>
+<ul><li>✅ <strong>Constant speed</strong> at any depth, because it is an index seek.</li><li>✅ <strong>Stable under concurrent inserts and deletes.</strong></li><li>❌ No &quot;jump to page 50&quot;. Only next, and optionally previous.</li><li>⚠️ The sort key must be unique. Add <code>id</code> as a tie-breaker, as above.</li><li>⚠️ Keep the cursor opaque so you can change its internals later.</li></ul>
+<h2 id="103-which-to-use">10.3 Which to use<a class="anchor" href="#103-which-to-use">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>Situation</th><th>Choice</th></tr></thead><tbody><tr><td>Infinite scroll, feeds, activity logs</td><td>Cursor</td></tr><tr><td>Large or fast-changing tables</td><td>Cursor</td></tr><tr><td>Public APIs meant to scale</td><td>Cursor</td></tr><tr><td>Small admin tables that need numbered pages</td><td>Offset is fine</td></tr></tbody></table></div>
+<p>The notes&#x27; short answer is right: offset-based and cursor-based both exist, and cursor-based is better for most systems.</p>
+<h2 id="104-response-shape-and-link-header">10.4 Response shape and Link header<a class="anchor" href="#104-response-shape-and-link-header">#</a></h2>
+<pre><code class="lang-http">HTTP/1.1 200 OK
+Link: &lt;https://api.example.com/posts?limit=20&amp;cursor=abc&gt;; rel=&quot;next&quot;
+
+{
+  &quot;data&quot;: [ ... ],
+  &quot;pagination&quot;: { &quot;nextCursor&quot;: &quot;abc&quot;, &quot;hasMore&quot;: true, &quot;limit&quot;: 20 }
+}</code></pre>
+<p>Rules:</p>
+<ul><li>**Enforce a maximum <code>limit</code>**, such as 100, and apply a sensible default when it is omitted.</li><li><strong>Avoid returning a total count by default.</strong> <code>COUNT(*)</code> on a large table is expensive; offer it as an opt-in when truly needed.</li><li><strong>Whitelist sortable and filterable fields.</strong> Arbitrary sort fields invite unindexed scans and injection bugs.</li></ul>
+<hr>
+<h1 id="11-idempotency-and-safe-retries">11. Idempotency and safe retries<a class="anchor" href="#11-idempotency-and-safe-retries">#</a></h1>
+<p>Networks fail in the worst possible place: after the server did the work, but before the client got the response. The client cannot tell a failed request from a lost response, so it retries. For GET, PUT and DELETE that is harmless. For POST it means a second order or a second charge.</p>
+<h2 id="111-the-idempotency-key-header">11.1 The Idempotency-Key header<a class="anchor" href="#111-the-idempotency-key-header">#</a></h2>
+<figure><img src="images/idempotency-key-flow.svg" alt="Idempotency-Key retry flow"></figure>
+<p>The client generates a unique key, typically a UUID, per logical operation and sends it on the request. On a retry it sends the <strong>same</strong> key. Stripe popularised the pattern, and the IETF HTTPAPI working group is standardising it as the <code>Idempotency-Key</code> header, currently an Internet-Draft.</p>
+<pre><code class="lang-http">POST /payments
+Idempotency-Key: 8e03978e-40d5-43e8-bc93-6894a57f9324
+Content-Type: application/json
+
+{ &quot;amount&quot;: 4999, &quot;currency&quot;: &quot;USD&quot;, &quot;source&quot;: &quot;card_123&quot; }</code></pre>
+<h2 id="112-server-side-algorithm">11.2 Server-side algorithm<a class="anchor" href="#112-server-side-algorithm">#</a></h2>
+<ol><li><strong>Look up the key</strong>, scoped to the authenticated client.</li><li><strong>Not found:</strong> atomically insert it as <code>in_progress</code>, for example with a unique constraint or Redis <code>SET key value NX</code>, then process the request.</li><li><strong>After processing:</strong> store the status code and response body against the key, and give it a retention period such as 24 hours.</li><li><strong>Found and completed:</strong> replay the stored response without re-executing the operation.</li><li><strong>Found but still in progress:</strong> return <code>409 Conflict</code>, so two concurrent retries cannot both run.</li><li><strong>Found with a different request body:</strong> return <code>422</code>, because the key is being reused for a different operation.</li></ol>
+<p>Doing the business write and recording the key in the <strong>same database transaction</strong> removes the window where one succeeds and the other does not.</p>
+<h2 id="113-retry-policy">11.3 Retry policy<a class="anchor" href="#113-retry-policy">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>Response</th><th>Retry?</th></tr></thead><tbody><tr><td>Network error or timeout</td><td>Yes, if the operation is idempotent or has an idempotency key</td></tr><tr><td>408, 429</td><td>Yes, after <code>Retry-After</code> if present</td></tr><tr><td>500, 502, 503, 504</td><td>Yes, with backoff</td></tr><tr><td>Other 4xx</td><td>No. The request itself is wrong</td></tr></tbody></table></div>
+<p>Use <strong>exponential backoff with jitter</strong> and a cap on attempts. Without jitter, thousands of clients that failed together retry together, which causes the <strong>retry storm</strong> the notes list as a REST failure mode.</p>
+<pre><code class="lang-js">async function withRetry(fn, { attempts = 5, baseMs = 200, maxMs = 10_000 } = {}) {
+  for (let i = 0; ; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      if (i === attempts - 1 || !err.retryable) throw err;
+      const ceiling = Math.min(maxMs, baseMs * 2 ** i);
+      const delay = Math.random() * ceiling;          // &quot;full jitter&quot;
+      await new Promise((r) =&gt; setTimeout(r, delay));
+    }
+  }
+}</code></pre>
+<hr>
+<h1 id="12-versioning-and-api-evolution">12. Versioning and API evolution<a class="anchor" href="#12-versioning-and-api-evolution">#</a></h1>
+<h2 id="121-the-best-version-is-the-one-you-never-ship">12.1 The best version is the one you never ship<a class="anchor" href="#121-the-best-version-is-the-one-you-never-ship">#</a></h2>
+<p>Most change can be made <strong>backward compatible</strong>, so no new version is required.</p>
+<div class="table-wrap"><table><thead><tr><th>Non-breaking (safe)</th><th>Breaking (needs a new version)</th></tr></thead><tbody><tr><td>Adding a new endpoint</td><td>Removing or renaming an endpoint or field</td></tr><tr><td>Adding an optional request field</td><td>Making an optional field required</td></tr><tr><td>Adding a response field</td><td>Changing a field&#x27;s type or format</td></tr><tr><td>Adding a new enum value (if clients were told to expect unknown values)</td><td>Changing the meaning of an existing value</td></tr><tr><td>Relaxing validation</td><td>Tightening validation</td></tr><tr><td>Adding an optional query parameter</td><td>Changing default sort, page size or behaviour</td></tr></tbody></table></div>
+<p>Clients should follow the <strong>tolerant reader</strong> principle: ignore unknown fields rather than failing on them. Document that expectation explicitly.</p>
+<h2 id="122-versioning-strategies">12.2 Versioning strategies<a class="anchor" href="#122-versioning-strategies">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>Strategy</th><th>Example</th><th>Pros</th><th>Cons</th></tr></thead><tbody><tr><td>URI path</td><td><code>/v1/users</code></td><td>Obvious, easy to route, cache and test in a browser</td><td>Version is not really part of the resource&#x27;s identity</td></tr><tr><td>Custom header</td><td><code>Api-Version: 2026-09-01</code></td><td>Clean URLs; allows date-based versions</td><td>Invisible in links; easy to forget</td></tr><tr><td>Media type</td><td><code>Accept: application/vnd.example.v2+json</code></td><td>Most &quot;pure&quot; REST</td><td>Awkward tooling and testing</td></tr><tr><td>Query parameter</td><td><code>/users?version=2</code></td><td>Easy to add</td><td>Messes with caching; easy to omit</td></tr></tbody></table></div>
+<p><strong>URI path versioning is the pragmatic default</strong> and is what most public APIs use. Stripe&#x27;s date-based header versioning, pinned per account, is the best-known alternative and suits APIs that change often.</p>
+<p>Only major, breaking versions belong in the URL: <code>v1</code>, <code>v2</code>. Never <code>v1.2.3</code>.</p>
+<h2 id="123-deprecating-responsibly">12.3 Deprecating responsibly<a class="anchor" href="#123-deprecating-responsibly">#</a></h2>
+<p>Announce removal in the protocol, not only in a blog post:</p>
+<pre><code class="lang-http">HTTP/1.1 200 OK
+Deprecation: @1788220800
+Sunset: Wed, 30 Jun 2027 23:59:59 GMT
+Link: &lt;https://api.example.com/docs/migrate-v2&gt;; rel=&quot;deprecation&quot;</code></pre>
+<ul><li>**<code>Deprecation</code>**, RFC 9745 (March 2025), says the resource is or will be deprecated. Its value is a Unix timestamp prefixed with <code>@</code>.</li><li>**<code>Sunset</code>**, RFC 8594, gives the date after which the resource may stop responding.</li><li>Track who still calls deprecated endpoints, and contact them before the sunset date.</li></ul>
+<hr>
+<h1 id="13-caching-and-conditional-requests">13. Caching and conditional requests<a class="anchor" href="#13-caching-and-conditional-requests">#</a></h1>
+<h2 id="131-cache-control">13.1 Cache-Control<a class="anchor" href="#131-cache-control">#</a></h2>
+<pre><code class="lang-http">Cache-Control: public, max-age=300          # shared caches such as CDNs may store for 5 minutes
+Cache-Control: private, max-age=60          # only the user&#x27;s browser may store it
+Cache-Control: no-cache                     # store, but revalidate before every use
+Cache-Control: no-store                     # never store: tokens, personal data, payment details</code></pre>
+<p>Any response that varies by header must say so, or a CDN may serve one user&#x27;s response to another:</p>
+<pre><code class="lang-http">Vary: Authorization, Accept-Encoding</code></pre>
+<h2 id="132-etags-and-conditional-get">13.2 ETags and conditional GET<a class="anchor" href="#132-etags-and-conditional-get">#</a></h2>
+<p>An <code>ETag</code> is a fingerprint of a representation&#x27;s content. The client sends it back and the server answers <code>304</code> with an empty body if nothing changed, saving bandwidth.</p>
+<pre><code class="lang-http">GET /products/10
+→ 200 OK
+  ETag: &quot;v7-a1b2c3&quot;
+
+GET /products/10
+If-None-Match: &quot;v7-a1b2c3&quot;
+→ 304 Not Modified          (no body)</code></pre>
+<p>The notes explain why ETags beat <code>Last-Modified</code>. They detect changes within the same second, they ignore &quot;touched but unchanged&quot; files, and they do not depend on synchronised clocks across a server cluster.</p>
+<h2 id="133-optimistic-concurrency-preventing-lost-updates">13.3 Optimistic concurrency: preventing lost updates<a class="anchor" href="#133-optimistic-concurrency-preventing-lost-updates">#</a></h2>
+<p>Two users load product 10. Both edit it. The second save silently overwrites the first. The fix is a <strong>conditional write</strong> using <code>If-Match</code>.</p>
+<pre><code class="lang-http">PUT /products/10
+If-Match: &quot;v7-a1b2c3&quot;
+Content-Type: application/json
+
+{ &quot;name&quot;: &quot;Desk lamp&quot;, &quot;price&quot;: { &quot;amount&quot;: 2999, &quot;currency&quot;: &quot;USD&quot; } }</code></pre>
+<ul><li>ETag still matches → the update is applied, <code>200</code> with the new ETag.</li><li>ETag changed because someone else saved first → <code>412 Precondition Failed</code>. The client refetches, merges and retries.</li><li>Header missing, when the API requires it → <code>428 Precondition Required</code>.</li></ul>
+<hr>
+<h1 id="14-security">14. Security<a class="anchor" href="#14-security">#</a></h1>
+<h2 id="141-baseline">14.1 Baseline<a class="anchor" href="#141-baseline">#</a></h2>
+<ul><li><strong>HTTPS everywhere, no exceptions.</strong> Redirecting HTTP to HTTPS is not enough for API clients; reject plain HTTP and send <code>Strict-Transport-Security</code> for browsers.</li><li><strong>Authenticate every non-public endpoint</strong>, and deny by default.</li><li><strong>Authorize every object, not just every endpoint.</strong></li><li><strong>Validate all input</strong> against a schema: types, lengths, ranges, formats, allowed values.</li><li><strong>Encode output</strong> and set <code>Content-Type</code> correctly, so JSON is never rendered as HTML.</li><li><strong>Keep secrets out of URLs and logs.</strong> Tokens belong in headers.</li><li><strong>Limit payload sizes</strong> for request bodies and uploads.</li></ul>
+<h2 id="142-authentication-options">14.2 Authentication options<a class="anchor" href="#142-authentication-options">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>Mechanism</th><th>Best for</th><th>Notes</th></tr></thead><tbody><tr><td>API keys</td><td>Server-to-server, identifying a calling application</td><td>Identifies an app, not a user. Send in a header, rotate, scope</td></tr><tr><td>OAuth 2.0</td><td>Delegated access: letting an app act on a user&#x27;s behalf</td><td>Use Authorization Code with PKCE for browser and mobile clients</td></tr><tr><td>OpenID Connect</td><td>Login and user identity</td><td>Identity layer on top of OAuth 2.0; issues an ID token</td></tr><tr><td>JWT bearer tokens</td><td>Stateless auth between services</td><td>Short expiry; verify signature, <code>exp</code>, <code>iss</code>, <code>aud</code></td></tr><tr><td>Session cookies</td><td>First-party browser apps</td><td>Mark <code>HttpOnly</code>, <code>Secure</code>, <code>SameSite</code>; needs CSRF protection</td></tr><tr><td>mTLS</td><td>High-trust service-to-service</td><td>Both sides present certificates</td></tr></tbody></table></div>
+<p>From the notes on JWT:</p>
+<ul><li>A JWT has three base64url-encoded parts: header, payload and signature.</li><li>The payload holds claims such as <code>sub</code>, <code>exp</code>, <code>iat</code> and a role.</li><li><strong>It is encoded, not encrypted.</strong> Anyone can read it, so never put secrets or sensitive personal data in it.</li><li>The signature guarantees integrity, not confidentiality.</li><li>Because it is stateless, a JWT cannot easily be revoked before expiry. Keep access tokens short lived, such as 5 to 15 minutes, and use refresh tokens.</li></ul>
+<h2 id="143-cors-and-csrf">14.3 CORS and CSRF<a class="anchor" href="#143-cors-and-csrf">#</a></h2>
+<p><strong>CORS</strong> is a browser mechanism, not a server security control. It decides whether JavaScript from one origin (protocol + domain + port) may read a response from another origin. <code>curl</code> and servers ignore it entirely.</p>
+<pre><code class="lang-http">Access-Control-Allow-Origin: https://app.example.com
+Access-Control-Allow-Methods: GET, POST, PATCH, DELETE
+Access-Control-Allow-Headers: Authorization, Content-Type, Idempotency-Key
+Access-Control-Allow-Credentials: true
+Access-Control-Max-Age: 600</code></pre>
+<p>Never combine <code>Access-Control-Allow-Origin: *</code> with credentials, and never reflect the request&#x27;s <code>Origin</code> header back without checking it against an allowlist.</p>
+<p><strong>CSRF</strong> is an attack in which another website makes the victim&#x27;s browser send an authenticated request, because browsers attach cookies automatically.</p>
+<ul><li>An API authenticated only with <code>Authorization: Bearer</code> headers is <strong>not</strong> vulnerable to CSRF, because browsers never attach that header automatically.</li><li>An API authenticated with <strong>cookies</strong> must defend itself: <code>SameSite=Lax</code> or <code>Strict</code> cookies, CSRF tokens, and checking the <code>Origin</code> header on state-changing requests.</li></ul>
+<h2 id="144-owasp-api-security-top-10-2023">14.4 OWASP API Security Top 10 (2023)<a class="anchor" href="#144-owasp-api-security-top-10-2023">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>#</th><th>Risk</th><th>In one line</th></tr></thead><tbody><tr><td>API1</td><td>Broken Object Level Authorization (BOLA)</td><td><code>GET /orders/124</code> returns someone else&#x27;s order</td></tr><tr><td>API2</td><td>Broken Authentication</td><td>Weak tokens, no expiry, credential stuffing allowed</td></tr><tr><td>API3</td><td>Broken Object Property Level Authorization</td><td>Exposing or letting clients set fields they shouldn&#x27;t, such as <code>isAdmin</code></td></tr><tr><td>API4</td><td>Unrestricted Resource Consumption</td><td>No rate limits, unbounded page sizes or uploads</td></tr><tr><td>API5</td><td>Broken Function Level Authorization</td><td>A normal user can call admin endpoints</td></tr><tr><td>API6</td><td>Unrestricted Access to Sensitive Business Flows</td><td>Bots mass-buying stock or abusing sign-ups</td></tr><tr><td>API7</td><td>Server-Side Request Forgery (SSRF)</td><td>API fetches an attacker-supplied URL on an internal network</td></tr><tr><td>API8</td><td>Security Misconfiguration</td><td>Verbose errors, permissive CORS, default credentials</td></tr><tr><td>API9</td><td>Improper Inventory Management</td><td>Forgotten old versions and debug endpoints still live</td></tr><tr><td>API10</td><td>Unsafe Consumption of APIs</td><td>Blindly trusting data returned by third-party APIs</td></tr></tbody></table></div>
+<p><strong>BOLA is number one</strong> and is exactly the &quot;user ID in the request body&quot; mistake from section 8.3. Every handler that loads an object by ID must check that the caller may access that specific object.</p>
+<p><strong>Mass assignment</strong>, part of API3, is its sibling. Never pass the request body straight into an ORM update; copy only an explicit allowlist of fields.</p>
+<pre><code class="lang-js">// ❌ client can send {&quot;role&quot;:&quot;admin&quot;}
+await db.users.update(req.params.id, req.body);
+
+// ✅ allowlist
+const { name, email } = req.body;
+await db.users.update(req.params.id, { name, email });</code></pre>
+<hr>
+<h1 id="15-rate-limiting-and-throttling">15. Rate limiting and throttling<a class="anchor" href="#15-rate-limiting-and-throttling">#</a></h1>
+<h2 id="151-what-and-why">15.1 What and why<a class="anchor" href="#151-what-and-why">#</a></h2>
+<p><strong>Rate limiting</strong> controls how many requests a client may make in a time window, for example 100 requests per minute. Its goals are to prevent abuse, protect capacity and ensure fair usage.</p>
+<p>Without it:</p>
+<ul><li>A DDoS or misbehaving script can take the system down.</li><li>One user can consume all shared resources.</li><li>The API becomes unstable for everyone.</li><li>Infrastructure and third-party costs grow without bound.</li></ul>
+<p>It is used by essentially every public API, including Google Cloud, Stripe, GitHub and the major LLM APIs.</p>
+<p><strong>Throttling</strong> is the softer sibling. Instead of rejecting outright, it delays or degrades requests when traffic is high.</p>
+<h2 id="152-where-it-happens">15.2 Where it happens<a class="anchor" href="#152-where-it-happens">#</a></h2>
+<ol><li><strong>Client</strong> throttling, such as debouncing a search box. A courtesy only, since it can be bypassed.</li><li><strong>API gateway</strong>, the main line of defence.</li><li><strong>Backend middleware</strong>, for per-endpoint or business-specific limits.</li><li><strong>A shared store such as Redis</strong>, which tracks counters across all instances.</li></ol>
+<pre><code class="lang-text">Client → API Gateway → Rate Limiter → Service → DB</code></pre>
+<p>Limits can be keyed by IP address, user ID, API key, device, or a combination. IP-only limits punish users behind shared NAT and are easy to evade with many IPs, so prefer authenticated identity where possible.</p>
+<h2 id="153-algorithms">15.3 Algorithms<a class="anchor" href="#153-algorithms">#</a></h2>
+<figure><img src="images/token-bucket.svg" alt="Token bucket rate limiter"></figure>
+<div class="table-wrap"><table><thead><tr><th>Algorithm</th><th>How it works</th><th>Burst handling</th><th>Memory</th><th>Typical use</th></tr></thead><tbody><tr><td>Fixed window counter</td><td>Count requests per clock window, reset at the boundary</td><td>❌ Up to 2× limit across a boundary</td><td>Very low</td><td>Basic APIs</td></tr><tr><td>Sliding window log</td><td>Store a timestamp per request; count those inside the window</td><td>✅ Exact</td><td>High</td><td>Low-volume, strict limits</td></tr><tr><td>Sliding window counter</td><td>Weighted blend of current and previous window counts</td><td>⚠️ Close approximation</td><td>Low</td><td>Large-scale APIs</td></tr><tr><td>Token bucket</td><td>Tokens refill at a steady rate; each request spends one</td><td>✅ Allows bursts up to capacity</td><td>Low</td><td>Most real systems</td></tr><tr><td>Leaky bucket</td><td>Requests queue and drain at a constant rate</td><td>⚠️ Smooths bursts into a steady flow</td><td>Queue size</td><td>Protecting fragile downstreams</td></tr></tbody></table></div>
+<p><strong>Fixed window boundary problem:</strong> with a limit of 100 per minute, a client can send 100 requests at 0:59 and another 100 at 1:00, which is 200 requests in two seconds.</p>
+<h2 id="154-communicating-limits-to-clients">15.4 Communicating limits to clients<a class="anchor" href="#154-communicating-limits-to-clients">#</a></h2>
+<pre><code class="lang-http">HTTP/1.1 429 Too Many Requests
+Retry-After: 30
+Content-Type: application/problem+json
+
+{
+  &quot;type&quot;: &quot;https://api.example.com/problems/rate-limited&quot;,
+  &quot;title&quot;: &quot;Too many requests&quot;,
+  &quot;status&quot;: 429,
+  &quot;detail&quot;: &quot;Limit of 100 requests per minute exceeded. Retry in 30 seconds.&quot;
+}</code></pre>
+<ul><li>**<code>429</code> + <code>Retry-After</code>** are standard and should always be sent.</li><li>Many APIs also send <code>X-RateLimit-Limit</code>, <code>X-RateLimit-Remaining</code> and <code>X-RateLimit-Reset</code>. These are a convention, not a standard.</li><li>The IETF is standardising <code>RateLimit</code> and <code>RateLimit-Policy</code> headers. As of the May 2026 draft this is still an Internet-Draft, so the syntax may change before it becomes an RFC.</li></ul>
+<h2 id="155-implementation">15.5 Implementation<a class="anchor" href="#155-implementation">#</a></h2>
+<p>The notes&#x27; Express example keeps an array of timestamps per IP and drops those older than the window. That is a <strong>sliding window log</strong>, not a token bucket as the notes labelled it. It is correct, but in-memory state only works on a single server.</p>
+<pre><code class="lang-js">const express = require(&quot;express&quot;);
+const app = express();
+
+const hits = new Map();          // ip -&gt; array of timestamps
+const LIMIT = 5;                 // max requests
+const WINDOW_MS = 60 * 1000;     // per minute
+
+app.use((req, res, next) =&gt; {
+  const now = Date.now();
+  const recent = (hits.get(req.ip) ?? []).filter((t) =&gt; now - t &lt; WINDOW_MS);
+
+  if (recent.length &gt;= LIMIT) {
+    const retryAfter = Math.ceil((recent[0] + WINDOW_MS - now) / 1000);
+    res.set(&quot;Retry-After&quot;, String(retryAfter));
+    return res.status(429).json({ title: &quot;Too many requests&quot;, status: 429 });
+  }
+
+  recent.push(now);
+  hits.set(req.ip, recent);
+  next();
+});</code></pre>
+<p>Production systems keep the state in <strong>Redis</strong> so every instance shares one counter. A simple fixed window uses an atomic increment with expiry:</p>
+<pre><code class="lang-text">key    = ratelimit:{userId}:{currentMinute}
+INCR key            -&gt; returns the new count
+EXPIRE key 60       -&gt; only when the count is 1
+count &gt; limit       -&gt; reject with 429</code></pre>
+<p>A token bucket or sliding window should run as a <strong>Lua script</strong> in Redis so the read, compute and write happen atomically; otherwise concurrent requests race past the limit.</p>
+<h2 id="156-common-problems-and-best-practices">15.6 Common problems and best practices<a class="anchor" href="#156-common-problems-and-best-practices">#</a></h2>
+<p>Problems listed in the notes:</p>
+<ul><li>Shared state across distributed instances.</li><li>Clock synchronisation between servers.</li><li>IP spoofing and rotating IPs.</li><li>Burst traffic at window boundaries.</li><li>Race conditions on counters.</li></ul>
+<p>Best practices:</p>
+<ul><li>Use Redis, or the gateway&#x27;s built-in limiter, for distributed limits.</li><li>Prefer the token bucket algorithm for user-facing APIs.</li><li>Apply limits per user, per IP and per API key, often in layers.</li><li>Set stricter limits on expensive or sensitive endpoints, such as login, password reset and search.</li><li>Always return <code>429</code> with <code>Retry-After</code>.</li><li>Decide in advance whether to <strong>fail open</strong> (allow traffic) or <strong>fail closed</strong> (reject) if the limiter&#x27;s store is down.</li></ul>
+<hr>
+<h1 id="16-reliability-and-failure-handling">16. Reliability and failure handling<a class="anchor" href="#16-reliability-and-failure-handling">#</a></h1>
+<h2 id="161-rest-failure-modes">16.1 REST failure modes<a class="anchor" href="#161-rest-failure-modes">#</a></h2>
+<p>From the notes, REST is stateless, HTTP-based and has a simple error model. Its common failure modes are:</p>
+<ol><li>Timeouts from slow APIs.</li><li>5xx errors from server failures.</li><li>4xx errors from client mistakes.</li><li>Partial failure across microservices.</li><li>Retry storms.</li></ol>
+<div class="table-wrap"><table><thead><tr><th>Failure type</th><th>Description</th></tr></thead><tbody><tr><td>Timeout</td><td>Request takes too long</td></tr><tr><td>Network failure</td><td>Packet loss or disconnect</td></tr><tr><td>Server crash</td><td>Service goes down</td></tr><tr><td>Partial failure</td><td>Some services fail while others work</td></tr><tr><td>Data inconsistency</td><td>Replicas disagree</td></tr><tr><td>Overload</td><td>Too many requests</td></tr></tbody></table></div>
+<h2 id="162-defences">16.2 Defences<a class="anchor" href="#162-defences">#</a></h2>
+<h3 id="1-accurate-status-codes">1. Accurate status codes<a class="anchor" href="#1-accurate-status-codes">#</a></h3>
+<p>So clients and infrastructure can tell a retryable failure from a permanent one (section 7).</p>
+<h3 id="2-timeouts-on-every-outbound-call">2. Timeouts on every outbound call<a class="anchor" href="#2-timeouts-on-every-outbound-call">#</a></h3>
+<p>A call without a timeout can hang a thread or connection forever and cascade into an outage.</p>
+<p>The notes show <code>fetch(url, { timeout: 3000 })</code>. **<code>fetch</code> has no <code>timeout</code> option**, so that line silently does nothing. Use an abort signal instead:</p>
+<pre><code class="lang-js">const res = await fetch(url, { signal: AbortSignal.timeout(3000) });</code></pre>
+<p>Set a total deadline for the whole request, and give each downstream call a share of it.</p>
+<h3 id="3-retries-with-exponential-backoff-and-jitter">3. Retries with exponential backoff and jitter<a class="anchor" href="#3-retries-with-exponential-backoff-and-jitter">#</a></h3>
+<p>Retry only idempotent operations or those with an idempotency key, and only on retryable responses (section 11.3).</p>
+<h3 id="4-circuit-breaker">4. Circuit breaker<a class="anchor" href="#4-circuit-breaker">#</a></h3>
+<p>After repeated failures, stop calling the failing dependency for a cooling-off period and fail fast instead. After the timeout, let a trial request through to test recovery.</p>
+<pre><code class="lang-text">CLOSED ──(failure threshold reached)──▶ OPEN ──(cool-off expires)──▶ HALF-OPEN
+   ▲                                                                   │
+   └──────────────(trial request succeeds)─────────────────────────────┘
+                   (trial request fails → back to OPEN)</code></pre>
+<p>Netflix&#x27;s <strong>Hystrix</strong>, cited in the notes, has been in maintenance mode since 2018. Current choices are <strong>Resilience4j</strong> for Java, <strong>Polly</strong> for .NET, <strong>opossum</strong> for Node.js, or a service mesh such as Istio or Envoy.</p>
+<h3 id="5-load-balancing-and-health-checks">5. Load balancing and health checks<a class="anchor" href="#5-load-balancing-and-health-checks">#</a></h3>
+<p>Route away from unhealthy or overloaded instances.</p>
+<h3 id="6-graceful-degradation">6. Graceful degradation<a class="anchor" href="#6-graceful-degradation">#</a></h3>
+<p>Serve cached or partial data, or hide a non-critical feature, rather than failing the whole request.</p>
+<h3 id="7-load-shedding">7. Load shedding<a class="anchor" href="#7-load-shedding">#</a></h3>
+<p>Return <code>503</code> with <code>Retry-After</code> early when overloaded, instead of accepting work you cannot finish.</p>
+<h2 id="163-long-running-operations">16.3 Long-running operations<a class="anchor" href="#163-long-running-operations">#</a></h2>
+<p>Never hold an HTTP connection open for a job that takes minutes. Accept it, return immediately and let the client poll a status resource.</p>
+<pre><code class="lang-http">POST /reports
+→ 202 Accepted
+  Location: /reports/jobs/job_91
+
+GET /reports/jobs/job_91
+→ 200 OK
+  { &quot;id&quot;: &quot;job_91&quot;, &quot;status&quot;: &quot;running&quot;, &quot;progress&quot;: 0.4 }
+
+GET /reports/jobs/job_91
+→ 303 See Other
+  Location: /reports/rpt_55</code></pre>
+<p>For push instead of polling, offer a <strong>webhook</strong> callback, or stream progress over <strong>SSE</strong>.</p>
+<hr>
+<h1 id="17-documentation-tooling-and-observability">17. Documentation, tooling and observability<a class="anchor" href="#17-documentation-tooling-and-observability">#</a></h1>
+<h2 id="171-documentation">17.1 Documentation<a class="anchor" href="#171-documentation">#</a></h2>
+<ul><li><strong>Describe the API with OpenAPI 3.1.</strong> One spec generates interactive docs (Swagger UI, Redoc), client SDKs, mock servers and contract tests.</li><li><strong>Prefer contract-first design.</strong> Write and review the spec before the code, so consumers can give feedback while change is still cheap.</li><li><strong>Document every endpoint</strong> with its purpose, auth requirements, parameters, request and response examples, every possible error, and its rate limit.</li><li><strong>Publish a changelog</strong> and a deprecation policy.</li></ul>
+<h2 id="172-observability">17.2 Observability<a class="anchor" href="#172-observability">#</a></h2>
+<ul><li><strong>Propagate a trace ID</strong> on every request using the W3C <code>traceparent</code> header, and return it in error responses.</li><li><strong>Emit structured JSON logs</strong> containing method, route template, status, duration, client ID and trace ID, and never the token or the request body&#x27;s secrets.</li><li><strong>Track the RED metrics per endpoint:</strong> Rate, Errors and Duration, using p50, p95 and p99 latency rather than averages.</li><li><strong>Alert on symptoms users feel</strong>, such as error rate and latency, rather than on CPU alone.</li></ul>
+<hr>
+<h1 id="18-worked-example-an-orders-api">18. Worked example: an orders API<a class="anchor" href="#18-worked-example-an-orders-api">#</a></h1>
+<h2 id="181-endpoints">18.1 Endpoints<a class="anchor" href="#181-endpoints">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>Method</th><th>Path</th><th>Purpose</th><th>Success</th><th>Notable errors</th></tr></thead><tbody><tr><td>GET</td><td><code>/v1/orders</code></td><td>List the caller&#x27;s orders, cursor-paginated</td><td>200</td><td>400 bad cursor</td></tr><tr><td>POST</td><td><code>/v1/orders</code></td><td>Create an order; requires <code>Idempotency-Key</code></td><td>201 + <code>Location</code></td><td>409, 422</td></tr><tr><td>GET</td><td><code>/v1/orders/{id}</code></td><td>Fetch one order, with <code>ETag</code></td><td>200, 304</td><td>404</td></tr><tr><td>PATCH</td><td><code>/v1/orders/{id}</code></td><td>Update notes or cancel; requires <code>If-Match</code></td><td>200</td><td>404, 409, 412, 422, 428</td></tr><tr><td>DELETE</td><td><code>/v1/orders/{id}</code></td><td>Delete a draft order</td><td>204</td><td>404, 409</td></tr><tr><td>GET</td><td><code>/v1/orders/{id}/items</code></td><td>List line items</td><td>200</td><td>404</td></tr><tr><td>POST</td><td><code>/v1/orders/{id}/refunds</code></td><td>Create a refund; requires <code>Idempotency-Key</code></td><td>201 or 202</td><td>404, 409, 422</td></tr></tbody></table></div>
+<h2 id="182-a-full-exchange">18.2 A full exchange<a class="anchor" href="#182-a-full-exchange">#</a></h2>
+<pre><code class="lang-http">POST /v1/orders HTTP/1.1
+Host: api.example.com
+Authorization: Bearer eyJhbGciOiJSUzI1NiIs...
+Content-Type: application/json
+Idempotency-Key: 5b1f0c1e-9a4d-4f7a-8f0e-2c7d6f1a9b33
+
+{
+  &quot;items&quot;: [ { &quot;productId&quot;: &quot;prd_10&quot;, &quot;quantity&quot;: 2 } ],
+  &quot;shippingAddress&quot;: { &quot;line1&quot;: &quot;1 Main St&quot;, &quot;city&quot;: &quot;Austin&quot;, &quot;postcode&quot;: &quot;78701&quot;, &quot;country&quot;: &quot;US&quot; }
+}</code></pre>
+<pre><code class="lang-http">HTTP/1.1 201 Created
+Location: /v1/orders/ord_7
+ETag: &quot;1&quot;
+Content-Type: application/json
+
+{
+  &quot;id&quot;: &quot;ord_7&quot;,
+  &quot;status&quot;: &quot;pending&quot;,
+  &quot;items&quot;: [ { &quot;productId&quot;: &quot;prd_10&quot;, &quot;quantity&quot;: 2, &quot;unitPrice&quot;: { &quot;amount&quot;: 2499, &quot;currency&quot;: &quot;USD&quot; } } ],
+  &quot;total&quot;: { &quot;amount&quot;: 4998, &quot;currency&quot;: &quot;USD&quot; },
+  &quot;createdAt&quot;: &quot;2026-09-13T14:05:00Z&quot;,
+  &quot;updatedAt&quot;: &quot;2026-09-13T14:05:00Z&quot;
+}</code></pre>
+<p>Cancelling it, with optimistic locking:</p>
+<pre><code class="lang-http">PATCH /v1/orders/ord_7 HTTP/1.1
+Authorization: Bearer eyJhbGciOiJSUzI1NiIs...
+If-Match: &quot;1&quot;
+Content-Type: application/merge-patch+json
+
+{ &quot;status&quot;: &quot;cancelled&quot; }</code></pre>
+<pre><code class="lang-http">HTTP/1.1 200 OK
+ETag: &quot;2&quot;
+
+{ &quot;id&quot;: &quot;ord_7&quot;, &quot;status&quot;: &quot;cancelled&quot;, &quot;updatedAt&quot;: &quot;2026-09-13T14:09:12Z&quot;, ... }</code></pre>
+<h2 id="183-express-implementation">18.3 Express implementation<a class="anchor" href="#183-express-implementation">#</a></h2>
+<p>A compact, runnable illustration of the practices above. Storage is in memory to keep the focus on HTTP behaviour; a real service would use a database and Redis.</p>
+<pre><code class="lang-js">const express = require(&quot;express&quot;);
+const crypto = require(&quot;node:crypto&quot;);
+
+const app = express();
+app.use(express.json({ limit: &quot;100kb&quot; }));
+
+// ---- in-memory stores -------------------------------------------------
+const orders = new Map();              // id -&gt; order
+const idempotency = new Map();         // `${userId}:${key}` -&gt; { hash, status, body }
+let seq = 0;
+
+// ---- helpers ------------------------------------------------------------
+const problem = (res, status, title, extra = {}) =&gt;
+  res.status(status).type(&quot;application/problem+json&quot;).json({
+    type: `https://api.example.com/problems/${title.toLowerCase().replace(/\s+/g, &quot;-&quot;)}`,
+    title, status, ...extra,
+  });
+
+const etagOf = (order) =&gt; `&quot;${order.version}&quot;`;
+
+// Opaque cursor wrapping the sort key of the last item seen (keyset pagination).
+const encodeCursor = (order) =&gt; Buffer.from(JSON.stringify({ seq: order.seq })).toString(&quot;base64url&quot;);
+const decodeCursor = (c) =&gt; {
+  const { seq } = JSON.parse(Buffer.from(c, &quot;base64url&quot;).toString(&quot;utf8&quot;));
+  if (!Number.isInteger(seq)) throw new Error(&quot;bad cursor&quot;);
+  return seq;
+};
+
+// Stand-in for real token verification: identity comes from the token, never the body.
+function auth(req, res, next) {
+  const token = req.get(&quot;Authorization&quot;)?.replace(/^Bearer /, &quot;&quot;);
+  if (!token) return problem(res, 401, &quot;Unauthorized&quot;);
+  req.user = { id: token };            // pretend the token is the verified user id
+  next();
+}
+
+// Loads the order AND checks it belongs to the caller (prevents BOLA).
+function loadOwnOrder(req, res, next) {
+  const order = orders.get(req.params.id);
+  if (!order || order.userId !== req.user.id) return problem(res, 404, &quot;Not Found&quot;);
+  req.order = order;
+  next();
+}
+
+// ---- routes -------------------------------------------------------------
+app.get(&quot;/v1/orders&quot;, auth, (req, res) =&gt; {
+  const limit = Math.min(Number(req.query.limit) || 20, 100);
+  let beforeSeq = Infinity;
+  if (req.query.cursor) {
+    try { beforeSeq = decodeCursor(req.query.cursor); }
+    catch { return problem(res, 400, &quot;Bad Request&quot;, { detail: &quot;Invalid cursor.&quot; }); }
+  }
+
+  // Equivalent of: WHERE user_id = ? AND seq &lt; ? ORDER BY seq DESC LIMIT limit + 1
+  const page = [...orders.values()]
+    .filter((o) =&gt; o.userId === req.user.id &amp;&amp; o.seq &lt; beforeSeq)
+    .sort((a, b) =&gt; b.seq - a.seq)                           // newest first
+    .slice(0, limit + 1);                                    // one extra =&gt; hasMore
+  const hasMore = page.length &gt; limit;
+  const rows = page.slice(0, limit);
+
+  res.json({
+    data: rows.map(({ userId, seq, version, ...o }) =&gt; o),
+    pagination: { hasMore, nextCursor: hasMore ? encodeCursor(rows.at(-1)) : null, limit },
+  });
+});
+
+app.post(&quot;/v1/orders&quot;, auth, (req, res) =&gt; {
+  const key = req.get(&quot;Idempotency-Key&quot;);
+  if (!key) return problem(res, 400, &quot;Bad Request&quot;, { detail: &quot;Idempotency-Key header is required.&quot; });
+
+  const storeKey = `${req.user.id}:${key}`;
+  const hash = crypto.createHash(&quot;sha256&quot;).update(JSON.stringify(req.body)).digest(&quot;hex&quot;);
+  const seen = idempotency.get(storeKey);
+  if (seen) {
+    if (seen.hash !== hash)
+      return problem(res, 422, &quot;Unprocessable Content&quot;, { detail: &quot;Idempotency-Key reused with a different body.&quot; });
+    if (seen.status === &quot;in_progress&quot;) return problem(res, 409, &quot;Conflict&quot;, { detail: &quot;Request still in progress.&quot; });
+    return res.status(seen.statusCode).set(seen.headers).json(seen.body);  // replay
+  }
+  idempotency.set(storeKey, { hash, status: &quot;in_progress&quot; });
+
+  const items = Array.isArray(req.body.items) ? req.body.items : [];
+  const errors = [];
+  if (items.length === 0) errors.push({ pointer: &quot;/items&quot;, detail: &quot;must contain at least one item&quot; });
+  items.forEach((it, i) =&gt; {
+    if (!Number.isInteger(it.quantity) || it.quantity &lt; 1)
+      errors.push({ pointer: `/items/${i}/quantity`, detail: &quot;must be an integer of at least 1&quot; });
+  });
+  if (errors.length) {
+    idempotency.delete(storeKey);                            // let the client fix and retry
+    return problem(res, 422, &quot;Unprocessable Content&quot;, { errors });
+  }
+
+  const now = new Date().toISOString();
+  const order = {
+    id: `ord_${++seq}`, seq, version: 1, userId: req.user.id,   // userId from token, not body
+    status: &quot;pending&quot;,
+    items: items.map(({ productId, quantity }) =&gt; ({ productId, quantity })),  // allowlist
+    createdAt: now, updatedAt: now,
+  };
+  orders.set(order.id, order);
+
+  const { userId, seq: _s, version, ...body } = order;
+  const headers = { Location: `/v1/orders/${order.id}`, ETag: etagOf(order) };
+  idempotency.set(storeKey, { hash, status: &quot;done&quot;, statusCode: 201, headers, body });
+  res.status(201).set(headers).json(body);
+});
+
+app.get(&quot;/v1/orders/:id&quot;, auth, loadOwnOrder, (req, res) =&gt; {
+  const etag = etagOf(req.order);
+  if (req.get(&quot;If-None-Match&quot;) === etag) return res.status(304).end();
+  const { userId, seq, version, ...body } = req.order;
+  res.set(&quot;ETag&quot;, etag).json(body);
+});
+
+const ALLOWED_TRANSITIONS = { pending: [&quot;cancelled&quot;], cancelled: [] };
+
+app.patch(&quot;/v1/orders/:id&quot;, auth, loadOwnOrder, (req, res) =&gt; {
+  const ifMatch = req.get(&quot;If-Match&quot;);
+  if (!ifMatch) return problem(res, 428, &quot;Precondition Required&quot;);
+  if (ifMatch !== etagOf(req.order)) return problem(res, 412, &quot;Precondition Failed&quot;);
+
+  const { status, notes } = req.body;                        // allowlist of patchable fields
+  if (status !== undefined) {
+    if (!(ALLOWED_TRANSITIONS[req.order.status] ?? []).includes(status))
+      return problem(res, 409, &quot;Conflict&quot;, { detail: `Cannot move from ${req.order.status} to ${status}.` });
+    req.order.status = status;
+  }
+  if (notes !== undefined) req.order.notes = notes;
+
+  req.order.version += 1;
+  req.order.updatedAt = new Date().toISOString();
+  const { userId, seq, version, ...body } = req.order;
+  res.set(&quot;ETag&quot;, etagOf(req.order)).json(body);
+});
+
+app.delete(&quot;/v1/orders/:id&quot;, auth, loadOwnOrder, (req, res) =&gt; {
+  if (req.order.status !== &quot;pending&quot;)
+    return problem(res, 409, &quot;Conflict&quot;, { detail: &quot;Only pending orders can be deleted.&quot; });
+  orders.delete(req.order.id);
+  res.status(204).end();
+});
+
+// Unknown routes and unexpected errors still return Problem Details.
+app.use((req, res) =&gt; problem(res, 404, &quot;Not Found&quot;));
+app.use((err, req, res, next) =&gt; {
+  if (err.type === &quot;entity.parse.failed&quot;) return problem(res, 400, &quot;Bad Request&quot;, { detail: &quot;Malformed JSON.&quot; });
+  console.error(err);                                        // full detail stays server-side
+  problem(res, 500, &quot;Internal Server Error&quot;);
+});
+
+if (require.main === module) app.listen(3000, () =&gt; console.log(&quot;listening on :3000&quot;));
+module.exports = app;</code></pre>
+<hr>
+<h1 id="19-best-practices-checklist">19. Best-practices checklist<a class="anchor" href="#19-best-practices-checklist">#</a></h1>
+<h2 id="design">Design<a class="anchor" href="#design">#</a></h2>
+<ul><li class="task"><label><input type="checkbox"> Resources are plural nouns; the HTTP method is the verb</label></li><li class="task"><label><input type="checkbox"> Nesting is at most one or two levels deep</label></li><li class="task"><label><input type="checkbox"> Field naming, date format and ID format are consistent across the whole API</label></li><li class="task"><label><input type="checkbox"> Every collection is paginated, with a maximum page size</label></li><li class="task"><label><input type="checkbox"> Filtering and sorting use whitelisted query parameters</label></li></ul>
+<h2 id="semantics">Semantics<a class="anchor" href="#semantics">#</a></h2>
+<ul><li class="task"><label><input type="checkbox"> GET is safe; PUT and DELETE are idempotent</label></li><li class="task"><label><input type="checkbox"> POST endpoints with side effects accept an <code>Idempotency-Key</code></label></li><li class="task"><label><input type="checkbox"> Status codes are precise: 201 + <code>Location</code>, 204, 401 vs 403, 409, 422, 429</label></li><li class="task"><label><input type="checkbox"> All errors use one format, ideally <code>application/problem+json</code></label></li><li class="task"><label><input type="checkbox"> Long jobs return 202 with a status resource</label></li></ul>
+<h2 id="evolution">Evolution<a class="anchor" href="#evolution">#</a></h2>
+<ul><li class="task"><label><input type="checkbox"> Only additive changes within a version</label></li><li class="task"><label><input type="checkbox"> Major version in the URI path, or a documented header scheme</label></li><li class="task"><label><input type="checkbox"> <code>Deprecation</code> and <code>Sunset</code> headers before anything is removed</label></li><li class="task"><label><input type="checkbox"> An OpenAPI spec is the source of truth and is published</label></li></ul>
+<h2 id="security">Security<a class="anchor" href="#security">#</a></h2>
+<ul><li class="task"><label><input type="checkbox"> HTTPS only</label></li><li class="task"><label><input type="checkbox"> Every object access is checked against the caller&#x27;s identity (BOLA)</label></li><li class="task"><label><input type="checkbox"> Request bodies are schema-validated; updates use a field allowlist</label></li><li class="task"><label><input type="checkbox"> Tokens are short-lived and never placed in URLs or logs</label></li><li class="task"><label><input type="checkbox"> CORS is an explicit allowlist; cookie auth has CSRF protection</label></li><li class="task"><label><input type="checkbox"> Errors never expose stack traces or internals</label></li></ul>
+<h2 id="operations">Operations<a class="anchor" href="#operations">#</a></h2>
+<ul><li class="task"><label><input type="checkbox"> Rate limits per client, with <code>429</code> and <code>Retry-After</code></label></li><li class="task"><label><input type="checkbox"> Timeouts on every outbound call</label></li><li class="task"><label><input type="checkbox"> Retries use exponential backoff with jitter and a cap</label></li><li class="task"><label><input type="checkbox"> Circuit breakers on critical dependencies</label></li><li class="task"><label><input type="checkbox"> <code>Cache-Control</code> and <code>ETag</code> on cacheable GETs; <code>If-Match</code> on concurrent writes</label></li><li class="task"><label><input type="checkbox"> Trace IDs, structured logs and per-endpoint latency and error metrics</label></li></ul>
+<hr>
+<h1 id="20-qa">20. Q&amp;A<a class="anchor" href="#20-qa">#</a></h1>
+<h3 id="fundamentals">Fundamentals<a class="anchor" href="#fundamentals">#</a></h3>
+<p><strong>What is REST?</strong> An architectural style, defined by Roy Fielding in 2000, for networked applications in which resources identified by URLs are manipulated through a uniform interface, usually HTTP methods.</p>
+<p><strong>What is the difference between REST and a RESTful API?</strong> REST is the set of rules. A RESTful API is a real API that implements those rules.</p>
+<p><strong>Is REST a protocol?</strong> No. It is an architectural style. HTTP is the protocol it is almost always used with.</p>
+<p><strong>What are the six REST constraints?</strong> Client–server, stateless, cacheable, uniform interface, layered system, and the optional code on demand.</p>
+<p><strong>What does stateless mean in REST?</strong> Each request carries all the information needed to process it. The server keeps no client session between requests, so any instance can serve any request.</p>
+<p><strong>If HTTP is stateless, how do APIs know who is logged in?</strong> The client sends state with each request: a token such as a JWT, a cookie, or a session ID that points to a shared store such as Redis.</p>
+<p><strong>What is HATEOAS?</strong> Hypermedia As The Engine Of Application State. Responses include links to the actions available next, so clients discover the API rather than hard-coding URLs.</p>
+<p><strong>What is the Richardson Maturity Model?</strong> A four-level scale: one endpoint (0), resources (1), HTTP verbs and status codes (2), hypermedia controls (3).</p>
+<h3 id="design-questions">Design questions<a class="anchor" href="#design-questions">#</a></h3>
+<p><strong>Why use nouns instead of verbs in URLs?</strong> The HTTP method already expresses the action. <code>GET /users/42</code> is clearer and more uniform than <code>/getUser?id=42</code>.</p>
+<p><strong>How do you model an action like &quot;cancel order&quot; in REST?</strong> As a state change, <code>PATCH /orders/7</code> with <code>{&quot;status&quot;:&quot;cancelled&quot;}</code>, or by creating a sub-resource such as <code>POST /orders/7/cancellations</code>.</p>
+<p><strong>PUT vs PATCH?</strong> PUT replaces the entire resource and is idempotent. PATCH applies a partial change and is not guaranteed to be idempotent.</p>
+<p><strong>PUT vs POST for creation?</strong> POST when the server assigns the ID: <code>POST /users</code>. PUT when the client knows the URI: <code>PUT /users/alice</code>.</p>
+<p><strong>Which methods are idempotent?</strong> GET, HEAD, OPTIONS, PUT and DELETE. POST is not; PATCH is not guaranteed.</p>
+<p><strong>Does idempotent mean the response is always the same?</strong> No. It means the server&#x27;s final state is the same. A second DELETE may return 404 instead of 204.</p>
+<p><strong>401 vs 403?</strong> 401 means not authenticated. 403 means authenticated but not permitted.</p>
+<p><strong>400 vs 422?</strong> 400 for a malformed request the server cannot parse. 422 for well-formed data that fails validation.</p>
+<p><strong>Why is returning 200 with an error in the body a bad idea?</strong> Monitoring, caches, retries and client libraries all treat 200 as success, so the failure becomes invisible.</p>
+<p><strong>What should a successful POST return?</strong> 201 Created, a <code>Location</code> header pointing at the new resource, and usually the resource itself.</p>
+<h3 id="pagination-caching-versioning">Pagination, caching, versioning<a class="anchor" href="#pagination-caching-versioning">#</a></h3>
+<p><strong>Offset vs cursor pagination?</strong> Offset is simple and allows page jumps but slows down on deep pages and duplicates or skips rows when data changes. Cursor pagination is fast at any depth and stable, but only supports next and previous.</p>
+<p><strong>Why should cursors be opaque?</strong> So clients cannot depend on their internals, leaving you free to change the encoding or sort keys.</p>
+<p><strong>What is an ETag used for?</strong> Conditional GETs that return 304 when unchanged, and conditional writes with <code>If-Match</code> that return 412 when someone else changed the resource first.</p>
+<p><strong>How do you prevent lost updates?</strong> Optimistic concurrency: the client sends <code>If-Match</code> with the ETag it read, and the server rejects the write with 412 if the ETag has changed.</p>
+<p><strong>How do you version a REST API?</strong> Most commonly with a major version in the path, such as <code>/v1</code>. Alternatives are a custom header, a media type, or a query parameter. Avoid breaking changes within a version.</p>
+<p><strong>What counts as a breaking change?</strong> Removing or renaming fields or endpoints, changing types, making optional fields required, tightening validation, or changing default behaviour.</p>
+<p><strong>How do you deprecate an endpoint?</strong> Announce it, send <code>Deprecation</code> and <code>Sunset</code> headers with a link to migration docs, monitor remaining usage, contact those clients, then remove it after the sunset date.</p>
+<h3 id="reliability-and-security">Reliability and security<a class="anchor" href="#reliability-and-security">#</a></h3>
+<p><strong>How do you make POST safe to retry?</strong> The client sends an <code>Idempotency-Key</code>. The server stores the key with the result and replays that result for any retry with the same key.</p>
+<p><strong>Which errors should a client retry?</strong> Network errors, timeouts, 408, 429 and 5xx, using exponential backoff with jitter. Never other 4xx.</p>
+<p><strong>What is a retry storm?</strong> Many clients retrying at the same moment, multiplying load on an already failing service. Jitter, retry caps and circuit breakers prevent it.</p>
+<p><strong>What is a circuit breaker?</strong> A wrapper that stops calling a failing dependency after a threshold of failures, fails fast for a cooling period, then lets a trial request through to test recovery.</p>
+<p>**Why doesn&#x27;t <code>fetch(url, { timeout: 3000 })</code> work?** <code>fetch</code> has no timeout option, so it is silently ignored. Use <code>AbortSignal.timeout(3000)</code> as the <code>signal</code>.</p>
+<p><strong>What is rate limiting, and which algorithm is most used?</strong> Limiting how many requests a client may make per time window. Token bucket is the most common because it allows short bursts while enforcing an average rate.</p>
+<p><strong>What is the fixed window boundary problem?</strong> A client can send a full quota at the end of one window and another at the start of the next, doubling the effective rate for a moment.</p>
+<p><strong>What should an API return when rate limited?</strong> 429 Too Many Requests with a <code>Retry-After</code> header.</p>
+<p><strong>What is BOLA?</strong> Broken Object Level Authorization, the top OWASP API risk. The API checks that a user is logged in but not that the specific object requested belongs to them.</p>
+<p><strong>Is a JWT encrypted?</strong> No. A standard signed JWT is only base64url-encoded. Anyone can read the payload, but nobody can alter it without invalidating the signature.</p>
+<p><strong>Does a REST API need CSRF protection?</strong> Only if it authenticates with cookies. Bearer tokens in the <code>Authorization</code> header are not sent automatically by browsers, so they are not exposed to CSRF.</p>
+<p><strong>Is CORS a security feature for the server?</strong> No. It is enforced only by browsers, to protect users. Non-browser clients ignore it, so the server still has to authenticate and authorize every request.</p>
+<p><strong>When would you choose GraphQL or gRPC over REST?</strong> GraphQL when many clients need differently shaped data and over-fetching or under-fetching hurts. gRPC for internal service-to-service calls where performance, strict contracts or streaming matter.</p>
+<hr>
+<h1 id="21-quick-revision-sheet">21. Quick revision sheet<a class="anchor" href="#21-quick-revision-sheet">#</a></h1>
+<div class="table-wrap"><table><thead><tr><th>Topic</th><th>Remember</th></tr></thead><tbody><tr><td>REST</td><td>Architectural style: resources + uniform interface + stateless</td></tr><tr><td>RESTful</td><td>An API that actually follows those constraints</td></tr><tr><td>URIs</td><td>Plural nouns, shallow nesting, query params for filter, sort, page</td></tr><tr><td>GET</td><td>Safe, idempotent, cacheable, no body</td></tr><tr><td>POST</td><td>Not idempotent; use <code>Idempotency-Key</code>; 201 + <code>Location</code></td></tr><tr><td>PUT</td><td>Full replace; idempotent</td></tr><tr><td>PATCH</td><td>Partial update; not guaranteed idempotent</td></tr><tr><td>DELETE</td><td>Idempotent; 204</td></tr><tr><td>401 / 403</td><td>Not authenticated / not allowed</td></tr><tr><td>400 / 422</td><td>Can&#x27;t parse / parsed but invalid</td></tr><tr><td>409 / 412</td><td>State conflict / ETag precondition failed</td></tr><tr><td>429</td><td>Rate limited; send <code>Retry-After</code></td></tr><tr><td>Errors</td><td><code>application/problem+json</code>, RFC 9457</td></tr><tr><td>Pagination</td><td>Cursor for scale, offset for small page-jump tables</td></tr><tr><td>Caching</td><td><code>Cache-Control</code>, <code>ETag</code>, <code>If-None-Match</code> → 304</td></tr><tr><td>Concurrency</td><td><code>If-Match</code> → 412 on conflict</td></tr><tr><td>Versioning</td><td>Additive changes; <code>/v1</code>; <code>Deprecation</code> + <code>Sunset</code> headers</td></tr><tr><td>Security</td><td>HTTPS, auth every call, check every object, validate input, allowlist fields</td></tr><tr><td>Rate limiting</td><td>Token bucket, Redis, per user and key</td></tr><tr><td>Reliability</td><td>Timeouts, backoff + jitter, circuit breaker, 503 + <code>Retry-After</code></td></tr></tbody></table></div>
+<p><strong>One sentence each</strong></p>
+<ul><li>REST is a set of constraints, and a RESTful API is one that honours them over HTTP.</li><li>Good REST design is mostly about modelling resources well and using HTTP&#x27;s existing semantics precisely instead of reinventing them.</li><li>A production API is defined less by its happy path than by how it handles errors, retries, change, abuse and failure.</li></ul>
+<hr>
+<h1 id="22-references">22. References<a class="anchor" href="#22-references">#</a></h1>
+<ul><li>Roy Fielding, <a href="https://ics.uci.edu/~fielding/pubs/dissertation/top.htm">Architectural Styles and the Design of Network-based Software Architectures</a>, chapter 5, 2000</li><li><a href="https://www.rfc-editor.org/rfc/rfc9110.html">RFC 9110 — HTTP Semantics</a>: methods, status codes, conditional requests</li><li><a href="https://www.rfc-editor.org/rfc/rfc9111.html">RFC 9111 — HTTP Caching</a></li><li><a href="https://www.rfc-editor.org/rfc/rfc9457.html">RFC 9457 — Problem Details for HTTP APIs</a></li><li><a href="https://www.rfc-editor.org/rfc/rfc7396.html">RFC 7396 — JSON Merge Patch</a> and <a href="https://www.rfc-editor.org/rfc/rfc6902.html">RFC 6902 — JSON Patch</a></li><li><a href="https://www.rfc-editor.org/rfc/rfc8288.html">RFC 8288 — Web Linking</a></li><li><a href="https://www.rfc-editor.org/rfc/rfc9745.html">RFC 9745 — The Deprecation HTTP Response Header Field</a> and <a href="https://www.rfc-editor.org/rfc/rfc8594.html">RFC 8594 — The Sunset Header Field</a></li><li><a href="https://datatracker.ietf.org/doc/draft-ietf-httpapi-idempotency-key-header/">IETF draft — The Idempotency-Key HTTP Header Field</a></li><li><a href="https://datatracker.ietf.org/doc/draft-ietf-httpapi-ratelimit-headers/">IETF draft — RateLimit header fields for HTTP</a></li><li><a href="https://owasp.org/API-Security/editions/2023/en/0x11-t10/">OWASP API Security Top 10 — 2023</a></li><li><a href="https://spec.openapis.org/oas/latest.html">OpenAPI Specification</a></li><li>Martin Fowler, <a href="https://martinfowler.com/articles/richardsonMaturityModel.html">Richardson Maturity Model</a></li><li>Hello Interview, <a href="https://www.hellointerview.com/learn/system-design/core-concepts/api-design">API Design</a> and <a href="https://www.hellointerview.com/learn/system-design/core-concepts/networking-essentials">Networking Essentials</a>, referenced in the notes</li></ul>
+<hr>
+<p><strong>Previous:</strong> <a href="../5.%20DNS_LOAD_BALANCING/index.html">DNS &amp; Load Balancing</a></p>
+<p><strong>Related:</strong> <a href="../4.%20HTTP_EVOLUTION_HTTP1.1_HTTP2_HTTP3/index.html">HTTP Evolution — HTTP/1.1, HTTP/2 &amp; HTTP/3</a></p>
+<footer>Extracted from the DOCUMENTATIONS export &middot; OSI model study notes &middot; see <code>README.md</code> for the markdown source.</footer>
+</main>
+</div>
+</body>
+</html>

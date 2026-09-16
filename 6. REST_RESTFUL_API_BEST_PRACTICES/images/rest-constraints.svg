@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 430" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+  <rect width="880" height="430" rx="14" fill="#fbfbf9"/>
+  <text x="440" y="42" text-anchor="middle" font-size="21" font-weight="700" fill="#1c1c1a">The 6 REST architectural constraints</text>
+  <text x="440" y="66" text-anchor="middle" font-size="13.5" fill="#5c5c56">Roy Fielding, 2000. An API that honours all of them is RESTful.</text>
+  <g font-size="13" fill="#5c5c56">
+    <g transform="translate(30,90)">
+      <rect width="260" height="140" rx="10" fill="#fff" stroke="#e3e3dd"/><rect width="260" height="6" rx="3" fill="#8a4b2a"/>
+      <text x="18" y="38" font-size="16" font-weight="700" fill="#1c1c1a">1. Client–Server</text>
+      <text x="18" y="66">UI and data storage are separated.</text>
+      <text x="18" y="86">Each side evolves independently.</text>
+      <text x="18" y="118" font-size="12" fill="#8a4b2a">React app  ⇄  Node API</text>
+    </g>
+    <g transform="translate(310,90)">
+      <rect width="260" height="140" rx="10" fill="#fff" stroke="#e3e3dd"/><rect width="260" height="6" rx="3" fill="#8a4b2a"/>
+      <text x="18" y="38" font-size="16" font-weight="700" fill="#1c1c1a">2. Stateless</text>
+      <text x="18" y="66">Every request carries everything</text>
+      <text x="18" y="86">needed. No server-side session.</text>
+      <text x="18" y="118" font-size="12" fill="#8a4b2a">Authorization: Bearer &lt;token&gt;</text>
+    </g>
+    <g transform="translate(590,90)">
+      <rect width="260" height="140" rx="10" fill="#fff" stroke="#e3e3dd"/><rect width="260" height="6" rx="3" fill="#8a4b2a"/>
+      <text x="18" y="38" font-size="16" font-weight="700" fill="#1c1c1a">3. Cacheable</text>
+      <text x="18" y="66">Responses declare whether and</text>
+      <text x="18" y="86">for how long they can be cached.</text>
+      <text x="18" y="118" font-size="12" fill="#8a4b2a">Cache-Control, ETag</text>
+    </g>
+    <g transform="translate(30,250)">
+      <rect width="260" height="140" rx="10" fill="#fff" stroke="#e3e3dd"/><rect width="260" height="6" rx="3" fill="#8a4b2a"/>
+      <text x="18" y="38" font-size="16" font-weight="700" fill="#1c1c1a">4. Uniform Interface</text>
+      <text x="18" y="66">Resources by URI, standard verbs,</text>
+      <text x="18" y="86">self-descriptive messages, links.</text>
+      <text x="18" y="118" font-size="12" fill="#8a4b2a">GET /orders/42</text>
+    </g>
+    <g transform="translate(310,250)">
+      <rect width="260" height="140" rx="10" fill="#fff" stroke="#e3e3dd"/><rect width="260" height="6" rx="3" fill="#8a4b2a"/>
+      <text x="18" y="38" font-size="16" font-weight="700" fill="#1c1c1a">5. Layered System</text>
+      <text x="18" y="66">Client can't tell if it talks to the</text>
+      <text x="18" y="86">server or a proxy, CDN, gateway.</text>
+      <text x="18" y="118" font-size="12" fill="#8a4b2a">Client → CDN → Gateway → API</text>
+    </g>
+    <g transform="translate(590,250)">
+      <rect width="260" height="140" rx="10" fill="#fff" stroke="#e3e3dd" stroke-dasharray="6 4"/>
+      <text x="18" y="38" font-size="16" font-weight="700" fill="#1c1c1a">6. Code on Demand</text>
+      <text x="18" y="56" font-size="12" font-style="italic">(the only optional one)</text>
+      <text x="18" y="80">Server may send executable code</text>
+      <text x="18" y="99">to extend the client.</text>
+      <text x="18" y="121" font-size="12" fill="#8a4b2a">Serving JavaScript to a browser</text>
+    </g>
+  </g>
+</svg>

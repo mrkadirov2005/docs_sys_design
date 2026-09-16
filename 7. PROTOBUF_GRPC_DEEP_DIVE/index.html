@@ -1,0 +1,674 @@
+<!doctype html>
+<html lang="en" data-theme-auto>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Protocol Buffers &amp; gRPC Deep Dive</title>
+<style>
+:root{
+  --bg:#fbfbf9; --surface:#ffffff; --ink:#1c1c1a; --muted:#5c5c56;
+  --line:#e3e3dd; --accent:#8a4b2a; --accent-soft:#f3ece7;
+  --code-bg:#f5f4f0; --quote-bg:#f7f5f1;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#16161a; --surface:#1d1d22; --ink:#e8e8e4; --muted:#a0a099;
+    --line:#32323a; --accent:#e0a077; --accent-soft:#2a2320;
+    --code-bg:#232329; --quote-bg:#202026;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#16161a; --surface:#1d1d22; --ink:#e8e8e4; --muted:#a0a099;
+  --line:#32323a; --accent:#e0a077; --accent-soft:#2a2320;
+  --code-bg:#232329; --quote-bg:#202026;
+}
+*{box-sizing:border-box}
+body{
+  background:var(--bg); color:var(--ink); margin:0;
+  font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,
+       "Helvetica Neue",Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.layout{max-width:1180px;margin:0 auto;padding:0 24px;
+  display:grid;grid-template-columns:236px minmax(0,1fr);gap:48px}
+nav.toc{position:sticky;top:0;align-self:start;max-height:100vh;
+  overflow-y:auto;padding:40px 0 40px;font-size:13.5px}
+nav.toc .label{text-transform:uppercase;letter-spacing:.09em;
+  font-size:11px;color:var(--muted);font-weight:700;margin-bottom:12px}
+nav.toc a{display:block;color:var(--muted);text-decoration:none;
+  padding:4px 10px;border-left:2px solid transparent;line-height:1.4}
+nav.toc a:hover{color:var(--accent);border-left-color:var(--accent);
+  background:var(--accent-soft)}
+nav.toc a.lvl2{padding-left:22px;font-size:13px}
+main{padding:40px 0 96px;min-width:0}
+h1,h2,h3,h4{line-height:1.25;font-weight:650;
+  scroll-margin-top:24px;position:relative}
+h1{font-size:2.05rem;margin:.2em 0 .6em;letter-spacing:-.02em}
+h2{font-size:1.5rem;margin:2.2em 0 .7em;padding-bottom:.3em;
+  border-bottom:1px solid var(--line)}
+h3{font-size:1.16rem;margin:1.9em 0 .5em}
+h4{font-size:1rem;margin:1.5em 0 .4em;color:var(--muted)}
+.anchor{position:absolute;margin-left:.4em;color:var(--line);
+  text-decoration:none;opacity:0;font-weight:400}
+h1:hover .anchor,h2:hover .anchor,h3:hover .anchor{opacity:1}
+.anchor:hover{color:var(--accent)}
+p{margin:0 0 1em}
+a{color:var(--accent)}
+ul,ol{margin:0 0 1.15em;padding-left:1.45em}
+li{margin:.32em 0}
+li::marker{color:var(--muted)}
+li.task{list-style:none;margin-left:-1.45em}
+li.task input{accent-color:var(--accent);margin:0 .5em 0 0;vertical-align:-1px}
+li.task label{cursor:pointer}
+hr{border:0;border-top:1px solid var(--line);margin:2.6em 0}
+code{background:var(--code-bg);border:1px solid var(--line);
+  border-radius:4px;padding:.12em .38em;font-size:.875em;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+pre{background:var(--code-bg);border:1px solid var(--line);
+  border-radius:8px;padding:16px 18px;overflow-x:auto;margin:0 0 1.3em}
+pre code{background:none;border:0;padding:0;font-size:13px;line-height:1.55}
+blockquote{margin:0 0 1.3em;padding:14px 18px;background:var(--quote-bg);
+  border-left:3px solid var(--accent);border-radius:0 8px 8px 0}
+blockquote p{margin:0 0 .6em}
+blockquote p:last-child{margin:0}
+.table-wrap{overflow-x:auto;margin:0 0 1.5em;border:1px solid var(--line);
+  border-radius:8px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:14.5px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);
+  vertical-align:top}
+th{background:var(--accent-soft);font-weight:650;white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+figure{margin:0 0 1.6em;text-align:center}
+img{max-width:100%;height:auto;border:1px solid var(--line);
+  border-radius:8px;background:var(--surface)}
+footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--line);
+  font-size:13px;color:var(--muted)}
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr;gap:0}
+  nav.toc{position:static;max-height:none;padding:28px 0 0;
+    border-bottom:1px solid var(--line);margin-bottom:8px}
+  nav.toc a.lvl2{display:none}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="toc"><div class="label">On this page</div>
+<a class="lvl1" href="#protocol-buffers-grpc-deep-dive">Protocol Buffers &amp; gRPC Deep Dive</a>
+<a class="lvl2" href="#0-what-this-document-covers">0. What this document covers</a>
+<a class="lvl1" href="#1-what-protobuf-and-grpc-are">1. What Protobuf and gRPC are</a>
+<a class="lvl2" href="#11-protocol-buffers">1.1 Protocol Buffers</a>
+<a class="lvl2" href="#12-grpc">1.2 gRPC</a>
+<a class="lvl2" href="#13-how-the-pieces-fit">1.3 How the pieces fit</a>
+<a class="lvl2" href="#14-vocabulary">1.4 Vocabulary</a>
+<a class="lvl1" href="#2-defining-proto-schemas">2. Defining .proto schemas</a>
+<a class="lvl2" href="#21-anatomy-of-a-file">2.1 Anatomy of a file</a>
+<a class="lvl2" href="#22-scalar-types">2.2 Scalar types</a>
+<a class="lvl2" href="#23-messages-nesting-repeated-and-maps">2.3 Messages, nesting, repeated and maps</a>
+<a class="lvl2" href="#24-enums">2.4 Enums</a>
+<a class="lvl2" href="#25-oneof">2.5 oneof</a>
+<a class="lvl2" href="#26-field-presence-zero-vs-unset">2.6 Field presence: zero vs unset</a>
+<a class="lvl2" href="#27-well-known-types">2.7 Well-known types</a>
+<a class="lvl2" href="#28-services-and-rpc-methods">2.8 Services and RPC methods</a>
+<a class="lvl2" href="#29-design-and-style-rules">2.9 Design and style rules</a>
+<a class="lvl2" href="#210-editions-the-successor-to-proto2-and-proto3">2.10 Editions: the successor to proto2 and proto3</a>
+<a class="lvl2" href="#211-complete-example">2.11 Complete example</a>
+<a class="lvl1" href="#3-binary-serialisation-the-wire-format">3. Binary serialisation: the wire format</a>
+<a class="lvl2" href="#31-the-core-idea">3.1 The core idea</a>
+<a class="lvl2" href="#32-tags-and-wire-types">3.2 Tags and wire types</a>
+<a class="lvl2" href="#33-varints">3.3 Varints</a>
+<a class="lvl2" href="#34-zigzag-for-negative-numbers">3.4 ZigZag for negative numbers</a>
+<a class="lvl2" href="#35-length-delimited-fields">3.5 Length-delimited fields</a>
+<a class="lvl2" href="#36-measured-byte-sequences">3.6 Measured byte sequences</a>
+<a class="lvl2" href="#37-rules-that-fall-out-of-the-format">3.7 Rules that fall out of the format</a>
+<a class="lvl1" href="#4-speed-and-size-measured">4. Speed and size, measured</a>
+<a class="lvl2" href="#41-method">4.1 Method</a>
+<a class="lvl2" href="#42-size">4.2 Size</a>
+<a class="lvl2" href="#43-speed-in-javascript">4.3 Speed in JavaScript</a>
+<a class="lvl2" href="#44-where-grpcs-real-world-speed-comes-from">4.4 Where gRPC&#x27;s real-world speed comes from</a>
+<a class="lvl1" href="#5-schema-evolution-and-compatibility">5. Schema evolution and compatibility</a>
+<a class="lvl2" href="#51-what-each-change-actually-does-tested">5.1 What each change actually does (tested)</a>
+<a class="lvl2" href="#52-always-reserve-deleted-fields">5.2 Always reserve deleted fields</a>
+<a class="lvl2" href="#53-unknown-fields-a-nodejs-gotcha">5.3 Unknown fields: a Node.js gotcha</a>
+<a class="lvl2" href="#54-compatibility-checklist">5.4 Compatibility checklist</a>
+<a class="lvl2" href="#55-deployment-order">5.5 Deployment order</a>
+<a class="lvl1" href="#6-type-safety-what-you-get-and-what-you-dont">6. Type safety: what you get and what you don&#x27;t</a>
+<a class="lvl2" href="#61-what-protobuf-gives-you">6.1 What Protobuf gives you</a>
+<a class="lvl2" href="#62-the-limits-tested-in-javascript">6.2 The limits, tested in JavaScript</a>
+<a class="lvl2" href="#63-mini-project-protobuf-in-nodejs">6.3 Mini project: Protobuf in Node.js</a>
+<a class="lvl1" href="#7-code-generation-across-microservices">7. Code generation across microservices</a>
+<a class="lvl2" href="#71-what-gets-generated">7.1 What gets generated</a>
+<a class="lvl2" href="#72-static-generation-vs-dynamic-loading">7.2 Static generation vs dynamic loading</a>
+<a class="lvl2" href="#73-generating-with-protoc">7.3 Generating with protoc</a>
+<a class="lvl2" href="#74-generating-with-buf">7.4 Generating with Buf</a>
+<a class="lvl2" href="#75-where-the-proto-files-live">7.5 Where the .proto files live</a>
+<a class="lvl2" href="#76-a-workable-pipeline">7.6 A workable pipeline</a>
+<a class="lvl1" href="#8-grpc-on-the-wire">8. gRPC on the wire</a>
+<a class="lvl2" href="#81-one-call-is-one-http2-stream">8.1 One call is one HTTP/2 stream</a>
+<a class="lvl2" href="#82-the-length-prefixed-message">8.2 The length-prefixed message</a>
+<a class="lvl2" href="#83-status-lives-in-trailers">8.3 Status lives in trailers</a>
+<a class="lvl2" href="#84-json-mapping">8.4 JSON mapping</a>
+<a class="lvl1" href="#9-grpc-vs-rest-vs-graphql">9. gRPC vs REST vs GraphQL</a>
+<a class="lvl2" href="#91-when-to-use-grpc">9.1 When to use gRPC</a>
+<a class="lvl2" href="#92-when-not-to">9.2 When not to</a>
+<a class="lvl2" href="#93-common-production-problems-from-the-notes">9.3 Common production problems, from the notes</a>
+<a class="lvl1" href="#10-corrections-to-the-notes">10. Corrections to the notes</a>
+<a class="lvl1" href="#11-qa">11. Q&amp;A</a>
+<a class="lvl1" href="#12-quick-revision-sheet">12. Quick revision sheet</a>
+<a class="lvl1" href="#13-references">13. References</a>
+</nav>
+<main>
+<h1 id="protocol-buffers-grpc-deep-dive">Protocol Buffers &amp; gRPC Deep Dive<a class="anchor" href="#protocol-buffers-grpc-deep-dive">#</a></h1>
+<blockquote><p>Scope: how to define <code>.proto</code> schemas well, what Protobuf&#x27;s binary encoding actually does to your data, how fast and small it really is (measured, not assumed), how schemas evolve without breaking anyone, and how one contract generates typed code for every microservice.</p><p>Source: extracted and reorganised from <code>0. md/DOCUMENTATIONS ...md</code> (and its HTML twin) → <code>API DESIGN &gt; API TYPES</code>, <code>GRAPHQL, gRPC… &gt; gRPC</code> (Overal, Docs, FAANG questions, Custom QA, Q&amp;A), <code>Protocol Buffers and Type Safety</code>, and <code>Handling Failures and Fault Mode &gt; gRPC</code>. Gaps were filled from protobuf.dev, grpc.io and the gRPC proposals. Every byte sequence, benchmark and compatibility claim marked <strong>measured</strong> or <strong>tested</strong> was run with protobufjs 8.8.0 and @grpc/grpc-js 1.14.4 on Node 24. All diagrams in <code>images/</code> were drawn for this document.</p></blockquote>
+<hr>
+<h2 id="0-what-this-document-covers">0. What this document covers<a class="anchor" href="#0-what-this-document-covers">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>Topic</th><th>One-line summary</th></tr></thead><tbody><tr><td>What they are</td><td>Protobuf is a schema + binary format; gRPC is an RPC framework built on it and HTTP/2</td></tr><tr><td>Defining schemas</td><td>Messages, types, enums, oneof, maps, presence, well-known types, services, style</td></tr><tr><td>Wire format</td><td>Tags, varints, zigzag, length-delimited fields: byte by byte</td></tr><tr><td>Speed and size</td><td>Measured against JSON: always smaller, faster to decode, not always faster to encode</td></tr><tr><td>Schema evolution</td><td>Which changes are safe, which corrupt data silently, and how <code>reserved</code> protects you</td></tr><tr><td>Type safety</td><td>What generated code guarantees, and what still needs validation</td></tr><tr><td>Code generation</td><td><code>protoc</code>, Buf, static vs dynamic loading, contract repos, CI gates, publishing</td></tr><tr><td>gRPC on the wire</td><td>One call = one HTTP/2 stream: headers, length-prefixed messages, trailers</td></tr><tr><td>Choosing</td><td>gRPC vs REST vs GraphQL, and when not to use gRPC</td></tr></tbody></table></div>
+<p>The practical companion to this document, covering the four streaming types, deadlines, interceptors and error handling with a runnable service, is <a href="../8.%20GRPC_PRACTICAL_PATTERNS_STREAMING/index.html">gRPC Practical Patterns &amp; Streaming</a>.</p>
+<hr>
+<h1 id="1-what-protobuf-and-grpc-are">1. What Protobuf and gRPC are<a class="anchor" href="#1-what-protobuf-and-grpc-are">#</a></h1>
+<h2 id="11-protocol-buffers">1.1 Protocol Buffers<a class="anchor" href="#11-protocol-buffers">#</a></h2>
+<p><strong>Protocol Buffers (Protobuf)</strong> is a language-neutral, platform-neutral way to define structured data once and serialise it to a compact binary format. Google created it for internal use and open-sourced it in 2008.</p>
+<p>The idea in one line: **define your data once in a <code>.proto</code> file, generate strongly typed code for every language, and serialise efficiently.**</p>
+<p>It has three parts:</p>
+<ol><li><strong>A schema language</strong>, the <code>.proto</code> file.</li><li><strong>A compiler</strong>, <code>protoc</code>, plus per-language plugins that generate code.</li><li><strong>A binary wire format</strong> that the generated code reads and writes.</li></ol>
+<h2 id="12-grpc">1.2 gRPC<a class="anchor" href="#12-grpc">#</a></h2>
+<p><strong>gRPC</strong> is a high-performance Remote Procedure Call framework. A service calls a method on another machine as if it were a local function:</p>
+<pre><code class="lang-text">REST:  GET /users/1
+gRPC:  userService.GetUser({ id: 1 })</code></pre>
+<p>It looks like a function call, but it runs over the network. gRPC combines two technologies:</p>
+<ul><li><strong>Protocol Buffers</strong> define the service contract and encode every message.</li><li><strong>HTTP/2</strong> carries the calls: many concurrent calls multiplexed over one long-lived connection, with compressed headers and native streaming.</li></ul>
+<p>Google open-sourced gRPC in 2015 as the successor to its internal RPC system, Stubby. It is now a Cloud Native Computing Foundation project.</p>
+<blockquote><p><strong>On the name.</strong> The notes expand gRPC as &quot;Google Remote Procedure Call&quot;. The project&#x27;s official position is that the &quot;g&quot; stands for something different in every release, from &quot;good&quot; to &quot;gravity&quot;, and the first release used the recursive &quot;gRPC Remote Procedure Calls&quot;. In practice everyone understands the Google origin; just don&#x27;t state the expansion as fact in an interview.</p></blockquote>
+<h2 id="13-how-the-pieces-fit">1.3 How the pieces fit<a class="anchor" href="#13-how-the-pieces-fit">#</a></h2>
+<ol><li><strong>Define</strong> the service and messages in a <code>.proto</code> file.</li><li><strong>Generate</strong> client stubs and server interfaces for each language.</li><li><strong>Implement</strong> the server interface with your business logic.</li><li><strong>Call</strong> the server through the generated client, which serialises the request, sends it over HTTP/2, and deserialises the response.</li></ol>
+<pre><code class="lang-proto">syntax = &quot;proto3&quot;;
+
+service UserService {
+  rpc GetUser(GetUserRequest) returns (User);
+}
+
+message GetUserRequest {
+  int32 id = 1;
+}
+
+message User {
+  string name = 1;
+  int32 age = 2;
+}</code></pre>
+<h2 id="14-vocabulary">1.4 Vocabulary<a class="anchor" href="#14-vocabulary">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>Term</th><th>Meaning</th></tr></thead><tbody><tr><td>Message</td><td>A typed data structure, like a class or DTO</td></tr><tr><td>Field number</td><td>The permanent numeric ID of a field; this, not the name, goes on the wire</td></tr><tr><td>Service</td><td>A named group of RPC methods</td></tr><tr><td>RPC method</td><td>A remotely callable function with a request and response type</td></tr><tr><td>Stub</td><td>Generated client code used to call a service</td></tr><tr><td>Channel</td><td>A client&#x27;s managed connection to a server address, reused across calls</td></tr><tr><td>Metadata</td><td>Key-value pairs sent with a call, like HTTP headers</td></tr><tr><td>Deadline</td><td>The absolute time by which a call must finish</td></tr><tr><td>Status</td><td>The result of a call: a code such as <code>OK</code> or <code>NOT_FOUND</code> plus a message</td></tr><tr><td>Interceptor</td><td>Middleware that wraps calls on the client or server</td></tr></tbody></table></div>
+<hr>
+<h1 id="2-defining-proto-schemas">2. Defining <code>.proto</code> schemas<a class="anchor" href="#2-defining-proto-schemas">#</a></h1>
+<h2 id="21-anatomy-of-a-file">2.1 Anatomy of a file<a class="anchor" href="#21-anatomy-of-a-file">#</a></h2>
+<pre><code class="lang-proto">syntax = &quot;proto3&quot;;                          // or: edition = &quot;2024&quot;;
+
+package shop.orders.v1;                     // namespace + major version
+
+import &quot;google/protobuf/timestamp.proto&quot;;   // well-known types
+import &quot;shop/common/v1/money.proto&quot;;        // your own shared messages
+
+option go_package = &quot;github.com/acme/contracts/gen/go/shop/orders/v1;ordersv1&quot;;
+option java_multiple_files = true;
+option java_package = &quot;com.acme.shop.orders.v1&quot;;
+
+service OrderService { ... }
+message Order { ... }
+enum OrderStatus { ... }</code></pre>
+<ul><li>**<code>syntax</code> or <code>edition</code>** comes first and sets default behaviour for the file.</li><li>**<code>package</code>** prevents name clashes and should end in a major version such as <code>v1</code>.</li><li>**<code>import</code>** pulls in messages from other files.</li><li>**<code>option</code>** lines control how code is generated for specific languages.</li></ul>
+<h2 id="22-scalar-types">2.2 Scalar types<a class="anchor" href="#22-scalar-types">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>Proto type</th><th>Encoding</th><th>JS type in <code>@grpc/proto-loader</code></th><th>Use it for</th></tr></thead><tbody><tr><td><code>double</code>, <code>float</code></td><td>Fixed 8 or 4 bytes</td><td>number</td><td>Real measurements. Never money</td></tr><tr><td><code>int32</code>, <code>int64</code></td><td>Varint</td><td>number, or string for int64 with <code>longs: String</code></td><td>Non-negative or rarely negative integers</td></tr><tr><td><code>uint32</code>, <code>uint64</code></td><td>Varint</td><td>number, or string</td><td>Counts and sizes that are never negative</td></tr><tr><td><code>sint32</code>, <code>sint64</code></td><td>ZigZag varint</td><td>number, or string</td><td>Integers that are often negative</td></tr><tr><td><code>fixed32</code>, <code>fixed64</code></td><td>Fixed 4 or 8 bytes</td><td>number, or string</td><td>Values usually larger than 2^28, such as hashes</td></tr><tr><td><code>sfixed32</code>, <code>sfixed64</code></td><td>Fixed 4 or 8 bytes</td><td>number, or string</td><td>Large signed values</td></tr><tr><td><code>bool</code></td><td>Varint</td><td>boolean</td><td>Flags</td></tr><tr><td><code>string</code></td><td>Length-delimited UTF-8</td><td>string</td><td>Text. Must be valid UTF-8</td></tr><tr><td><code>bytes</code></td><td>Length-delimited</td><td>Buffer</td><td>Binary data, hashes, encrypted blobs</td></tr></tbody></table></div>
+<p>Two rules that prevent real bugs:</p>
+<ul><li>**Negative numbers in <code>int32</code> or <code>int64</code> always take 10 bytes.** Measured: an <code>int32</code> field set to −1 encodes to 11 bytes including its tag; the same value in <code>sint32</code> encodes to 2 bytes. Use <code>sint*</code> for fields that are often negative.</li><li>**<code>int64</code> does not fit in a JavaScript number.** Values above 2^53 lose precision. Load with <code>longs: String</code> and convert with <code>BigInt</code> when you do arithmetic.</li></ul>
+<h2 id="23-messages-nesting-repeated-and-maps">2.3 Messages, nesting, repeated and maps<a class="anchor" href="#23-messages-nesting-repeated-and-maps">#</a></h2>
+<pre><code class="lang-proto">message Order {
+  string order_id = 1;
+  OrderStatus status = 2;
+  repeated LineItem items = 3;            // ordered list
+  map&lt;string, string&gt; labels = 4;         // key-value map
+  google.protobuf.Timestamp created_at = 5;
+
+  message LineItem {                      // nested type: Order.LineItem
+    string sku = 1;
+    int32 quantity = 2;
+    Money unit_price = 3;
+  }
+}
+
+message Money {
+  string currency_code = 1;               // ISO 4217, e.g. &quot;USD&quot;
+  int64 units = 2;                        // whole units
+  int32 nanos = 3;                        // fractional part, 10^-9 units
+}</code></pre>
+<ul><li>**<code>repeated</code><strong> is an ordered list. Scalar numeric repeated fields are </strong>packed** by default in proto3, which stores them as one length-delimited block.</li><li>**<code>map&lt;K, V&gt;</code>** keys must be integer or string types. Iteration order is not guaranteed, and a map cannot be <code>repeated</code>.</li><li><strong>Nested messages</strong> are good for types that only make sense inside the parent. Promote them to top level once another message needs them.</li><li><strong>Money</strong> should never be a <code>double</code>. Use integer units, as in <code>Money</code> above, which mirrors Google&#x27;s <code>google.type.Money</code>.</li></ul>
+<h2 id="24-enums">2.4 Enums<a class="anchor" href="#24-enums">#</a></h2>
+<pre><code class="lang-proto">enum OrderStatus {
+  ORDER_STATUS_UNSPECIFIED = 0;   // required first value, means &quot;not set&quot;
+  ORDER_STATUS_PENDING = 1;
+  ORDER_STATUS_PAID = 2;
+  ORDER_STATUS_SHIPPED = 3;
+  reserved 4;                     // was ORDER_STATUS_ON_HOLD, removed
+  reserved &quot;ORDER_STATUS_ON_HOLD&quot;;
+}</code></pre>
+<ul><li><strong>The first value must be zero, and it should mean &quot;unspecified&quot;.</strong> An unset field reads as 0, so if 0 meant <code>USER</code> as in the notes&#x27; <code>Role</code> example, every message that forgot to set the role would silently become a normal user.</li><li><strong>Prefix every value with the enum name</strong> in <code>UPPER_SNAKE_CASE</code>. Enum values share a namespace with their siblings in the package, so two enums both containing <code>ACTIVE</code> would collide.</li><li><strong>Proto3 enums are open.</strong> Tested: an old reader receiving a value it doesn&#x27;t know, such as 2, keeps the raw number 2 instead of failing. Code must handle unknown values.</li></ul>
+<h2 id="25-oneof">2.5 oneof<a class="anchor" href="#25-oneof">#</a></h2>
+<p>A <code>oneof</code> holds at most one of its fields at a time. Setting one clears the others.</p>
+<pre><code class="lang-proto">message ContactMethod {
+  oneof method {
+    string email = 1;
+    string phone = 2;
+    PushToken push = 3;
+  }
+}</code></pre>
+<p>Use it for &quot;exactly one of these&quot; data. Generated code exposes which field is set, for example <code>message.method === &quot;phone&quot;</code> with proto-loader&#x27;s <code>oneofs: true</code>. A <code>oneof</code> cannot contain <code>repeated</code> or <code>map</code> fields.</p>
+<h2 id="26-field-presence-zero-vs-unset">2.6 Field presence: zero vs unset<a class="anchor" href="#26-field-presence-zero-vs-unset">#</a></h2>
+<p>This is the most misunderstood part of proto3.</p>
+<div class="table-wrap"><table><thead><tr><th>Declaration</th><th>Presence</th><th>Can you tell &quot;unset&quot; from zero?</th><th>Wire behaviour, measured</th></tr></thead><tbody><tr><td><code>int32 count = 1;</code></td><td>Implicit</td><td>No</td><td>Value 0 is not written at all: 0 bytes</td></tr><tr><td><code>optional int32 count = 1;</code></td><td>Explicit</td><td>Yes, <code>hasCount()</code> or own-property check</td><td>Value 0 is written: 2 bytes</td></tr><tr><td><code>Message field = 1;</code></td><td>Explicit</td><td>Yes</td><td>Written if set</td></tr><tr><td><code>repeated</code>, <code>map</code></td><td>None</td><td>Empty equals unset</td><td>Nothing written when empty</td></tr></tbody></table></div>
+<p>The notes&#x27; comment <code>string name = 1; // optional (proto3 default)</code> is misleading. Every proto3 field can be absent, but a plain scalar field <strong>cannot tell you whether it was absent</strong>. A decoded <code>name</code> is simply <code>&quot;&quot;</code>. Add the <code>optional</code> keyword whenever &quot;not provided&quot; and &quot;empty or zero&quot; must mean different things, which is essential for partial updates.</p>
+<h2 id="27-well-known-types">2.7 Well-known types<a class="anchor" href="#27-well-known-types">#</a></h2>
+<p>Google ships common messages in <code>google/protobuf/*</code>. Use them instead of inventing your own.</p>
+<div class="table-wrap"><table><thead><tr><th>Type</th><th>Represents</th><th>Why use it</th></tr></thead><tbody><tr><td><code>Timestamp</code></td><td>A point in time: seconds + nanos since the Unix epoch, UTC</td><td>Unambiguous; maps to native date types; JSON as RFC 3339</td></tr><tr><td><code>Duration</code></td><td>A signed span of time</td><td>Timeouts, TTLs; JSON as <code>&quot;1.5s&quot;</code></td></tr><tr><td><code>FieldMask</code></td><td>A list of field paths</td><td>Partial updates and partial reads: <code>update_mask: &quot;email,address.city&quot;</code></td></tr><tr><td><code>Empty</code></td><td>No data</td><td>Request or response with nothing in it</td></tr><tr><td><code>Any</code></td><td>Any message plus its type URL</td><td>Extensible payloads such as error details</td></tr><tr><td><code>Struct</code>, <code>Value</code></td><td>Arbitrary JSON-like data</td><td>Genuinely schemaless blobs, sparingly</td></tr><tr><td><code>StringValue</code>, <code>Int32Value</code>, …</td><td>Nullable scalars</td><td>Legacy presence workaround; prefer <code>optional</code> now</td></tr></tbody></table></div>
+<h2 id="28-services-and-rpc-methods">2.8 Services and RPC methods<a class="anchor" href="#28-services-and-rpc-methods">#</a></h2>
+<pre><code class="lang-proto">service OrderService {
+  rpc GetOrder(GetOrderRequest) returns (Order);                       // unary
+  rpc WatchOrder(WatchOrderRequest) returns (stream OrderEvent);       // server streaming
+  rpc UploadItems(stream LineItem) returns (UploadSummary);            // client streaming
+  rpc Chat(stream ChatMessage) returns (stream ChatMessage);           // bidirectional
+}</code></pre>
+<p>The <code>stream</code> keyword on either side selects the call type. The practical patterns for each are in the companion document.</p>
+<h2 id="29-design-and-style-rules">2.9 Design and style rules<a class="anchor" href="#29-design-and-style-rules">#</a></h2>
+<ul><li><strong>Give every RPC its own request and response message</strong>, even if it has one field today. <code>rpc GetOrder(GetOrderRequest) returns (Order)</code> can grow new request fields without a breaking change; <code>rpc GetOrder(google.protobuf.StringValue)</code> cannot.</li><li><strong>Version packages, not fields.</strong> <code>package shop.orders.v1;</code> and later <code>shop.orders.v2</code>, served side by side during migration.</li><li><strong>Naming:</strong> <code>PascalCase</code> for messages, services and RPCs; <code>lower_snake_case</code> for fields; files in <code>lower_snake_case.proto</code>; enum values in <code>UPPER_SNAKE_CASE</code> prefixed with the enum name.</li><li><strong>Reserve numbers 1 to 15 for the most frequent fields.</strong> Their tags take one byte; 16 to 2047 take two.</li><li><strong>Pluralise repeated fields:</strong> <code>repeated LineItem items</code>.</li><li><strong>Use standard method names</strong> where they fit: <code>Get</code>, <code>List</code>, <code>Create</code>, <code>Update</code>, <code>Delete</code>, as described in Google&#x27;s API design guide.</li><li>**Paginate <code>List</code> methods** with <code>page_size</code> and an opaque <code>page_token</code>, returning <code>next_page_token</code>.</li><li><strong>Comment every field</strong>; comments flow into generated code and documentation.</li></ul>
+<h2 id="210-editions-the-successor-to-proto2-and-proto3">2.10 Editions: the successor to proto2 and proto3<a class="anchor" href="#210-editions-the-successor-to-proto2-and-proto3">#</a></h2>
+<p>Protobuf <strong>Editions</strong> replace the <code>syntax = &quot;proto2&quot;</code> and <code>syntax = &quot;proto3&quot;</code> split with a yearly edition and per-feature switches. Edition 2023 unified proto2 and proto3 behaviour; <strong>edition 2024 is the latest released edition</strong>.</p>
+<pre><code class="lang-proto">edition = &quot;2024&quot;;
+
+package shop.orders.v1;
+
+message Order {
+  string order_id = 1;
+  int32 retry_count = 2 [features.field_presence = IMPLICIT];   // opt back into proto3 behaviour
+}</code></pre>
+<p>The biggest default change: <strong>editions use explicit presence for every field</strong>, the equivalent of writing <code>optional</code> everywhere in proto3. Proto3 files remain fully supported and can import and be imported by edition files, so there is no need to migrate existing contracts in a hurry.</p>
+<h2 id="211-complete-example">2.11 Complete example<a class="anchor" href="#211-complete-example">#</a></h2>
+<p>This is the contract used by the runnable service in the companion document, where every RPC in it is tested:</p>
+<p><code>order_service.proto</code></p>
+<pre><code class="lang-proto">syntax = &quot;proto3&quot;;
+
+package demo.v1;
+
+import &quot;google/protobuf/timestamp.proto&quot;;
+
+// The four RPC shapes, on one realistic service.
+service OrderService {
+  // Unary: one request, one response.
+  rpc GetOrder(GetOrderRequest) returns (Order);
+
+  // Server streaming: one request, a stream of status updates.
+  rpc WatchOrder(WatchOrderRequest) returns (stream OrderEvent);
+
+  // Client streaming: the client uploads many line items, gets one summary.
+  rpc UploadItems(stream LineItem) returns (UploadSummary);
+
+  // Bidirectional streaming: live support chat about an order.
+  rpc Chat(stream ChatMessage) returns (stream ChatMessage);
+}
+
+// A downstream dependency, used to show deadline propagation.
+service InventoryService {
+  rpc CheckStock(CheckStockRequest) returns (CheckStockResponse);
+}
+
+enum OrderStatus {
+  ORDER_STATUS_UNSPECIFIED = 0;
+  ORDER_STATUS_PENDING = 1;
+  ORDER_STATUS_PAID = 2;
+  ORDER_STATUS_SHIPPED = 3;
+  ORDER_STATUS_DELIVERED = 4;
+}
+
+message GetOrderRequest {
+  string order_id = 1;
+}
+
+message Order {
+  string order_id = 1;
+  OrderStatus status = 2;
+  repeated LineItem items = 3;
+  int64 total_cents = 4;
+  bool in_stock = 5;
+}
+
+message WatchOrderRequest {
+  string order_id = 1;
+}
+
+message OrderEvent {
+  string order_id = 1;
+  OrderStatus status = 2;
+  google.protobuf.Timestamp at = 3;
+}
+
+message LineItem {
+  string sku = 1;
+  int32 quantity = 2;
+  int64 unit_price_cents = 3;
+}
+
+message UploadSummary {
+  int32 item_count = 1;
+  int64 total_cents = 2;
+}
+
+message ChatMessage {
+  string from = 1;
+  string text = 2;
+}
+
+message CheckStockRequest {
+  repeated string skus = 1;
+}
+
+message CheckStockResponse {
+  bool all_in_stock = 1;
+}</code></pre>
+<hr>
+<h1 id="3-binary-serialisation-the-wire-format">3. Binary serialisation: the wire format<a class="anchor" href="#3-binary-serialisation-the-wire-format">#</a></h1>
+<figure><img src="images/wire-format.svg" alt="How a Protobuf message becomes bytes"></figure>
+<h2 id="31-the-core-idea">3.1 The core idea<a class="anchor" href="#31-the-core-idea">#</a></h2>
+<p>A Protobuf message on the wire is just a sequence of <strong>key-value records</strong>:</p>
+<pre><code class="lang-text">[tag][value] [tag][value] [tag][value] ...</code></pre>
+<p>There is no schema, no field names, no delimiters and no message length inside the bytes. The reader must already know the <code>.proto</code> to interpret them. This is exactly why the encoding is compact, and why it is unreadable without the schema.</p>
+<h2 id="32-tags-and-wire-types">3.2 Tags and wire types<a class="anchor" href="#32-tags-and-wire-types">#</a></h2>
+<p>Every record starts with a <strong>tag</strong>, a varint combining the field number and a 3-bit wire type:</p>
+<pre><code class="lang-text">tag = (field_number &lt;&lt; 3) | wire_type</code></pre>
+<div class="table-wrap"><table><thead><tr><th>Wire type</th><th>ID</th><th>Used for</th></tr></thead><tbody><tr><td>VARINT</td><td>0</td><td><code>int32</code>, <code>int64</code>, <code>uint32</code>, <code>uint64</code>, <code>sint32</code>, <code>sint64</code>, <code>bool</code>, <code>enum</code></td></tr><tr><td>I64</td><td>1</td><td><code>fixed64</code>, <code>sfixed64</code>, <code>double</code></td></tr><tr><td>LEN</td><td>2</td><td><code>string</code>, <code>bytes</code>, embedded messages, packed repeated fields</td></tr><tr><td>SGROUP, EGROUP</td><td>3, 4</td><td>Deprecated proto2 groups</td></tr><tr><td>I32</td><td>5</td><td><code>fixed32</code>, <code>sfixed32</code>, <code>float</code></td></tr></tbody></table></div>
+<p>The wire type tells a reader <strong>how many bytes to skip</strong> for a field it doesn&#x27;t recognise. That single property is what makes forward compatibility possible.</p>
+<h2 id="33-varints">3.3 Varints<a class="anchor" href="#33-varints">#</a></h2>
+<p>A varint stores an integer in 7-bit groups, least significant group first. The top bit of each byte is a continuation flag: 1 means another byte follows.</p>
+<pre><code class="lang-text">150 in binary          = 1001 0110
+split into 7-bit groups = 0000001 0010110
+low group first         = 0010110 0000001
+add continuation bits   = 1 0010110   0 0000001
+bytes                   = 0x96        0x01</code></pre>
+<p>So small numbers are tiny: 0 to 127 take one byte, 128 to 16,383 take two.</p>
+<h2 id="34-zigzag-for-negative-numbers">3.4 ZigZag for negative numbers<a class="anchor" href="#34-zigzag-for-negative-numbers">#</a></h2>
+<p>Plain varints treat negative numbers as huge unsigned values, so −1 becomes ten bytes. <code>sint32</code> and <code>sint64</code> first apply <strong>ZigZag</strong> encoding, which maps small negative and positive numbers to small unsigned ones:</p>
+<div class="table-wrap"><table><thead><tr><th>Original</th><th>ZigZag</th></tr></thead><tbody><tr><td>0</td><td>0</td></tr><tr><td>−1</td><td>1</td></tr><tr><td>1</td><td>2</td></tr><tr><td>−2</td><td>3</td></tr><tr><td>2</td><td>4</td></tr></tbody></table></div>
+<h2 id="35-length-delimited-fields">3.5 Length-delimited fields<a class="anchor" href="#35-length-delimited-fields">#</a></h2>
+<p>Strings, bytes, embedded messages and packed arrays use wire type 2: a tag, then a varint length, then that many bytes.</p>
+<h2 id="36-measured-byte-sequences">3.6 Measured byte sequences<a class="anchor" href="#36-measured-byte-sequences">#</a></h2>
+<p>Every line below was produced by encoding with protobufjs and matches the examples in the official encoding guide.</p>
+<div class="table-wrap"><table><thead><tr><th>Message and value</th><th>Bytes</th><th>Breakdown</th></tr></thead><tbody><tr><td><code>int32 a = 1</code> set to 150</td><td><code>08 96 01</code></td><td>tag field 1 VARINT, varint 150</td></tr><tr><td><code>string b = 2</code> set to &quot;testing&quot;</td><td><code>12 07 74 65 73 74 69 6e 67</code></td><td>tag field 2 LEN, length 7, UTF-8</td></tr><tr><td><code>Test1 c = 3</code> with <code>c.a = 150</code></td><td><code>1a 03 08 96 01</code></td><td>tag field 3 LEN, length 3, the nested message</td></tr><tr><td><code>repeated int32 nums = 4</code> set to 3, 270, 86447</td><td><code>22 06 03 8e 02 af a3 05</code></td><td>one LEN record holding 3 varints: packed</td></tr><tr><td><code>int32</code> set to −1</td><td><code>08 ff ff ff ff ff ff ff ff ff 01</code></td><td>11 bytes: negative varint is always 10 bytes</td></tr><tr><td><code>sint32</code> set to −1</td><td><code>10 01</code></td><td>2 bytes: ZigZag maps −1 to 1</td></tr><tr><td>implicit <code>int32</code> set to 0</td><td>nothing</td><td>default values are not written at all</td></tr><tr><td><code>optional int32</code> set to 0</td><td><code>10 00</code></td><td>explicit presence writes the zero</td></tr><tr><td><code>User{id:1, name:&quot;Ali&quot;, email:&quot;ali@mail.com&quot;}</code></td><td>21 bytes</td><td>the same object as JSON is 44 bytes</td></tr></tbody></table></div>
+<h2 id="37-rules-that-fall-out-of-the-format">3.7 Rules that fall out of the format<a class="anchor" href="#37-rules-that-fall-out-of-the-format">#</a></h2>
+<ul><li><strong>Field numbers are permanent.</strong> They are the only identity a field has on the wire.</li><li><strong>Valid field numbers are 1 to 536,870,911</strong>, except 19,000 to 19,999, which are reserved for the Protobuf implementation.</li><li><strong>Numbers 1 to 15 cost one tag byte</strong>, so spend them on frequently set fields.</li><li><strong>Default values cost zero bytes</strong>, which is why implicit-presence fields can&#x27;t tell &quot;unset&quot; from zero.</li><li><strong>Field order in the bytes doesn&#x27;t matter</strong>, and a repeated scalar field is last-one-wins when read as singular.</li><li><strong>Serialisation is not canonical.</strong> Map ordering and unknown-field placement can differ between languages and library versions. Never hash or sign serialised bytes and expect another service to reproduce them; the notes&#x27; &quot;same input → same binary output&quot; only holds within one binary using deterministic mode.</li></ul>
+<hr>
+<h1 id="4-speed-and-size-measured">4. Speed and size, measured<a class="anchor" href="#4-speed-and-size-measured">#</a></h1>
+<p>The notes list &quot;faster and smaller than JSON&quot; as a headline benefit, and cite &quot;30–70% latency reduction&quot;. Size is reliably true. Speed depends heavily on the language and library, so it was measured here rather than assumed.</p>
+<h2 id="41-method">4.1 Method<a class="anchor" href="#41-method">#</a></h2>
+<p>An <code>Order</code> message with an enum, a nested <code>Money</code>, a timestamp, tags and N line items was encoded as JSON with <code>JSON.stringify</code> and as Protobuf with protobufjs, at 1, 20 and 200 line items. Throughput was measured in operations per second after JIT warm-up, on Node 24 on an Apple M1, and the benchmark was run twice.</p>
+<h2 id="42-size">4.2 Size<a class="anchor" href="#42-size">#</a></h2>
+<figure><img src="images/size-vs-json.svg" alt="Protobuf size as a share of JSON, raw and gzipped"></figure>
+<div class="table-wrap"><table><thead><tr><th>Line items</th><th>JSON</th><th>Protobuf</th><th>Protobuf ÷ JSON</th><th>JSON gzipped</th><th>Protobuf gzipped</th><th>Protobuf ÷ JSON, gzipped</th></tr></thead><tbody><tr><td>1</td><td>338 B</td><td>133 B</td><td>39%</td><td>242 B</td><td>147 B</td><td>61%</td></tr><tr><td>20</td><td>3,198 B</td><td>1,435 B</td><td>45%</td><td>428 B</td><td>331 B</td><td>77%</td></tr><tr><td>200</td><td>30,627 B</td><td>14,076 B</td><td>46%</td><td>1,947 B</td><td>1,642 B</td><td>84%</td></tr></tbody></table></div>
+<ul><li><strong>Raw Protobuf is less than half the size of JSON</strong>, because field names, quotes, braces and decimal digits never go on the wire.</li><li><strong>Compression narrows the gap sharply.</strong> Repeated JSON field names compress extremely well, so a gzipped JSON payload of 200 items is only 19% bigger than gzipped Protobuf.</li><li><strong>Tiny messages don&#x27;t compress.</strong> At 1 item, gzip made Protobuf *larger*, 133 to 147 bytes, because of gzip&#x27;s header overhead.</li></ul>
+<h2 id="43-speed-in-javascript">4.3 Speed in JavaScript<a class="anchor" href="#43-speed-in-javascript">#</a></h2>
+<p>Rounded operations per second; higher is faster.</p>
+<div class="table-wrap"><table><thead><tr><th>Line items</th><th>JSON encode</th><th>Protobuf encode</th><th>JSON decode</th><th>Protobuf decode</th></tr></thead><tbody><tr><td>20</td><td>~175,000–234,000</td><td>~173,000–178,000</td><td>~112,000–128,000</td><td>~180,000–199,000</td></tr><tr><td>200</td><td>~27,000</td><td>~19,000–20,000</td><td>~14,000</td><td>~21,000</td></tr></tbody></table></div>
+<ul><li><strong>Decoding Protobuf was about 1.5 times faster</strong> than <code>JSON.parse</code> for realistic messages.</li><li><strong>Encoding was not faster.</strong> For 200 items protobufjs encoded about 30% *slower* than V8&#x27;s native, C++-implemented <code>JSON.stringify</code>.</li><li><strong>A full round trip was roughly a tie</strong> at 20 and 200 items.</li></ul>
+<p><strong>Conclusion:</strong> in Node.js, Protobuf&#x27;s win is <strong>size and a typed contract</strong>, not raw CPU. In languages whose Protobuf libraries are compiled rather than written in JavaScript, such as Go, Java, C++ and Rust, published benchmarks generally show larger serialisation speedups, but measure your own payloads before quoting a number.</p>
+<h2 id="44-where-grpcs-real-world-speed-comes-from">4.4 Where gRPC&#x27;s real-world speed comes from<a class="anchor" href="#44-where-grpcs-real-world-speed-comes-from">#</a></h2>
+<p>Serialisation is usually a small fraction of a request&#x27;s latency. The larger gains come from the transport:</p>
+<ul><li><strong>Persistent connections.</strong> One HTTP/2 connection is reused for thousands of calls, avoiding a TCP and TLS handshake per request.</li><li><strong>Multiplexing.</strong> Many concurrent calls share that connection without HTTP/1.1&#x27;s one-request-at-a-time limit.</li><li><strong>HPACK header compression.</strong> Repeated headers such as <code>:path</code> and <code>authorization</code> shrink to a few bytes after the first call.</li><li><strong>Smaller payloads.</strong> Less data to send, which matters most on mobile and cross-region links.</li><li><strong>Generated code.</strong> No hand-written parsing or validation of shapes.</li></ul>
+<p>A latency figure like the notes&#x27; &quot;30–70%&quot; is plausible for chatty service-to-service traffic over HTTP/1.1 without keep-alive, but it describes a specific workload, not a law. REST over HTTP/2 with connection reuse closes much of that gap.</p>
+<p><strong>One nuance on head-of-line blocking:</strong> HTTP/2 removes HTTP-level head-of-line blocking, as the notes say, but all streams still share one TCP connection, so a single lost packet stalls every stream until it is retransmitted. HTTP/3 over QUIC removes that too.</p>
+<hr>
+<h1 id="5-schema-evolution-and-compatibility">5. Schema evolution and compatibility<a class="anchor" href="#5-schema-evolution-and-compatibility">#</a></h1>
+<p>Contracts change constantly. Protobuf is designed so that <strong>old and new code can exchange messages</strong>, provided you follow a small set of rules.</p>
+<ul><li><strong>Backward compatible:</strong> new code can read data written by old code.</li><li><strong>Forward compatible:</strong> old code can read data written by new code.</li></ul>
+<h2 id="51-what-each-change-actually-does-tested">5.1 What each change actually does (tested)<a class="anchor" href="#51-what-each-change-actually-does-tested">#</a></h2>
+<p>Each row was tested by encoding with one schema and decoding with the other in protobufjs.</p>
+<div class="table-wrap"><table><thead><tr><th>Change</th><th>Result</th><th>Verdict</th></tr></thead><tbody><tr><td>Add a new field with a new number</td><td>New reader sees default for missing field; old reader skips the unknown field</td><td>✅ Safe</td></tr><tr><td>Remove a field and <code>reserved</code> its number and name</td><td>Old data with that number is skipped</td><td>✅ Safe</td></tr><tr><td>Rename a field, same number</td><td>Binary unaffected: decoded as <code>user_id</code> / <code>full_name</code></td><td>⚠️ Binary safe, <strong>breaks JSON</strong> and generated code</td></tr><tr><td><code>int32</code> to <code>int64</code>, same number</td><td>Decoded correctly: <code>id: &quot;7&quot;</code></td><td>✅ Safe (also <code>uint32</code>↔<code>uint64</code>, <code>bool</code>)</td></tr><tr><td>Add a value to an enum</td><td>Old reader keeps the raw number 2</td><td>✅ Safe if code handles unknown values</td></tr><tr><td><code>repeated string</code> read as singular <code>string</code></td><td>Old reader keeps the last element only: <code>&quot;c&quot;</code></td><td>⚠️ Lossy</td></tr><tr><td>Change type with a different wire type: <code>int32</code> to <code>string</code></td><td>Field silently dropped: <code>{&quot;name&quot;:&quot;Ali&quot;}</code></td><td>❌ Breaking, silent</td></tr><tr><td>Renumber a field: <code>name</code> from 2 to 5</td><td>Name silently lost: <code>name: &quot;&quot;</code></td><td>❌ Breaking, silent</td></tr><tr><td>Reuse a deleted number for a new <code>string</code> field</td><td>Old <code>name</code> bytes decoded as <code>nickname: &quot;Ali&quot;</code></td><td>❌ <strong>Silent data corruption</strong></td></tr></tbody></table></div>
+<p>The dangerous rows don&#x27;t throw. They produce valid-looking but wrong data, which is far worse than a crash.</p>
+<h2 id="52-always-reserve-deleted-fields">5.2 Always reserve deleted fields<a class="anchor" href="#52-always-reserve-deleted-fields">#</a></h2>
+<pre><code class="lang-proto">message User {
+  reserved 2, 15, 9 to 11;
+  reserved &quot;name&quot;, &quot;legacy_score&quot;;
+
+  int32 id = 1;
+  string display_name = 3;
+}</code></pre>
+<p><code>reserved</code> makes the compiler reject any future attempt to reuse the number or name. Tested: protobufjs refused a schema that reused a reserved number with <code>id 2 is reserved in Type User</code>.</p>
+<p>The notes suggest keeping removed fields and marking them deprecated. That&#x27;s a valid transitional step, <code>string name = 2 [deprecated = true];</code>, but the end state is deletion plus <code>reserved</code>.</p>
+<h2 id="53-unknown-fields-a-nodejs-gotcha">5.3 Unknown fields: a Node.js gotcha<a class="anchor" href="#53-unknown-fields-a-nodejs-gotcha">#</a></h2>
+<p>When an old reader decodes a message containing fields it doesn&#x27;t know, the official C++, Java, Go and Python libraries <strong>preserve</strong> those unknown fields and write them back out if the message is re-serialised. The notes&#x27; &quot;ignored safely&quot; undersells this; preservation is what lets a proxy on old code pass new data through untouched.</p>
+<p><strong>Tested:</strong> protobufjs does <strong>not</strong> preserve them. A 22-byte message from a newer schema, decoded and re-encoded by the older schema, came out as 7 bytes; the <code>email</code> and <code>roles</code> fields were gone.</p>
+<p><strong>Consequence:</strong> a Node.js service that decodes, modifies and re-encodes messages, such as a gateway, enricher or queue consumer, <strong>strips any fields added after it was deployed</strong>. Either redeploy it with the new schema first, or forward the original bytes instead of re-encoding.</p>
+<h2 id="54-compatibility-checklist">5.4 Compatibility checklist<a class="anchor" href="#54-compatibility-checklist">#</a></h2>
+<ul><li>✅ Add fields with new numbers.</li><li>✅ Delete fields, then <code>reserved</code> the number and the name.</li><li>✅ Add enum values; handle unknown values in code.</li><li>✅ Add new RPC methods and new services.</li><li>❌ Never change a field&#x27;s number.</li><li>❌ Never reuse a number or name, even years later.</li><li>❌ Never change a field&#x27;s type unless the pair is listed as compatible.</li><li>❌ Never rename a field or enum value if anything uses the JSON mapping.</li><li>❌ Never rename a package, service or method. The method&#x27;s full name, such as <code>/demo.v1.OrderService/GetOrder</code>, is the URL path clients call.</li><li>❌ Never move a field into or out of a <code>oneof</code>.</li><li>✅ For genuinely breaking redesigns, create a new package version such as <code>v2</code> and run both.</li></ul>
+<h2 id="55-deployment-order">5.5 Deployment order<a class="anchor" href="#55-deployment-order">#</a></h2>
+<ol><li><strong>Adding a field:</strong> deploy readers first so nothing strips or ignores it, then writers.</li><li><strong>Removing a field:</strong> stop writing it, deploy all writers, then stop reading it, then delete and reserve it.</li><li><strong>Enforce the rules in CI</strong> with <code>buf breaking</code>, covered in section 7.</li></ol>
+<hr>
+<h1 id="6-type-safety-what-you-get-and-what-you-dont">6. Type safety: what you get and what you don&#x27;t<a class="anchor" href="#6-type-safety-what-you-get-and-what-you-dont">#</a></h1>
+<h2 id="61-what-protobuf-gives-you">6.1 What Protobuf gives you<a class="anchor" href="#61-what-protobuf-gives-you">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>Feature</th><th>JSON</th><th>Protobuf</th></tr></thead><tbody><tr><td>Schema</td><td>Optional (JSON Schema, OpenAPI)</td><td>Required</td></tr><tr><td>Types</td><td>Loose: numbers, strings, no int64</td><td>Strict: 15 scalar types, enums, messages</td></tr><tr><td>Checked at</td><td>Runtime, if you add validation</td><td>Compile time in typed languages, plus runtime</td></tr><tr><td>Contract drift</td><td>Discovered in production</td><td>Caught when code is regenerated</td></tr><tr><td>Readability</td><td>Human-readable</td><td>Binary, needs the schema</td></tr></tbody></table></div>
+<p>In statically typed languages such as Go, Java, C# and TypeScript with generated types, sending a string where an <code>int32</code> is expected is a <strong>compile error</strong>.</p>
+<h2 id="62-the-limits-tested-in-javascript">6.2 The limits, tested in JavaScript<a class="anchor" href="#62-the-limits-tested-in-javascript">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>Call</th><th>Result</th><th>Lesson</th></tr></thead><tbody><tr><td><code>User.verify({ id: &quot;abc&quot; })</code></td><td><code>&quot;id: integer expected&quot;</code></td><td><code>verify</code> catches wrong types</td></tr><tr><td><code>User.verify({ emial: &quot;typo&quot; })</code></td><td><code>null</code>, no error</td><td>Unknown and misspelled keys are not reported</td></tr><tr><td><code>User.verify({ email: &quot;&quot; })</code></td><td><code>null</code>, no error</td><td>No business rules: nothing is required</td></tr><tr><td><code>User.fromObject({ id: &quot;abc&quot; }).id</code></td><td><code>0</code></td><td>Silent coercion</td></tr><tr><td><code>User.fromObject({ id: 3000000000 }).id</code></td><td><code>-1294967296</code></td><td><strong>Silent int32 overflow</strong></td></tr><tr><td><code>User.encode({ id: &quot;abc&quot;, name: 42 })</code> without <code>verify</code></td><td>Decodes as <code>{}</code></td><td>Bad input produces wrong data, not an error</td></tr></tbody></table></div>
+<p><strong>Proto3 has no &quot;required&quot; fields</strong>; they were removed deliberately because a required field can never be safely removed. Business validation, such as &quot;email is non-empty and looks like an email&quot;, needs a separate layer:</p>
+<ul><li><strong>protovalidate</strong>, from Buf, puts rules in the schema and enforces them in each language:</li></ul>
+<pre><code class="lang-proto">import &quot;buf/validate/validate.proto&quot;;
+
+message CreateUserRequest {
+  string email = 1 [(buf.validate.field).string.email = true];
+  int32 age = 2 [(buf.validate.field).int32 = { gte: 13, lte: 150 }];
+}</code></pre>
+<ul><li>Or validate explicitly in the handler and return <code>INVALID_ARGUMENT</code> with field details.</li></ul>
+<h2 id="63-mini-project-protobuf-in-nodejs">6.3 Mini project: Protobuf in Node.js<a class="anchor" href="#63-mini-project-protobuf-in-nodejs">#</a></h2>
+<p>The notes&#x27; mini project, corrected to validate before encoding and to show presence and the limits of <code>verify</code>:</p>
+<p><code>user.proto</code></p>
+<pre><code class="lang-proto">syntax = &quot;proto3&quot;;
+
+package demo.v1;
+
+message User {
+  int32 id = 1;
+  string name = 2;
+  string email = 3;
+  repeated string roles = 4;
+  optional string nickname = 5;   // explicit presence: &quot;unset&quot; differs from &quot;&quot;
+}</code></pre>
+<p><code>index.js</code></p>
+<pre><code class="lang-js">// index.js — define once, validate, encode, decode.
+const protobuf = require(&quot;protobufjs&quot;);
+
+async function run() {
+  const root = await protobuf.load(&quot;user.proto&quot;);
+  const User = root.lookupType(&quot;demo.v1.User&quot;);
+
+  const payload = { id: 150, name: &quot;Ali&quot;, email: &quot;ali@mail.com&quot;, roles: [&quot;admin&quot;] };
+
+  // 1. Validate BEFORE encoding. fromObject/encode coerce silently otherwise:
+  //    &quot;abc&quot; -&gt; 0 and 3_000_000_000 -&gt; -1294967296 for an int32.
+  const problem = User.verify(payload);
+  if (problem) throw new Error(`Invalid User: ${problem}`);
+
+  // 2. Encode to bytes.
+  const bytes = User.encode(User.fromObject(payload)).finish();
+  console.log(&quot;protobuf:&quot;, bytes.length, &quot;bytes&quot;, Buffer.from(bytes).toString(&quot;hex&quot;));
+  console.log(&quot;json:    &quot;, Buffer.byteLength(JSON.stringify(payload)), &quot;bytes&quot;);
+
+  // 3. Decode, then convert to a plain object with explicit options.
+  const decoded = User.toObject(User.decode(bytes), { defaults: true });
+  console.log(&quot;decoded: &quot;, decoded);
+
+  // 4. Presence: only `optional` fields can tell &quot;unset&quot; from &quot;empty&quot;.
+  const message = User.decode(bytes);
+  console.log(&quot;has nickname?&quot;, Object.prototype.hasOwnProperty.call(message, &quot;nickname&quot;));
+
+  // 5. verify() catches wrong types, not business rules or typos in field names.
+  console.log(User.verify({ id: &quot;150&quot; }));        // &quot;id: integer expected&quot;
+  console.log(User.verify({ emial: &quot;typo&quot; }));    // null  -&gt; unknown keys are NOT reported
+}
+
+run().catch((err) =&gt; { console.error(err); process.exit(1); });</code></pre>
+<p>Actual output:</p>
+<pre><code class="lang-text">protobuf: 29 bytes 0896011203416c691a0c616c69406d61696c2e636f6d220561646d696e
+json:     64 bytes
+decoded:  { roles: [ &#x27;admin&#x27; ], id: 150, name: &#x27;Ali&#x27;, email: &#x27;ali@mail.com&#x27; }
+has nickname? false
+id: integer expected
+null</code></pre>
+<hr>
+<h1 id="7-code-generation-across-microservices">7. Code generation across microservices<a class="anchor" href="#7-code-generation-across-microservices">#</a></h1>
+<figure><img src="images/codegen-pipeline.svg" alt="Contract-first code generation pipeline"></figure>
+<h2 id="71-what-gets-generated">7.1 What gets generated<a class="anchor" href="#71-what-gets-generated">#</a></h2>
+<p>From one <code>.proto</code>, each language plugin produces:</p>
+<div class="table-wrap"><table><thead><tr><th>Artifact</th><th>Contents</th><th>Used by</th></tr></thead><tbody><tr><td>Message types</td><td>Classes or structs with typed fields, builders, encode and decode</td><td>Everyone</td></tr><tr><td>Client stub</td><td>One method per RPC that serialises, sends and deserialises</td><td>Callers</td></tr><tr><td>Server interface or base class</td><td>One abstract method per RPC to implement</td><td>The service owner</td></tr><tr><td>Service descriptor</td><td>Method names, paths, streaming flags</td><td>The gRPC runtime, reflection, tools</td></tr></tbody></table></div>
+<h2 id="72-static-generation-vs-dynamic-loading">7.2 Static generation vs dynamic loading<a class="anchor" href="#72-static-generation-vs-dynamic-loading">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>Approach</th><th>How</th><th>Pros</th><th>Cons</th></tr></thead><tbody><tr><td>Static codegen</td><td><code>protoc</code> or <code>buf generate</code> writes source files at build time</td><td>Full IDE types and autocompletion; compile-time errors; fastest</td><td>Build step; generated code to version</td></tr><tr><td>Dynamic loading</td><td><code>@grpc/proto-loader</code> parses <code>.proto</code> at runtime</td><td>No build step; quick prototypes</td><td>No compile-time types in plain JS; errors surface at runtime</td></tr></tbody></table></div>
+<p>Go, Java, C# and Rust effectively always use static generation. Node.js commonly uses <code>@grpc/proto-loader</code> in JavaScript, and static generation such as <code>protoc-gen-es</code> or <code>ts-proto</code> in TypeScript codebases. The companion document&#x27;s runnable service uses dynamic loading so it has no build step.</p>
+<h2 id="73-generating-with-protoc">7.3 Generating with protoc<a class="anchor" href="#73-generating-with-protoc">#</a></h2>
+<p>These commands show the standard invocations; they were not executed in this environment.</p>
+<pre><code class="lang-bash"># Go: messages + gRPC stubs
+protoc -I proto \
+  --go_out=gen/go --go_opt=paths=source_relative \
+  --go-grpc_out=gen/go --go-grpc_opt=paths=source_relative \
+  proto/demo/v1/order_service.proto
+
+# Python: messages + gRPC stubs
+python -m grpc_tools.protoc -I proto \
+  --python_out=gen/py --grpc_python_out=gen/py \
+  proto/demo/v1/order_service.proto</code></pre>
+<p>Java projects typically generate through the Gradle <code>com.google.protobuf</code> plugin or the Maven <code>protobuf-maven-plugin</code> rather than calling <code>protoc</code> directly.</p>
+<p>The pain with raw <code>protoc</code> is keeping compiler and plugin versions identical on every developer machine and CI runner. That problem is what Buf solves.</p>
+<h2 id="74-generating-with-buf">7.4 Generating with Buf<a class="anchor" href="#74-generating-with-buf">#</a></h2>
+<p>Buf is the de-facto modern toolchain: one binary for linting, breaking-change detection and code generation, with remote plugins so nobody installs <code>protoc</code>. These configuration files were not executed in this environment.</p>
+<p><code>buf.yaml</code>, at the repository root:</p>
+<pre><code class="lang-yaml">version: v2
+modules:
+  - path: proto
+lint:
+  use:
+    - STANDARD
+breaking:
+  use:
+    - FILE</code></pre>
+<p><code>buf.gen.yaml</code>:</p>
+<pre><code class="lang-yaml">version: v2
+managed:
+  enabled: true
+  override:
+    - file_option: go_package_prefix
+      value: github.com/acme/contracts/gen/go
+plugins:
+  - remote: buf.build/protocolbuffers/go
+    out: gen/go
+    opt: paths=source_relative
+  - remote: buf.build/grpc/go
+    out: gen/go
+    opt: paths=source_relative
+  - remote: buf.build/bufbuild/es
+    out: gen/ts</code></pre>
+<p>Daily commands:</p>
+<pre><code class="lang-bash">buf lint                                        # style: naming, enum zero values, package versions
+buf breaking --against &#x27;.git#branch=main&#x27;       # fail on incompatible changes vs main
+buf generate                                    # write gen/go and gen/ts</code></pre>
+<p><code>buf breaking</code> automates section 5: it rejects renumbered fields, type changes, removed fields that aren&#x27;t reserved, and renamed RPCs, before the change can merge.</p>
+<h2 id="75-where-the-proto-files-live">7.5 Where the <code>.proto</code> files live<a class="anchor" href="#75-where-the-proto-files-live">#</a></h2>
+<p>From the notes: microservices don&#x27;t need to share one directory, and large systems usually keep protos in a dedicated contract repository as the single source of truth. The main options:</p>
+<div class="table-wrap"><table><thead><tr><th>Strategy</th><th>How it works</th><th>Good for</th><th>Watch out for</th></tr></thead><tbody><tr><td>Monorepo</td><td>All services and protos in one repo; build generates code</td><td>One organisation, one build system</td><td>Needs strong build tooling at scale</td></tr><tr><td>Contracts repo</td><td>A <code>contracts</code> repo owns every <code>.proto</code>; CI publishes generated packages</td><td>Polyglot services in many repos</td><td>Needs a release process and versioning</td></tr><tr><td>Schema registry</td><td>Protos pushed to a registry such as the Buf Schema Registry; clients pull generated SDKs</td><td>Many teams, external consumers</td><td>Another system to run or pay for</td></tr><tr><td>Copy the <code>.proto</code> into each service</td><td>Each repo has its own copy</td><td>Prototypes only</td><td>Copies drift apart; not for production</td></tr></tbody></table></div>
+<h2 id="76-a-workable-pipeline">7.6 A workable pipeline<a class="anchor" href="#76-a-workable-pipeline">#</a></h2>
+<ol><li>**A pull request edits a <code>.proto</code>** in the contracts repository.</li><li>**CI runs <code>buf lint</code> and <code>buf breaking</code>** against the main branch. Breaking changes fail the build.</li><li><strong>Reviewers include a consumer</strong>, not just the owning team.</li><li>**On merge, CI runs <code>buf generate</code>** and publishes versioned packages: a Go module tag, an npm package, a Python wheel.</li><li><strong>Each service upgrades the dependency</strong> on its own schedule. Additive changes mean old versions keep working.</li><li><strong>Server owners deploy support before clients rely on it.</strong></li></ol>
+<p><strong>Commit generated code or not?</strong> Committing it makes builds hermetic and diffs reviewable, which Go projects commonly prefer. Generating it in the build keeps repositories small and avoids stale files. Either works; the non-negotiable is that everyone generates from the same <code>.proto</code> version with the same plugin versions.</p>
+<hr>
+<h1 id="8-grpc-on-the-wire">8. gRPC on the wire<a class="anchor" href="#8-grpc-on-the-wire">#</a></h1>
+<figure><img src="images/grpc-over-http2.svg" alt="Anatomy of one gRPC call on an HTTP/2 stream"></figure>
+<h2 id="81-one-call-is-one-http2-stream">8.1 One call is one HTTP/2 stream<a class="anchor" href="#81-one-call-is-one-http2-stream">#</a></h2>
+<p>A client opens one long-lived HTTP/2 connection per server address, called a <strong>channel</strong>, and each RPC becomes a stream on it:</p>
+<ol><li><strong>Request HEADERS:</strong> <code>:method POST</code>, <code>:path /package.Service/Method</code>, <code>content-type: application/grpc</code>, optional <code>grpc-timeout</code>, plus your metadata.</li><li><strong>Request DATA:</strong> one or more <strong>length-prefixed messages</strong>.</li><li><strong>Response HEADERS:</strong> <code>:status 200</code> and response metadata.</li><li><strong>Response DATA:</strong> zero or more length-prefixed messages.</li><li><strong>TRAILERS:</strong> <code>grpc-status</code>, <code>grpc-message</code>, and optionally <code>grpc-status-details-bin</code>.</li></ol>
+<h2 id="82-the-length-prefixed-message">8.2 The length-prefixed message<a class="anchor" href="#82-the-length-prefixed-message">#</a></h2>
+<pre><code class="lang-text">+------------------+-----------------------------+----------------------+
+| Compressed-Flag  | Message-Length              | Message              |
+| 1 byte (0 or 1)  | 4 bytes, big-endian uint32  | Protobuf bytes       |
++------------------+-----------------------------+----------------------+</code></pre>
+<p>The 5-byte prefix is what lets many messages flow on one stream, and it is why gRPC imposes a maximum message size: the default receive limit is 4 MB in most implementations.</p>
+<h2 id="83-status-lives-in-trailers">8.3 Status lives in trailers<a class="anchor" href="#83-status-lives-in-trailers">#</a></h2>
+<p>The HTTP status is <code>200</code> even when the RPC fails. The real outcome is <code>grpc-status</code> in the trailers, sent after the last message, because a streaming call can fail after sending many successful messages.</p>
+<p>This is also why <strong>browsers cannot call gRPC directly</strong>: browser <code>fetch</code> does not expose HTTP trailers or fine-grained HTTP/2 control. The solutions are:</p>
+<ul><li><strong>gRPC-Web</strong>, which encodes trailers into the body and needs a proxy such as Envoy.</li><li><strong>Connect</strong>, a protocol and set of libraries compatible with gRPC and gRPC-Web that also supports plain HTTP POST with JSON.</li><li><strong>JSON transcoding</strong>, in Envoy or <code>grpc-gateway</code>, exposing REST endpoints from <code>google.api.http</code> annotations.</li></ul>
+<h2 id="84-json-mapping">8.4 JSON mapping<a class="anchor" href="#84-json-mapping">#</a></h2>
+<p>Protobuf defines a canonical JSON form, used by transcoding gateways and debugging tools:</p>
+<div class="table-wrap"><table><thead><tr><th>Proto</th><th>JSON</th></tr></thead><tbody><tr><td>Field <code>order_id</code></td><td>Key <code>orderId</code>, lowerCamelCase</td></tr><tr><td><code>int64</code>, <code>uint64</code></td><td>String, <code>&quot;9007199254740993&quot;</code></td></tr><tr><td><code>enum</code></td><td>Value name, <code>&quot;ORDER_STATUS_PAID&quot;</code></td></tr><tr><td><code>bytes</code></td><td>Base64 string</td></tr><tr><td><code>Timestamp</code></td><td>RFC 3339 string, <code>&quot;2026-09-13T14:05:00Z&quot;</code></td></tr><tr><td><code>Duration</code></td><td>String, <code>&quot;1.500s&quot;</code></td></tr><tr><td>Default values</td><td>Omitted by default</td></tr></tbody></table></div>
+<p>Because JSON uses field <strong>names</strong>, renaming a field is a breaking change for any JSON consumer even though the binary format doesn&#x27;t care.</p>
+<hr>
+<h1 id="9-grpc-vs-rest-vs-graphql">9. gRPC vs REST vs GraphQL<a class="anchor" href="#9-grpc-vs-rest-vs-graphql">#</a></h1>
+<div class="table-wrap"><table><thead><tr><th>Feature</th><th>REST</th><th>GraphQL</th><th>gRPC</th></tr></thead><tbody><tr><td>Model</td><td>Resources and HTTP verbs</td><td>Query language over a typed graph</td><td>Methods on services</td></tr><tr><td>Contract</td><td>Optional (OpenAPI)</td><td>Required schema</td><td>Required <code>.proto</code></td></tr><tr><td>Payload</td><td>JSON text</td><td>JSON text</td><td>Protobuf binary</td></tr><tr><td>Transport</td><td>HTTP/1.1, 2 or 3</td><td>Usually HTTP POST</td><td>HTTP/2</td></tr><tr><td>Streaming</td><td>No; use SSE or WebSocket</td><td>Subscriptions</td><td>Native, four call types</td></tr><tr><td>Browser support</td><td>Native</td><td>Native</td><td>Needs gRPC-Web or Connect</td></tr><tr><td>HTTP caching</td><td>Excellent</td><td>Poor</td><td>None</td></tr><tr><td>Human-readable</td><td>Yes</td><td>Yes</td><td>No; needs <code>grpcurl</code> and the schema</td></tr><tr><td>Code generation</td><td>Optional</td><td>Common</td><td>Central</td></tr><tr><td>Deadlines and cancellation</td><td>Client-side only</td><td>Per resolver</td><td>Built in, propagated</td></tr><tr><td>Error model</td><td>HTTP status codes</td><td><code>errors</code> array, partial data</td><td>17 status codes, rich details</td></tr><tr><td>Best for</td><td>Public APIs, CRUD, caching</td><td>Frontends with varied data needs</td><td>Internal service-to-service, streaming</td></tr></tbody></table></div>
+<p>A correction to the notes&#x27; tables: REST is not tied to HTTP/1.1. It runs perfectly well over HTTP/2 and HTTP/3. The accurate difference is that gRPC <strong>requires</strong> HTTP/2 and depends on its features.</p>
+<p><strong>The common real-world split:</strong> GraphQL or REST at the edge for browsers and mobile apps; gRPC between internal services; both often in the same system.</p>
+<h2 id="91-when-to-use-grpc">9.1 When to use gRPC<a class="anchor" href="#91-when-to-use-grpc">#</a></h2>
+<ul><li>✅ Internal microservice communication, especially polyglot.</li><li>✅ Low-latency, high-throughput calls.</li><li>✅ Streaming: live updates, telemetry, chat, large uploads.</li><li>✅ Strict contracts shared by many teams.</li><li>✅ Mobile clients on poor networks, where payload size matters.</li></ul>
+<h2 id="92-when-not-to">9.2 When not to<a class="anchor" href="#92-when-not-to">#</a></h2>
+<ul><li>❌ Public APIs for third-party developers who expect <code>curl</code> and JSON.</li><li>❌ Browser-first apps without a gRPC-Web or Connect layer.</li><li>❌ Simple CRUD apps where HTTP caching and simplicity matter more than speed.</li><li>❌ Teams without the tooling or appetite for schema management.</li></ul>
+<h2 id="93-common-production-problems-from-the-notes">9.3 Common production problems, from the notes<a class="anchor" href="#93-common-production-problems-from-the-notes">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>Problem</th><th>Cause</th><th>Fix</th></tr></thead><tbody><tr><td>Connection leaks</td><td>Creating a new client per request</td><td>Create one client per target and reuse it</td></tr><tr><td>No or wrong timeouts</td><td>Calls without deadlines hang forever</td><td>Default deadline on every unary call</td></tr><tr><td>Large payloads</td><td>Messages over the 4 MB default</td><td>Paginate, stream, or raise the limit deliberately</td></tr><tr><td><code>.proto</code> version mismatch</td><td>Services built from different contract versions</td><td>Contracts repo, <code>buf breaking</code>, reserved fields</td></tr><tr><td>Uneven load</td><td>Layer 4 load balancer pins long-lived HTTP/2 connections</td><td>Client-side <code>round_robin</code> or a Layer 7 proxy</td></tr><tr><td>Hard debugging</td><td>Binary payloads</td><td><code>grpcurl</code> with server reflection, logging interceptors</td></tr><tr><td>N+1 RPC calls</td><td>Fetching related data one call at a time</td><td>Batch RPCs such as <code>BatchGetUsers</code></td></tr></tbody></table></div>
+<hr>
+<h1 id="10-corrections-to-the-notes">10. Corrections to the notes<a class="anchor" href="#10-corrections-to-the-notes">#</a></h1>
+<div class="table-wrap"><table><thead><tr><th>Notes say</th><th>Accurate version</th></tr></thead><tbody><tr><td>gRPC means &quot;Google Remote Procedure Call&quot;</td><td>Officially the &quot;g&quot; changes every release; the Google origin is real</td></tr><tr><td><code>string name = 1; // optional (proto3 default)</code></td><td>Plain proto3 scalars can&#x27;t distinguish unset from empty; use <code>optional</code> for presence</td></tr><tr><td><code>enum Role { USER = 0; ADMIN = 1; }</code></td><td>Zero should be <code>ROLE_UNSPECIFIED</code>, or unset roles silently become <code>USER</code></td></tr><tr><td>Removing fields is risky, mark deprecated</td><td>Deprecate during migration, then delete and <code>reserved</code> the number and name</td></tr><tr><td>Unknown fields are ignored safely</td><td>Official C++/Java/Go/Python libraries preserve them; protobufjs drops them on re-encode (tested)</td></tr><tr><td>Deterministic serialisation: same input → same output</td><td>Only within one binary in deterministic mode; not canonical across languages or versions</td></tr><tr><td>Type mismatch → validation fails or decoding error</td><td>Mismatched wire types are usually <strong>skipped silently</strong> (tested)</td></tr><tr><td>REST uses HTTP/1.1</td><td>REST works over HTTP/1.1, 2 and 3; gRPC is the one that requires HTTP/2</td></tr><tr><td>gRPC is 30–70% faster in real systems</td><td>Workload-dependent; in Node.js, measured encode speed was not faster than native JSON</td></tr><tr><td>HTTP/2 multiplexing avoids head-of-line blocking</td><td>At the HTTP layer; TCP-level head-of-line blocking remains until HTTP/3</td></tr></tbody></table></div>
+<hr>
+<h1 id="11-qa">11. Q&amp;A<a class="anchor" href="#11-qa">#</a></h1>
+<h3 id="protobuf-fundamentals">Protobuf fundamentals<a class="anchor" href="#protobuf-fundamentals">#</a></h3>
+<p><strong>What is Protobuf?</strong> A language-neutral schema language and compact binary serialisation format from Google, with code generation for many languages.</p>
+<p><strong>Why use it instead of JSON?</strong> Smaller payloads, faster decoding, a required schema, strong types and generated code. The trade-off is that payloads aren&#x27;t human-readable.</p>
+<p>**What is a <code>.proto</code> file?** The schema: messages, enums and services. It is a contract, not business logic.</p>
+<p><strong>What is a field number?</strong> The permanent numeric identifier of a field. It, not the field name, is written on the wire.</p>
+<p><strong>What is a tag?</strong> A varint combining the field number and wire type: <code>(field_number &lt;&lt; 3) | wire_type</code>.</p>
+<p><strong>What is a varint?</strong> A variable-length integer using 7 bits per byte with a continuation bit, so small numbers take one byte.</p>
+<p>**Why use <code>sint32</code> instead of <code>int32</code>?** Negative <code>int32</code> values always take 10 bytes. <code>sint32</code> uses ZigZag encoding, so −1 takes one byte.</p>
+<p><strong>What is packed encoding?</strong> Repeated scalar numbers stored as one length-delimited block instead of a tag per element. Default in proto3.</p>
+<p>**What is <code>oneof</code>?** A group of fields where at most one can be set at a time.</p>
+<p><strong>What is field presence?</strong> Whether you can tell a field was unset versus set to its default. Proto3 scalars need <code>optional</code> for it; editions default to explicit presence.</p>
+<p><strong>Why must an enum&#x27;s first value be zero and mean &quot;unspecified&quot;?</strong> Unset enum fields decode as 0, so 0 must not mean a real business value.</p>
+<p><strong>What are well-known types?</strong> Standard messages such as <code>Timestamp</code>, <code>Duration</code>, <code>FieldMask</code>, <code>Any</code> and <code>Empty</code>.</p>
+<p><strong>What are Protobuf Editions?</strong> The replacement for proto2 and proto3 syntax: a yearly edition with per-feature settings. Edition 2024 is the latest; proto3 remains supported.</p>
+<h3 id="evolution-and-compatibility">Evolution and compatibility<a class="anchor" href="#evolution-and-compatibility">#</a></h3>
+<p><strong>What is backward compatibility?</strong> New code can read data produced by old code.</p>
+<p><strong>What is forward compatibility?</strong> Old code can read data produced by new code, by skipping unknown fields.</p>
+<p><strong>How do you add a field safely?</strong> Give it a new, never-used field number. Readers without it skip it; readers with it see a default for old data.</p>
+<p><strong>How do you remove a field safely?</strong> Stop using it, then delete it and add <code>reserved</code> for its number and name.</p>
+<p><strong>What happens if you reuse a field number?</strong> Old data is decoded as the new field. Tested: an old <code>name</code> string was read as a new <code>nickname</code>, silent corruption with no error.</p>
+<p><strong>What happens if you change a field&#x27;s type?</strong> If the wire type differs, the field is silently skipped. Only specific pairs such as <code>int32</code>↔<code>int64</code> are compatible.</p>
+<p><strong>Is renaming a field safe?</strong> For binary, yes. For the JSON mapping and for generated code, no.</p>
+<p><strong>Do unknown fields survive a decode and re-encode?</strong> In the official C++, Java, Go and Python libraries, yes. In protobufjs, no (tested), so Node.js intermediaries can strip new fields.</p>
+<p>**How does <code>buf breaking</code> help?** It compares the schema against a previous version, such as the main branch, and fails CI on incompatible changes.</p>
+<h3 id="performance">Performance<a class="anchor" href="#performance">#</a></h3>
+<p><strong>Is Protobuf always faster than JSON?</strong> Always smaller. Decoding is typically faster. Encoding in JavaScript measured slower than native <code>JSON.stringify</code> for large messages; compiled languages generally show bigger gains.</p>
+<p><strong>Does gzip change the size comparison?</strong> Yes. Measured: raw Protobuf was 39–46% of JSON; gzipped it was 61–84%.</p>
+<p><strong>Why is gRPC fast in practice?</strong> Mostly persistent multiplexed HTTP/2 connections and header compression, plus smaller payloads and generated code.</p>
+<h3 id="grpc-fundamentals">gRPC fundamentals<a class="anchor" href="#grpc-fundamentals">#</a></h3>
+<p><strong>What is gRPC?</strong> An RPC framework that uses Protobuf for contracts and messages and HTTP/2 for transport.</p>
+<p><strong>What is a stub?</strong> The generated client object whose methods call the remote service.</p>
+<p><strong>What is a channel?</strong> A client&#x27;s managed, reusable connection to a server address.</p>
+<p><strong>What are the four call types?</strong> Unary, server streaming, client streaming and bidirectional streaming.</p>
+<p><strong>Why is the HTTP status 200 when a gRPC call fails?</strong> The gRPC status is sent in trailers after the messages, since a stream can fail after succeeding partway.</p>
+<p><strong>Why can&#x27;t browsers call gRPC directly?</strong> Browser APIs don&#x27;t expose HTTP trailers or the needed HTTP/2 control. Use gRPC-Web, Connect or JSON transcoding.</p>
+<p>**What happens if a method exists in the <code>.proto</code> but not in the server?** Tested: the server starts normally, and calling that method returns <code>UNIMPLEMENTED</code>.</p>
+<p><strong>How do you version a gRPC API?</strong> Additive changes within a package; breaking changes in a new package version such as <code>orders.v2</code>, served in parallel.</p>
+<h3 id="code-generation">Code generation<a class="anchor" href="#code-generation">#</a></h3>
+<p><strong>What does code generation produce?</strong> Message types, client stubs, server interfaces and service descriptors.</p>
+<p><strong>Static generation or dynamic loading?</strong> Static for typed languages and production builds; dynamic loading with <code>@grpc/proto-loader</code> is fine for JavaScript services and prototypes.</p>
+<p>**Where should <code>.proto</code> files live in a microservice system?** In a single source of truth: a monorepo, a dedicated contracts repository, or a schema registry. Not copied into each service.</p>
+<p><strong>What is contract-first design?</strong> Writing and reviewing the <code>.proto</code> before implementation, so consumers can shape the API while change is cheap.</p>
+<hr>
+<h1 id="12-quick-revision-sheet">12. Quick revision sheet<a class="anchor" href="#12-quick-revision-sheet">#</a></h1>
+<div class="table-wrap"><table><thead><tr><th>Topic</th><th>Remember</th></tr></thead><tbody><tr><td>Protobuf</td><td>Schema + codegen + binary format</td></tr><tr><td>gRPC</td><td>Protobuf contracts over HTTP/2</td></tr><tr><td>Field numbers</td><td>Permanent; 1–15 cost one byte; never reuse, always <code>reserved</code></td></tr><tr><td>Tag</td><td>Field number shifted left by 3, combined with the wire type</td></tr><tr><td>Varint</td><td>7 bits per byte, continuation bit; 150 = <code>96 01</code></td></tr><tr><td>Negatives</td><td><code>int32</code> −1 = 10-byte varint; use <code>sint32</code></td></tr><tr><td>Defaults</td><td>Not written; plain scalars can&#x27;t detect unset; use <code>optional</code></td></tr><tr><td>Enums</td><td>First value <code>X_UNSPECIFIED = 0</code>; open; handle unknowns</td></tr><tr><td>Well-known types</td><td><code>Timestamp</code>, <code>Duration</code>, <code>FieldMask</code>, <code>Empty</code>, <code>Any</code></td></tr><tr><td>Size</td><td>Raw ~40–46% of JSON; gzipped ~61–84%</td></tr><tr><td>Speed</td><td>Decode faster; JS encode not faster than native JSON</td></tr><tr><td>Safe changes</td><td>Add fields, add enum values, delete + reserve</td></tr><tr><td>Silent breakages</td><td>Renumber, reuse numbers, change wire type</td></tr><tr><td>Node gotcha</td><td>protobufjs drops unknown fields on re-encode</td></tr><tr><td>Validation</td><td><code>verify</code> checks types only; use protovalidate for rules</td></tr><tr><td>Codegen</td><td>Buf: lint, breaking, generate; one contract source of truth</td></tr><tr><td>On the wire</td><td>HEADERS → length-prefixed DATA → TRAILERS with <code>grpc-status</code></td></tr><tr><td>Browsers</td><td>gRPC-Web, Connect, or JSON transcoding</td></tr></tbody></table></div>
+<p><strong>One sentence each</strong></p>
+<ul><li>Protobuf trades human readability for a compact, typed, evolvable contract that every language can generate code from.</li><li>The field number is the field; everything about compatibility follows from never changing or reusing it.</li><li>gRPC&#x27;s speed comes more from HTTP/2 than from binary encoding, so measure before promising a number.</li></ul>
+<hr>
+<h1 id="13-references">13. References<a class="anchor" href="#13-references">#</a></h1>
+<ul><li><a href="https://protobuf.dev/">Protocol Buffers documentation</a>: <a href="https://protobuf.dev/programming-guides/proto3/">language guide (proto3)</a>, <a href="https://protobuf.dev/programming-guides/encoding/">encoding</a>, <a href="https://protobuf.dev/programming-guides/style/">style guide</a>, <a href="https://protobuf.dev/programming-guides/field_presence/">field presence</a></li><li><a href="https://protobuf.dev/editions/overview/">Protobuf Editions overview</a></li><li><a href="https://protobuf.dev/best-practices/dos-donts/">Proto best practices</a> and <a href="https://protobuf.dev/best-practices/api/">API best practices</a></li><li><a href="https://grpc.io/docs/">gRPC documentation</a>: <a href="https://grpc.io/docs/what-is-grpc/core-concepts/">core concepts</a>, <a href="https://grpc.io/docs/guides/status-codes/">status codes</a></li><li><a href="https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md">gRPC over HTTP/2 protocol specification</a></li><li><a href="https://cloud.google.com/apis/design">Google API design guide</a></li><li><a href="https://buf.build/docs/">Buf documentation</a> and <a href="https://github.com/bufbuild/protovalidate">protovalidate</a></li><li><a href="https://connectrpc.com/">Connect RPC</a></li><li>Library versions used for measurements: protobufjs 8.8.0, @grpc/proto-loader 0.8.1, @grpc/grpc-js 1.14.4, Node.js 24.15.0</li></ul>
+<hr>
+<p><strong>Previous:</strong> <a href="../6.%20REST_RESTFUL_API_BEST_PRACTICES/index.html">REST, RESTful APIs &amp; Best Practices</a></p>
+<p><strong>Next:</strong> <a href="../8.%20GRPC_PRACTICAL_PATTERNS_STREAMING/index.html">gRPC Practical Patterns &amp; Streaming</a></p>
+<footer>Extracted from the DOCUMENTATIONS export &middot; OSI model study notes &middot; see <code>README.md</code> for the markdown source.</footer>
+</main>
+</div>
+</body>
+</html>
