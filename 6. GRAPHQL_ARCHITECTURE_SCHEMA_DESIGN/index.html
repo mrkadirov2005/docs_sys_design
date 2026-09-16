@@ -1,0 +1,1010 @@
+<!doctype html>
+<html lang="en" data-theme-auto>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GraphQL Architecture &amp; Schema Design</title>
+<style>
+:root{
+  --bg:#fbfbf9; --surface:#ffffff; --ink:#1c1c1a; --muted:#5c5c56;
+  --line:#e3e3dd; --accent:#8a4b2a; --accent-soft:#f3ece7;
+  --code-bg:#f5f4f0; --quote-bg:#f7f5f1;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#16161a; --surface:#1d1d22; --ink:#e8e8e4; --muted:#a0a099;
+    --line:#32323a; --accent:#e0a077; --accent-soft:#2a2320;
+    --code-bg:#232329; --quote-bg:#202026;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#16161a; --surface:#1d1d22; --ink:#e8e8e4; --muted:#a0a099;
+  --line:#32323a; --accent:#e0a077; --accent-soft:#2a2320;
+  --code-bg:#232329; --quote-bg:#202026;
+}
+*{box-sizing:border-box}
+body{
+  background:var(--bg); color:var(--ink); margin:0;
+  font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,
+       "Helvetica Neue",Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.layout{max-width:1180px;margin:0 auto;padding:0 24px;
+  display:grid;grid-template-columns:236px minmax(0,1fr);gap:48px}
+nav.toc{position:sticky;top:0;align-self:start;max-height:100vh;
+  overflow-y:auto;padding:40px 0 40px;font-size:13.5px}
+nav.toc .label{text-transform:uppercase;letter-spacing:.09em;
+  font-size:11px;color:var(--muted);font-weight:700;margin-bottom:12px}
+nav.toc a{display:block;color:var(--muted);text-decoration:none;
+  padding:4px 10px;border-left:2px solid transparent;line-height:1.4}
+nav.toc a:hover{color:var(--accent);border-left-color:var(--accent);
+  background:var(--accent-soft)}
+nav.toc a.lvl2{padding-left:22px;font-size:13px}
+main{padding:40px 0 96px;min-width:0}
+h1,h2,h3,h4{line-height:1.25;font-weight:650;
+  scroll-margin-top:24px;position:relative}
+h1{font-size:2.05rem;margin:.2em 0 .6em;letter-spacing:-.02em}
+h2{font-size:1.5rem;margin:2.2em 0 .7em;padding-bottom:.3em;
+  border-bottom:1px solid var(--line)}
+h3{font-size:1.16rem;margin:1.9em 0 .5em}
+h4{font-size:1rem;margin:1.5em 0 .4em;color:var(--muted)}
+.anchor{position:absolute;margin-left:.4em;color:var(--line);
+  text-decoration:none;opacity:0;font-weight:400}
+h1:hover .anchor,h2:hover .anchor,h3:hover .anchor{opacity:1}
+.anchor:hover{color:var(--accent)}
+p{margin:0 0 1em}
+a{color:var(--accent)}
+ul,ol{margin:0 0 1.15em;padding-left:1.45em}
+li{margin:.32em 0}
+li::marker{color:var(--muted)}
+hr{border:0;border-top:1px solid var(--line);margin:2.6em 0}
+code{background:var(--code-bg);border:1px solid var(--line);
+  border-radius:4px;padding:.12em .38em;font-size:.875em;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+pre{background:var(--code-bg);border:1px solid var(--line);
+  border-radius:8px;padding:16px 18px;overflow-x:auto;margin:0 0 1.3em}
+pre code{background:none;border:0;padding:0;font-size:13px;line-height:1.55}
+blockquote{margin:0 0 1.3em;padding:14px 18px;background:var(--quote-bg);
+  border-left:3px solid var(--accent);border-radius:0 8px 8px 0}
+blockquote p{margin:0 0 .6em}
+blockquote p:last-child{margin:0}
+.table-wrap{overflow-x:auto;margin:0 0 1.5em;border:1px solid var(--line);
+  border-radius:8px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:14.5px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);
+  vertical-align:top}
+th{background:var(--accent-soft);font-weight:650;white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+figure{margin:0 0 1.6em;text-align:center}
+img{max-width:100%;height:auto;border:1px solid var(--line);
+  border-radius:8px;background:var(--surface)}
+footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--line);
+  font-size:13px;color:var(--muted)}
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr;gap:0}
+  nav.toc{position:static;max-height:none;padding:28px 0 0;
+    border-bottom:1px solid var(--line);margin-bottom:8px}
+  nav.toc a.lvl2{display:none}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="toc">
+<div class="label">On this page</div>
+<a href="#what-is-graphql">What is GraphQL</a>
+<a href="#single-endpoint" class="lvl2">Single Endpoint Model</a>
+<a href="#graphql-vs-rest-overview" class="lvl2">GraphQL vs REST Overview</a>
+<a href="#core-concepts">Core Concepts</a>
+<a href="#schema" class="lvl2">Schema</a>
+<a href="#type-system" class="lvl2">Type System</a>
+<a href="#sdl" class="lvl2">Schema Definition Language</a>
+<a href="#queries">Queries</a>
+<a href="#basic-query-syntax" class="lvl2">Basic Query Syntax</a>
+<a href="#nested-queries" class="lvl2">Nested Queries</a>
+<a href="#arguments-variables" class="lvl2">Arguments &amp; Variables</a>
+<a href="#aliases" class="lvl2">Aliases</a>
+<a href="#fragments" class="lvl2">Fragments</a>
+<a href="#directives" class="lvl2">Directives</a>
+<a href="#mutations">Mutations</a>
+<a href="#mutation-patterns" class="lvl2">Create / Update / Delete</a>
+<a href="#input-types" class="lvl2">Input Types</a>
+<a href="#subscriptions">Subscriptions</a>
+<a href="#resolvers">Resolvers</a>
+<a href="#resolver-chain" class="lvl2">Resolver Chain</a>
+<a href="#resolver-execution" class="lvl2">Execution Order</a>
+<a href="#schema-design">Schema Design Best Practices</a>
+<a href="#naming" class="lvl2">Naming Conventions</a>
+<a href="#nullability" class="lvl2">Nullability</a>
+<a href="#pagination" class="lvl2">Pagination Patterns</a>
+<a href="#error-handling" class="lvl2">Error Handling</a>
+<a href="#schema-evolution" class="lvl2">Schema Evolution</a>
+<a href="#relay-spec" class="lvl2">Relay Specification</a>
+<a href="#graphql-vs-rest">GraphQL vs REST</a>
+<a href="#introspection">Introspection</a>
+<a href="#revision">Quick Revision Sheet</a>
+</nav>
+
+<main>
+
+<h1 id="what-is-graphql">GraphQL Architecture &amp; Schema Design<a href="#what-is-graphql" class="anchor">#</a></h1>
+
+<p>GraphQL is a <strong>query language for APIs</strong> and a <strong>runtime</strong> for executing those queries against your data. Created internally by Facebook in 2012 to power their mobile apps, it was open-sourced in 2015 and is now governed by the GraphQL Foundation under the Linux Foundation.</p>
+
+<p>The fundamental idea: the client describes the shape of the data it needs, and the server returns exactly that shape &mdash; nothing more, nothing less.</p>
+
+<h3 id="single-endpoint">Single Endpoint Model<a href="#single-endpoint" class="anchor">#</a></h3>
+
+<p>Unlike REST, which exposes many endpoints (<code>GET /users</code>, <code>GET /users/1/posts</code>, <code>GET /posts/42/comments</code>), GraphQL exposes a <strong>single endpoint</strong> (typically <code>POST /graphql</code>). The request body contains the query that describes what data to fetch.</p>
+
+<pre><code># REST: 3 requests
+GET /users/1
+GET /users/1/posts
+GET /posts/42/comments
+
+# GraphQL: 1 request
+POST /graphql
+{
+  user(id: 1) {
+    name
+    posts {
+      title
+      comments { body author { name } }
+    }
+  }
+}</code></pre>
+
+<h3 id="graphql-vs-rest-overview">GraphQL vs REST &mdash; High-Level<a href="#graphql-vs-rest-overview" class="anchor">#</a></h3>
+
+<div class="table-wrap"><table>
+<thead><tr><th>Aspect</th><th>REST</th><th>GraphQL</th></tr></thead>
+<tbody>
+<tr><td>Endpoints</td><td>Multiple (one per resource)</td><td>Single endpoint</td></tr>
+<tr><td>Data fetching</td><td>Server decides response shape</td><td>Client specifies exact fields</td></tr>
+<tr><td>Over-fetching</td><td>Common (returns full resource)</td><td>Eliminated (only requested fields)</td></tr>
+<tr><td>Under-fetching</td><td>Common (requires multiple calls)</td><td>Eliminated (nested queries)</td></tr>
+<tr><td>Type system</td><td>Optional (OpenAPI/Swagger)</td><td>Built-in, required schema</td></tr>
+<tr><td>Versioning</td><td>URL versioning (/v1, /v2)</td><td>No versioning needed (evolve schema)</td></tr>
+<tr><td>Caching</td><td>HTTP caching works out of the box</td><td>Requires custom caching strategy</td></tr>
+<tr><td>Learning curve</td><td>Low</td><td>Medium-High</td></tr>
+</tbody>
+</table></div>
+
+<hr>
+
+<h2 id="core-concepts">Core Concepts<a href="#core-concepts" class="anchor">#</a></h2>
+
+<h3 id="schema">Schema<a href="#schema" class="anchor">#</a></h3>
+
+<p>The schema is the <strong>contract between client and server</strong>. It defines every type, field, query, mutation, and subscription available in the API. Written in the Schema Definition Language (SDL), the schema serves as both documentation and validation layer.</p>
+
+<pre><code># Every GraphQL API has a root schema
+schema {
+  query: Query
+  mutation: Mutation
+  subscription: Subscription
+}</code></pre>
+
+<p>The schema is the single source of truth. Clients can only request fields that exist in the schema, and the server validates every incoming query against it before execution.</p>
+
+<h3 id="type-system">Type System<a href="#type-system" class="anchor">#</a></h3>
+
+<p>GraphQL has a rich, strongly-typed system. Every field has a defined type.</p>
+
+<h4>Scalar Types (built-in primitives)</h4>
+
+<div class="table-wrap"><table>
+<thead><tr><th>Type</th><th>Description</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td><code>Int</code></td><td>Signed 32-bit integer</td><td><code>42</code></td></tr>
+<tr><td><code>Float</code></td><td>Signed double-precision floating-point</td><td><code>3.14</code></td></tr>
+<tr><td><code>String</code></td><td>UTF-8 character sequence</td><td><code>"hello"</code></td></tr>
+<tr><td><code>Boolean</code></td><td>true or false</td><td><code>true</code></td></tr>
+<tr><td><code>ID</code></td><td>Unique identifier (serialized as String)</td><td><code>"abc123"</code></td></tr>
+</tbody>
+</table></div>
+
+<h4>Object Types</h4>
+
+<pre><code>type User {
+  id: ID!              # Non-null ID
+  name: String!        # Non-null String
+  email: String
+  age: Int
+  posts: [Post!]!      # Non-null list of non-null Posts
+}</code></pre>
+
+<h4>Enum Types</h4>
+
+<pre><code>enum Role {
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+type User {
+  id: ID!
+  role: Role!
+}</code></pre>
+
+<h4>Interface Types</h4>
+
+<pre><code>interface Node {
+  id: ID!
+}
+
+type User implements Node {
+  id: ID!
+  name: String!
+}
+
+type Post implements Node {
+  id: ID!
+  title: String!
+}</code></pre>
+
+<h4>Union Types</h4>
+
+<pre><code>union SearchResult = User | Post | Comment
+
+type Query {
+  search(term: String!): [SearchResult!]!
+}</code></pre>
+
+<h4>Input Types</h4>
+
+<pre><code># Input types are used for mutation arguments
+input CreateUserInput {
+  name: String!
+  email: String!
+  role: Role = VIEWER   # Default value
+}</code></pre>
+
+<h4>Type Modifiers</h4>
+
+<div class="table-wrap"><table>
+<thead><tr><th>Syntax</th><th>Meaning</th><th>Null allowed?</th><th>Empty list?</th></tr></thead>
+<tbody>
+<tr><td><code>String</code></td><td>Nullable string</td><td>Yes</td><td>N/A</td></tr>
+<tr><td><code>String!</code></td><td>Non-null string</td><td>No</td><td>N/A</td></tr>
+<tr><td><code>[String]</code></td><td>Nullable list of nullable strings</td><td>Yes (list and items)</td><td>Yes</td></tr>
+<tr><td><code>[String!]</code></td><td>Nullable list of non-null strings</td><td>List can be null, items cannot</td><td>Yes</td></tr>
+<tr><td><code>[String!]!</code></td><td>Non-null list of non-null strings</td><td>No</td><td>Yes</td></tr>
+</tbody>
+</table></div>
+
+<h3 id="sdl">Schema Definition Language (SDL)<a href="#sdl" class="anchor">#</a></h3>
+
+<p>SDL is how you define the complete schema. Here is a realistic example showing types with relationships:</p>
+
+<pre><code>type User {
+  id: ID!
+  username: String!
+  email: String!
+  profile: Profile
+  posts(first: Int = 10, after: String): PostConnection!
+  createdAt: DateTime!
+}
+
+type Profile {
+  bio: String
+  avatarUrl: String
+  website: String
+}
+
+type Post {
+  id: ID!
+  title: String!
+  body: String!
+  author: User!
+  comments: [Comment!]!
+  tags: [String!]!
+  publishedAt: DateTime
+  status: PostStatus!
+}
+
+type Comment {
+  id: ID!
+  body: String!
+  author: User!
+  post: Post!
+  createdAt: DateTime!
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+# Custom scalar for dates
+scalar DateTime</code></pre>
+
+<hr>
+
+<h2 id="queries">Queries<a href="#queries" class="anchor">#</a></h2>
+
+<h3 id="basic-query-syntax">Basic Query Syntax<a href="#basic-query-syntax" class="anchor">#</a></h3>
+
+<p>A query selects fields on objects. The response mirrors the query shape exactly.</p>
+
+<pre><code># Query
+query {
+  user(id: "1") {
+    name
+    email
+  }
+}
+
+# Response
+{
+  "data": {
+    "user": {
+      "name": "Alice",
+      "email": "alice@example.com"
+    }
+  }
+}</code></pre>
+
+<h3 id="nested-queries">Nested Queries<a href="#nested-queries" class="anchor">#</a></h3>
+
+<p>Follow relationships by nesting field selections. This is what eliminates under-fetching.</p>
+
+<pre><code>query {
+  user(id: "1") {
+    name
+    posts {
+      title
+      comments {
+        body
+        author {
+          name
+        }
+      }
+    }
+  }
+}</code></pre>
+
+<p>One request fetches the user, their posts, comments on those posts, and the comment authors. In REST, this would require 4+ round trips.</p>
+
+<h3 id="arguments-variables">Arguments &amp; Variables<a href="#arguments-variables" class="anchor">#</a></h3>
+
+<p>Fields can accept arguments. Variables let you parameterize queries for reuse.</p>
+
+<pre><code># With inline arguments
+query {
+  user(id: "1") { name }
+  posts(limit: 5, status: PUBLISHED) { title }
+}
+
+# With variables (preferred for production)
+query GetUser($userId: ID!, $postLimit: Int = 10) {
+  user(id: $userId) {
+    name
+    posts(first: $postLimit) {
+      title
+    }
+  }
+}
+
+# Variables JSON (sent alongside the query)
+{
+  "userId": "1",
+  "postLimit": 5
+}</code></pre>
+
+<h3 id="aliases">Aliases<a href="#aliases" class="anchor">#</a></h3>
+
+<p>Aliases let you query the same field multiple times with different arguments.</p>
+
+<pre><code>query {
+  admin: user(id: "1") {
+    name
+    role
+  }
+  viewer: user(id: "42") {
+    name
+    role
+  }
+}
+
+# Response
+{
+  "data": {
+    "admin": { "name": "Alice", "role": "ADMIN" },
+    "viewer": { "name": "Bob", "role": "VIEWER" }
+  }
+}</code></pre>
+
+<h3 id="fragments">Fragments<a href="#fragments" class="anchor">#</a></h3>
+
+<p>Fragments are reusable sets of fields. They reduce duplication and make queries maintainable.</p>
+
+<pre><code>fragment UserFields on User {
+  id
+  name
+  email
+  role
+}
+
+query {
+  admin: user(id: "1") {
+    ...UserFields
+    posts { title }
+  }
+  viewer: user(id: "42") {
+    ...UserFields
+  }
+}
+
+# Inline fragments (for union/interface types)
+query {
+  search(term: "graphql") {
+    ... on User { name email }
+    ... on Post { title body }
+    ... on Comment { body author { name } }
+  }
+}</code></pre>
+
+<h3 id="directives">Directives<a href="#directives" class="anchor">#</a></h3>
+
+<p>Directives modify query execution. The two built-in directives:</p>
+
+<pre><code>query GetUser($userId: ID!, $withPosts: Boolean!, $skipEmail: Boolean!) {
+  user(id: $userId) {
+    name
+    email @skip(if: $skipEmail)
+    posts @include(if: $withPosts) {
+      title
+    }
+  }
+}
+
+# Variables
+{ "userId": "1", "withPosts": true, "skipEmail": false }</code></pre>
+
+<div class="table-wrap"><table>
+<thead><tr><th>Directive</th><th>Behavior</th></tr></thead>
+<tbody>
+<tr><td><code>@include(if: Boolean!)</code></td><td>Include field only if argument is <code>true</code></td></tr>
+<tr><td><code>@skip(if: Boolean!)</code></td><td>Skip field if argument is <code>true</code></td></tr>
+<tr><td><code>@deprecated(reason: String)</code></td><td>Mark a field as deprecated in the schema</td></tr>
+</tbody>
+</table></div>
+
+<hr>
+
+<h2 id="mutations">Mutations<a href="#mutations" class="anchor">#</a></h2>
+
+<p>Mutations are how clients <strong>modify server-side data</strong>. They are explicitly separated from queries to signal side effects.</p>
+
+<h3 id="mutation-patterns">Create / Update / Delete Patterns<a href="#mutation-patterns" class="anchor">#</a></h3>
+
+<pre><code># Schema
+type Mutation {
+  createPost(input: CreatePostInput!): Post!
+  updatePost(id: ID!, input: UpdatePostInput!): Post!
+  deletePost(id: ID!): DeletePostPayload!
+}
+
+input CreatePostInput {
+  title: String!
+  body: String!
+  tags: [String!]
+  status: PostStatus = DRAFT
+}
+
+input UpdatePostInput {
+  title: String
+  body: String
+  tags: [String!]
+  status: PostStatus
+}
+
+type DeletePostPayload {
+  success: Boolean!
+  deletedId: ID
+}</code></pre>
+
+<pre><code># Create
+mutation {
+  createPost(input: {
+    title: "GraphQL Basics"
+    body: "GraphQL is a query language..."
+    tags: ["graphql", "api"]
+  }) {
+    id
+    title
+    status
+    author { name }
+  }
+}
+
+# Update
+mutation {
+  updatePost(id: "42", input: {
+    status: PUBLISHED
+  }) {
+    id
+    title
+    status
+    publishedAt
+  }
+}
+
+# Delete
+mutation {
+  deletePost(id: "42") {
+    success
+    deletedId
+  }
+}</code></pre>
+
+<h3 id="input-types">Input Types for Mutations<a href="#input-types" class="anchor">#</a></h3>
+
+<blockquote>
+<p><strong>Best practice:</strong> Always use dedicated <code>input</code> types for mutation arguments rather than listing fields inline. This keeps mutations clean, reusable, and easier to evolve. Suffix them with <code>Input</code> (e.g., <code>CreateUserInput</code>).</p>
+</blockquote>
+
+<p>Return the mutated object so the client cache can update automatically:</p>
+
+<pre><code>mutation CreateUser($input: CreateUserInput!) {
+  createUser(input: $input) {
+    id        # Needed for cache identification
+    name      # Return what the client cares about
+    email
+    createdAt
+  }
+}</code></pre>
+
+<hr>
+
+<h2 id="subscriptions">Subscriptions<a href="#subscriptions" class="anchor">#</a></h2>
+
+<p>Subscriptions provide <strong>real-time data</strong> over a persistent connection, typically a WebSocket. The client subscribes to an event, and the server pushes data when it occurs.</p>
+
+<pre><code># Schema
+type Subscription {
+  postPublished: Post!
+  commentAdded(postId: ID!): Comment!
+  userStatusChanged(userId: ID!): UserStatus!
+}
+
+# Client subscription
+subscription {
+  commentAdded(postId: "42") {
+    id
+    body
+    author { name }
+    createdAt
+  }
+}</code></pre>
+
+<h4>When to use subscriptions vs polling</h4>
+
+<div class="table-wrap"><table>
+<thead><tr><th>Use subscriptions when</th><th>Use polling when</th></tr></thead>
+<tbody>
+<tr><td>Data changes frequently and unpredictably</td><td>Data changes at known intervals</td></tr>
+<tr><td>Low latency is critical (chat, live feeds)</td><td>Near-real-time is acceptable</td></tr>
+<tr><td>Small number of concurrent listeners</td><td>Many clients need same data</td></tr>
+<tr><td>Server can handle persistent connections</td><td>Simpler infrastructure preferred</td></tr>
+</tbody>
+</table></div>
+
+<hr>
+
+<h2 id="resolvers">Resolvers<a href="#resolvers" class="anchor">#</a></h2>
+
+<p>Resolvers are <strong>functions that populate data for each field</strong> in the schema. The schema defines the shape; resolvers provide the data.</p>
+
+<h3 id="resolver-chain">Resolver Chain<a href="#resolver-chain" class="anchor">#</a></h3>
+
+<p>Every resolver receives four arguments:</p>
+
+<pre><code>fieldName(parent, args, context, info) {
+  // parent  - Result from the parent resolver
+  // args    - Arguments passed to this field
+  // context - Shared object (auth, DB, loaders) across all resolvers
+  // info    - AST and schema metadata about the query
+}</code></pre>
+
+<pre><code>// Example: Node.js resolvers
+const resolvers = {
+  Query: {
+    // Root resolver - no meaningful parent
+    user: (parent, { id }, context) =&gt; {
+      return context.db.users.findById(id);
+    },
+    posts: (parent, { limit, status }, context) =&gt; {
+      return context.db.posts.find({ status }).limit(limit);
+    },
+  },
+
+  // Field-level resolvers
+  User: {
+    // parent is the User object from the Query.user resolver
+    posts: (user, { first = 10 }, context) =&gt; {
+      return context.db.posts.find({ authorId: user.id }).limit(first);
+    },
+    fullName: (user) =&gt; {
+      return `${user.firstName} ${user.lastName}`;
+    },
+  },
+
+  Post: {
+    author: (post, args, context) =&gt; {
+      return context.db.users.findById(post.authorId);
+    },
+    comments: (post, args, context) =&gt; {
+      return context.db.comments.find({ postId: post.id });
+    },
+  },
+
+  Mutation: {
+    createPost: (parent, { input }, context) =&gt; {
+      if (!context.currentUser) throw new AuthenticationError('Login required');
+      return context.db.posts.create({
+        ...input,
+        authorId: context.currentUser.id,
+      });
+    },
+  },
+};</code></pre>
+
+<h3 id="resolver-execution">Execution Order &amp; the Resolver Tree<a href="#resolver-execution" class="anchor">#</a></h3>
+
+<p>Given this query:</p>
+
+<pre><code>query {
+  user(id: "1") {       # 1. Query.user resolver
+    name                 # 2. User.name (default resolver)
+    posts {              # 3. User.posts resolver
+      title              # 4. Post.title (default) - runs for EACH post
+      author {           # 5. Post.author resolver - runs for EACH post
+        name             # 6. User.name (default)
+      }
+    }
+  }
+}</code></pre>
+
+<p>Resolvers execute <strong>breadth-first by level, depth-first by field</strong>. Sibling fields at the same level resolve in parallel; a child waits for its parent to resolve first.</p>
+
+<h4>Default (Trivial) Resolvers</h4>
+
+<p>If you don't define a resolver for a field, GraphQL uses a default resolver that returns <code>parent[fieldName]</code>. You only need custom resolvers when the field name doesn't match the property, or when you need to fetch data from another source.</p>
+
+<h4>Context Object</h4>
+
+<p>The context is created once per request and shared across all resolvers:</p>
+
+<pre><code>// Server setup
+const server = new ApolloServer({
+  typeDefs,
+  resolvers,
+  context: ({ req }) =&gt; ({
+    currentUser: getUserFromToken(req.headers.authorization),
+    db: database,
+    loaders: createDataLoaders(),  // For N+1 prevention
+  }),
+});</code></pre>
+
+<hr>
+
+<h2 id="schema-design">Schema Design Best Practices<a href="#schema-design" class="anchor">#</a></h2>
+
+<h3 id="naming">Naming Conventions<a href="#naming" class="anchor">#</a></h3>
+
+<div class="table-wrap"><table>
+<thead><tr><th>Element</th><th>Convention</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td>Fields</td><td>camelCase</td><td><code>firstName</code>, <code>createdAt</code></td></tr>
+<tr><td>Types</td><td>PascalCase</td><td><code>User</code>, <code>BlogPost</code></td></tr>
+<tr><td>Enums</td><td>PascalCase type, SCREAMING_SNAKE values</td><td><code>PostStatus.PUBLISHED</code></td></tr>
+<tr><td>Input types</td><td>PascalCase + "Input" suffix</td><td><code>CreateUserInput</code></td></tr>
+<tr><td>Mutations</td><td>verb + noun</td><td><code>createUser</code>, <code>deletePost</code></td></tr>
+<tr><td>Queries</td><td>noun (singular or plural)</td><td><code>user</code>, <code>posts</code></td></tr>
+</tbody>
+</table></div>
+
+<h3 id="nullability">Nullable vs Non-Nullable Fields<a href="#nullability" class="anchor">#</a></h3>
+
+<blockquote>
+<p><strong>Rule of thumb:</strong> Start nullable, then add <code>!</code> only when you're certain the field will always have a value. A non-null field that fails to resolve causes the error to propagate up to the nearest nullable parent, potentially nullifying an entire object.</p>
+</blockquote>
+
+<div class="table-wrap"><table>
+<thead><tr><th>Use <code>!</code> (non-null) when</th><th>Keep nullable when</th></tr></thead>
+<tbody>
+<tr><td>Field is a database primary key (<code>id: ID!</code>)</td><td>Field might not exist yet (<code>publishedAt</code>)</td></tr>
+<tr><td>Field is always present by schema logic</td><td>Field comes from an external service that can fail</td></tr>
+<tr><td>Field is an enum with a guaranteed value</td><td>Field is optional user data (<code>bio</code>, <code>website</code>)</td></tr>
+</tbody>
+</table></div>
+
+<h3 id="pagination">Pagination Patterns<a href="#pagination" class="anchor">#</a></h3>
+
+<h4>Offset-Based (simple but fragile)</h4>
+
+<pre><code>type Query {
+  posts(offset: Int = 0, limit: Int = 20): [Post!]!
+}
+
+# Usage
+query { posts(offset: 40, limit: 20) { title } }</code></pre>
+
+<p>Problem: if items are inserted or deleted between page requests, you can skip or duplicate items.</p>
+
+<h4>Cursor-Based / Relay-Style Connections (robust)</h4>
+
+<pre><code>type Query {
+  posts(first: Int, after: String, last: Int, before: String): PostConnection!
+}
+
+type PostConnection {
+  edges: [PostEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int
+}
+
+type PostEdge {
+  node: Post!
+  cursor: String!    # Opaque cursor (typically base64-encoded ID)
+}
+
+type PageInfo {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+  endCursor: String
+}</code></pre>
+
+<pre><code># First page
+query {
+  posts(first: 10) {
+    edges {
+      node { id title }
+      cursor
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
+
+# Next page
+query {
+  posts(first: 10, after: "Y3Vyc29yOjEw") {
+    edges {
+      node { id title }
+      cursor
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}</code></pre>
+
+<h3 id="error-handling">Error Handling<a href="#error-handling" class="anchor">#</a></h3>
+
+<h4>Approach 1: Top-Level Errors Array (default)</h4>
+
+<pre><code># Response with errors
+{
+  "data": { "user": null },
+  "errors": [
+    {
+      "message": "User not found",
+      "locations": [{ "line": 2, "column": 3 }],
+      "path": ["user"],
+      "extensions": { "code": "NOT_FOUND" }
+    }
+  ]
+}</code></pre>
+
+<h4>Approach 2: Union Types for Errors (recommended for expected errors)</h4>
+
+<pre><code>union CreateUserResult = User | ValidationError | DuplicateEmailError
+
+type ValidationError {
+  message: String!
+  field: String!
+}
+
+type DuplicateEmailError {
+  message: String!
+  existingEmail: String!
+}
+
+type Mutation {
+  createUser(input: CreateUserInput!): CreateUserResult!
+}
+
+# Client handles each case
+mutation {
+  createUser(input: { name: "Alice", email: "alice@test.com" }) {
+    ... on User { id name }
+    ... on ValidationError { message field }
+    ... on DuplicateEmailError { message }
+  }
+}</code></pre>
+
+<h3 id="schema-evolution">Schema Evolution<a href="#schema-evolution" class="anchor">#</a></h3>
+
+<p>GraphQL schemas evolve without versioning. Deprecate old fields instead of breaking them:</p>
+
+<pre><code>type User {
+  id: ID!
+  name: String! @deprecated(reason: "Use firstName and lastName instead")
+  firstName: String!
+  lastName: String!
+}</code></pre>
+
+<p>Deprecated fields still work but are flagged in tooling (GraphiQL, Apollo Studio). Remove them only after all clients have migrated.</p>
+
+<h3 id="relay-spec">Relay Specification<a href="#relay-spec" class="anchor">#</a></h3>
+
+<p>The Relay spec defines three patterns for a consistent, predictable schema:</p>
+
+<ol>
+<li><strong>Node Interface</strong> &mdash; Every object has a globally unique <code>id</code> and can be re-fetched via <code>node(id: ID!)</code></li>
+<li><strong>Global Object Identification</strong> &mdash; IDs are opaque and globally unique (often base64-encoded <code>Type:localId</code>)</li>
+<li><strong>Connections</strong> &mdash; Cursor-based pagination with <code>edges</code>, <code>node</code>, <code>pageInfo</code> (described above)</li>
+</ol>
+
+<pre><code>interface Node {
+  id: ID!
+}
+
+type Query {
+  node(id: ID!): Node
+  nodes(ids: [ID!]!): [Node]!
+}
+
+# Any type that implements Node can be fetched by ID
+type User implements Node {
+  id: ID!     # Globally unique, e.g., base64("User:123")
+  name: String!
+}</code></pre>
+
+<hr>
+
+<h2 id="graphql-vs-rest">GraphQL vs REST &mdash; Detailed Comparison<a href="#graphql-vs-rest" class="anchor">#</a></h2>
+
+<div class="table-wrap"><table>
+<thead><tr><th>Criteria</th><th>REST</th><th>GraphQL</th></tr></thead>
+<tbody>
+<tr><td>Data fetching</td><td>Fixed structure per endpoint</td><td>Client specifies exact fields</td></tr>
+<tr><td>Endpoints</td><td>Many (one per resource + action)</td><td>Single endpoint</td></tr>
+<tr><td>Over-fetching</td><td>Server returns full resource</td><td>Only requested fields returned</td></tr>
+<tr><td>Under-fetching</td><td>Multiple round trips needed</td><td>Nested queries in single request</td></tr>
+<tr><td>Type safety</td><td>Optional (JSON Schema, OpenAPI)</td><td>Built-in strong type system</td></tr>
+<tr><td>Versioning</td><td>URL-based (/v1, /v2)</td><td>Schema evolution, no versions</td></tr>
+<tr><td>Caching</td><td>HTTP caching (ETags, Cache-Control)</td><td>Needs client-side normalized cache</td></tr>
+<tr><td>File uploads</td><td>Multipart/form-data natively</td><td>Requires multipart spec or separate endpoint</td></tr>
+<tr><td>Error handling</td><td>HTTP status codes (404, 500)</td><td>Always 200, errors in response body</td></tr>
+<tr><td>Tooling</td><td>Postman, curl, browser</td><td>GraphiQL, Apollo Studio, Playground</td></tr>
+<tr><td>Real-time</td><td>Webhooks, SSE, polling</td><td>Built-in subscriptions (WebSocket)</td></tr>
+<tr><td>Introspection</td><td>Requires separate docs (Swagger)</td><td>Built-in schema introspection</td></tr>
+<tr><td>Learning curve</td><td>Low (HTTP fundamentals)</td><td>Medium-High (SDL, resolvers, client libs)</td></tr>
+<tr><td>Best for</td><td>Simple CRUD, public APIs, microservices</td><td>Complex data graphs, mobile apps, BFFs</td></tr>
+</tbody>
+</table></div>
+
+<h3>When to Use GraphQL</h3>
+
+<ul>
+<li>Mobile apps where bandwidth and round trips matter</li>
+<li>Complex data requirements with deep relationships</li>
+<li>Rapid frontend iteration (no backend changes needed for new data shapes)</li>
+<li>Backend-for-Frontend (BFF) layer aggregating multiple services</li>
+<li>When multiple clients (web, mobile, TV) need different data shapes from the same API</li>
+</ul>
+
+<h3>When to Stick with REST</h3>
+
+<ul>
+<li>Simple CRUD APIs without complex relationships</li>
+<li>Public APIs consumed by third parties (REST is more universally understood)</li>
+<li>File-heavy APIs (uploads, downloads)</li>
+<li>When HTTP caching is critical to your architecture</li>
+<li>Microservice-to-microservice communication (gRPC is often better here)</li>
+</ul>
+
+<hr>
+
+<h2 id="introspection">Introspection<a href="#introspection" class="anchor">#</a></h2>
+
+<p>Introspection allows clients to <strong>query the schema itself</strong> &mdash; discover types, fields, arguments, and documentation at runtime.</p>
+
+<pre><code># Query all types in the schema
+{
+  __schema {
+    types {
+      name
+      kind
+      description
+    }
+  }
+}
+
+# Query a specific type
+{
+  __type(name: "User") {
+    name
+    fields {
+      name
+      type {
+        name
+        kind
+        ofType { name }
+      }
+    }
+  }
+}
+
+# Query available queries and mutations
+{
+  __schema {
+    queryType { fields { name description } }
+    mutationType { fields { name description } }
+  }
+}</code></pre>
+
+<h3>Why Introspection Matters</h3>
+
+<ul>
+<li><strong>Tooling:</strong> GraphiQL, Apollo Studio, and Playground all use introspection to provide autocomplete, documentation, and schema exploration</li>
+<li><strong>Code generation:</strong> Tools like GraphQL Code Generator create TypeScript types from the schema via introspection</li>
+<li><strong>Validation:</strong> Clients can validate queries against the live schema before sending them</li>
+</ul>
+
+<h3>Security: Disable in Production</h3>
+
+<blockquote>
+<p>Introspection reveals your entire API surface. Disable it in production to prevent attackers from mapping your schema. Keep it enabled in development and staging.</p>
+</blockquote>
+
+<pre><code>// Apollo Server
+const server = new ApolloServer({
+  typeDefs,
+  resolvers,
+  introspection: process.env.NODE_ENV !== 'production',
+});</code></pre>
+
+<hr>
+
+<h2 id="revision">Quick Revision Sheet<a href="#revision" class="anchor">#</a></h2>
+
+<div class="table-wrap"><table>
+<thead><tr><th>Concept</th><th>Key Point</th></tr></thead>
+<tbody>
+<tr><td>GraphQL</td><td>Query language for APIs. Client asks for exactly what it needs.</td></tr>
+<tr><td>Schema</td><td>Contract between client and server. Written in SDL. Single source of truth.</td></tr>
+<tr><td>Types</td><td>Scalar (Int, Float, String, Boolean, ID), Object, Enum, Input, Union, Interface.</td></tr>
+<tr><td><code>!</code> modifier</td><td>Non-null. Error propagates up to nearest nullable parent if field fails.</td></tr>
+<tr><td>Query</td><td>Read data. Nested fields follow relationships. Single request, exact shape.</td></tr>
+<tr><td>Mutation</td><td>Write data. Use <code>input</code> types. Return the mutated object.</td></tr>
+<tr><td>Subscription</td><td>Real-time via WebSocket. Server pushes on events.</td></tr>
+<tr><td>Resolver</td><td>Function per field: <code>(parent, args, context, info)</code>. Default returns <code>parent[field]</code>.</td></tr>
+<tr><td>Fragment</td><td>Reusable field set. Inline fragments for unions/interfaces.</td></tr>
+<tr><td>Directive</td><td><code>@include</code>, <code>@skip</code> (client); <code>@deprecated</code> (schema).</td></tr>
+<tr><td>Pagination</td><td>Cursor-based (Relay connections) is robust. Offset-based is simple but fragile.</td></tr>
+<tr><td>Error handling</td><td>Top-level errors array (default) or union-type result types (for expected errors).</td></tr>
+<tr><td>Introspection</td><td>Query the schema itself (<code>__schema</code>, <code>__type</code>). Disable in production.</td></tr>
+<tr><td>N+1 Problem</td><td>Resolver per field can cause N+1 DB queries. Solve with DataLoader (batching).</td></tr>
+<tr><td>Caching</td><td>No HTTP caching. Use normalized client cache (Apollo) or persisted queries.</td></tr>
+<tr><td>vs REST</td><td>GraphQL: flexible, typed, single endpoint. REST: simple, cacheable, universal.</td></tr>
+</tbody>
+</table></div>
+
+<footer>
+GraphQL Architecture &amp; Schema Design &mdash; System Design Interview Prep
+</footer>
+
+</main>
+</div>
+</body>
+</html>
